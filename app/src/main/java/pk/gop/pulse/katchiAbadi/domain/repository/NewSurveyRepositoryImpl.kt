@@ -58,6 +58,15 @@ class NewSurveyRepositoryImpl @Inject constructor(
     override suspend fun deleteSurvey(survey: NewSurveyNewEntity): Resource<Unit> {
         return try {
             dao.deleteSurvey(survey)
+
+            // Check if there are any other surveys for this parcel
+            val remainingSurveys = dao.getSurveysByParcelId(survey.parcelId)
+
+            if (remainingSurveys.isEmpty()) {
+                // No more surveys for this parcel, set status back to unsurveyed (1)
+                activeParcelDao.updateSurveyStatus(survey.parcelId, 1)
+            }
+
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error(e.message ?: "Delete failed")
@@ -134,9 +143,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
             val gson = Gson()
             val json = gson.toJson(posts)
+            Log.d("UploadPayload", Gson().toJson(posts))
             // saveJsonToFile(context, json)
             Log.d("UploadDebug", "Uploading ${posts.size} posts")
-            Log.d("UploadDebug", "JSON: ${json.take(500)}...") // First 500 chars
+            Log.d("UploadDebug", "JSON: ${json.take(500)}...")
 
             val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
             val response = api.postSurveyDataNew("Bearer $token", posts)
@@ -203,11 +213,12 @@ class NewSurveyRepositoryImpl @Inject constructor(
             val inputStream = when (uri.scheme) {
                 "content" -> context.contentResolver.openInputStream(uri)
                 "file" -> File(uri.path ?: "").inputStream()
+                null -> File(img.uri).inputStream() // 👈 handle plain file paths
                 else -> null
             }
 
-            inputStream?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream)?.let { bmp ->
+            inputStream?.use { stream ->
+                BitmapFactory.decodeStream(stream)?.let { bmp ->
                     ByteArrayOutputStream().use { os ->
                         var quality = 100
                         do {
@@ -224,6 +235,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
 
         Pictures(img.id.toInt(), img.type, base64Encoded, img.type)
+
     }
 
 

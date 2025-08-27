@@ -56,4 +56,7 @@ interface NewSurveyNewDao {
     @Query("UPDATE new_surveys SET statusBit = 1 WHERE pkId = :pkId")
     suspend fun markAsUploaded(pkId: Long)
 
+    @Query("SELECT * FROM new_surveys WHERE parcelId = :parcelId AND (statusBit = 0 OR statusBit IS NULL)")
+    suspend fun getSurveysByParcelId(parcelId: Long): List<NewSurveyNewEntity>
+
 }

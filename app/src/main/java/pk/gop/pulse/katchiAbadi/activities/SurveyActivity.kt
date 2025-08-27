@@ -356,8 +356,8 @@ class SurveyActivity : AppCompatActivity() {
                     sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
                 Toast.makeText(context, "MauzaID: $mauzaId", Toast.LENGTH_SHORT).show()
                 val owners = withContext(Dispatchers.IO) {
-                    database.personDao().getPersonsForCurrentMouza(mauzaId)
-//                    database.personDao().getallPersons()
+//                    database.personDao().getPersonsForCurrentMouza(mauzaId) ////to show owner only in a desired mouza
+                    database.personDao().getallPersons()
                 }
 
                 if (owners.isEmpty()) {
@@ -558,6 +558,7 @@ class SurveyActivity : AppCompatActivity() {
                         val image =
                             SurveyImage(uri = compressedFile.absolutePath, type = currentImageType)
                         viewModel.addImage(image)
+                        database.imageDao().insertImage(image)
                         imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
                         Toast.makeText(context, "Photo added successfully", Toast.LENGTH_SHORT)
                             .show()

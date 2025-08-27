@@ -46,6 +46,13 @@ interface ActiveParcelDao {
     @Query("SELECT * FROM active_parcels WHERE id = :parcelId")
     suspend fun getParcelById(parcelId: Long): ActiveParcelEntity?
 
+
+    @Query("UPDATE active_parcels SET surveyStatusCode = :statusCode WHERE id = :parcelId")
+    suspend fun updateSurveyStatus(parcelId: Long, statusCode: Int)
+
+    @Query("SELECT surveyStatusCode FROM active_parcels WHERE id = :parcelId")
+    suspend fun getSurveyStatus(parcelId: Long): Int?
+
 //    val surveyStatusCode: Int,
 //    val surveyId: Int
 

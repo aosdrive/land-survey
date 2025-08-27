@@ -2,9 +2,11 @@ package pk.gop.pulse.katchiAbadi.fragments.form
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -37,6 +39,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
 import com.devstune.searchablemultiselectspinner.SearchableItem
 import com.devstune.searchablemultiselectspinner.SearchableMultiSelectSpinner
@@ -81,6 +84,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.threeten.bp.Duration
@@ -117,6 +121,8 @@ import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class FragmentMap : Fragment() {
+
+    private lateinit var refreshReceiver: BroadcastReceiver
 
     private val viewModel: SharedFormViewModel by activityViewModels()
 
@@ -265,6 +271,19 @@ class FragmentMap : Fragment() {
 
     override fun onResume() {
         super.onResume()
+
+        // Register broadcast receiver
+        refreshReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == "REFRESH_MAP") {
+                    Log.d("FragmentMap", "Received map refresh broadcast")
+                    refreshMapData()
+                }
+            }
+        }
+        val filter = IntentFilter("REFRESH_MAP")
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(refreshReceiver, filter)
         requireActivity().let { activity -> Utility.closeKeyBoard(activity) }
         try {
             binding.apply {
@@ -1115,8 +1134,26 @@ class FragmentMap : Fragment() {
     override fun onPause() {
         _binding?.parcelMapview?.pause()
         super.onPause()
+        try {
+            LocalBroadcastManager.getInstance(requireContext())
+                .unregisterReceiver(refreshReceiver)
+        } catch (e: Exception) {
+            Log.e("FragmentMap", "Error unregistering receiver: ${e.message}")
+        }
         stopLocationUpdates()
         stopLoadingParcels()
+    }
+
+    private fun refreshMapData() {
+        Log.d("FragmentMap", "Refreshing map data...")
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            surveyParcelsGraphics?.graphics?.clear()
+            surveyLabelGraphics?.graphics?.clear()
+            delay(300)
+            // Reload map with current IDs
+            loadMap(ids, ids.isNotEmpty())
+        }
     }
 
     private fun stopLocationUpdates() {

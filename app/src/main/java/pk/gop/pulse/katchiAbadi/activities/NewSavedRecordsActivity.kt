@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -85,6 +86,9 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
                             "Deleted successfully",
                             Toast.LENGTH_SHORT
                         ).show()
+
+                        // Refresh the map if it exists
+                        refreshMapIfVisible()
                     }
 
                     is Resource.Error -> {
@@ -136,6 +140,13 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
             }
         }
     }
+
+    private fun refreshMapIfVisible() {
+        // Send broadcast or use EventBus to notify map fragment
+        val intent = Intent("REFRESH_MAP")
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+    }
+
 
     override fun onUploadClicked(survey: NewSurveyNewEntity) {
 

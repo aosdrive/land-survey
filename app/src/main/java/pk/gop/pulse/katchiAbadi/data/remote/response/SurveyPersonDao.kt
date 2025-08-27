@@ -26,6 +26,10 @@ interface SurveyPersonDao {
     @Query("SELECT * FROM survey_persons WHERE surveyId = :surveyId")
     suspend fun getPersonsForSurvey(surveyId: Long): List<SurveyPersonEntity>
 
+    @Query("SELECT * FROM survey_persons")
+    suspend fun getAllPersons(): List<SurveyPersonEntity>
+
+
 
 
 }

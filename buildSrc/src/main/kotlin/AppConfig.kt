@@ -3,6 +3,6 @@ object AppConfig {
     const val minSdkVersion = 24
     const val targetSdkVersion = 34
     const val versionCode = 10
-    const val versionName = "3.1.6"
+    const val versionName = "3.1.7"
     const val applicationId = "pk.gop.pulse.katchiAbadi"
 }
