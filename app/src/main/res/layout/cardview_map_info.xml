@@ -1,0 +1,187 @@
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        tools:ignore="MissingConstraints">
+
+        <LinearLayout
+            android:id="@+id/layout_parcel_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:weightSum="2">
+
+                <TextView
+                    android:id="@+id/textViewSTRID"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Parcel No : "
+                    android:textColor="@android:color/black"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/textViewSTRIDValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end"
+                    android:paddingLeft="10dp"
+                    android:textColor="@color/primaryColor" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_parcel_division"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/margin_5dp"
+            android:orientation="vertical">
+
+            <RadioGroup
+                android:id="@+id/rg_parcel_division"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <RadioButton
+                    android:id="@+id/rb_same"
+                    android:layout_width="match_parent"
+                    android:layout_height="25dp"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="Same" />
+
+                <RadioButton
+                    android:id="@+id/rb_split"
+                    android:layout_width="match_parent"
+                    android:layout_height="25dp"
+                    android:layout_weight="1"
+                    android:text="Split" />
+
+                <RadioButton
+                    android:id="@+id/rb_merge"
+                    android:layout_width="match_parent"
+                    android:layout_height="25dp"
+                    android:layout_weight="1"
+                    android:text="Merge" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_split_parcel_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/margin_5dp"
+            android:layout_marginVertical="@dimen/margin_5dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_split_caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sub-parcels:"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_split_parcel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@drawable/textfield_area_bg"
+                android:entries="@array/split_parcel_option"
+                android:gravity="center_vertical"
+                android:minHeight="@dimen/margin_35dp"
+                android:paddingHorizontal="@dimen/margin_10dp"
+                android:paddingVertical="@dimen/margin_5dp"
+                android:text="Tap to select" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_merge_parcel_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/margin_5dp"
+            android:layout_marginVertical="@dimen/margin_5dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_merge_caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Parcel to merge:"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_merge_parcel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@drawable/textfield_area_bg"
+                android:entries="@array/split_parcel_option"
+                android:gravity="center_vertical"
+                android:minHeight="@dimen/margin_35dp"
+                android:paddingHorizontal="@dimen/margin_10dp"
+                android:paddingVertical="@dimen/margin_5dp"
+                android:text="Tap to select" />
+        </LinearLayout>
+        <!-- add rest of layout -->
+        <LinearLayout
+            android:id="@+id/layout_action_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="15dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:weightSum="6">
+
+            <Button
+                android:id="@+id/btn_start_survey"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="4"
+                android:background="@color/primaryColor"
+                android:text="Start Survey"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
+
+            <ImageView
+                android:id="@+id/mapLocaton"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="3dp"
+                android:layout_weight="1"
+                android:src="@drawable/map_pointer"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/directions"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="3dp"
+                android:layout_weight="1"
+                android:src="@drawable/directions"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.appcompat.widget.LinearLayoutCompat>

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <TextView
+        android:id="@+id/tv_details"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:textColor="@color/white"
+        android:textSize="@dimen/header_title_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/listitem_text_activated"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/ownership_status"
+        android:textColor="@color/black"
+        android:textSize="@dimen/margin_14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_details" />
+
+    <TextView
+        android:id="@+id/tv_page_number"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/_2_4"
+        android:textColor="@color/black"
+        android:textSize="@dimen/text_size_small"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_header"
+        app:layout_constraintEnd_toEndOf="@+id/tv_header"
+        app:layout_constraintTop_toTopOf="@+id/tv_header" />
+
+    <LinearLayout
+        android:id="@+id/layout_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/margin_50dp"
+        android:layout_marginHorizontal="@dimen/margin_3dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sv_property_demarcation_form">
+
+        <Button
+            style="?android:attr/buttonBarButtonStyle"
+            android:id="@+id/btn_previous"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableStart="@drawable/baseline_arrow_back_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_15dp"
+            android:paddingEnd="@dimen/margin_30dp"
+            android:text="@string/previous"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+        <Button
+            style="?android:attr/buttonBarButtonStyle"
+            android:id="@+id/btn_next"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableEnd="@drawable/baseline_arrow_forward_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_30dp"
+            android:paddingEnd="@dimen/margin_15dp"
+            android:text="@string/next"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/sv_property_demarcation_form"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/layout_bottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:background="@android:drawable/dialog_holo_light_frame"
+            android:layout_height="wrap_content">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_ownership_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/album_card_form_bg"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/margin_8dp"
+                    android:orientation="vertical">
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="2dp">
+
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/ownership_type"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="@dimen/margin_4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg"
+                                android:padding="@dimen/margin_4dp">
+
+                                <RadioGroup
+                                    android:id="@+id/rg_ownership_type"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content">
+
+                                    <RadioButton
+                                        android:id="@+id/rb_ownership_self_owner"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="25dp"
+                                        android:layout_weight="1"
+                                        android:checked="true"
+                                        android:text="@string/first_owner" />
+
+                                    <RadioButton
+                                        android:id="@+id/rb_ownership_inheritance"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/inherited" />
+
+                                    <RadioButton
+                                        android:id="@+id/rb_ownership_buyer"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/buyer" />
+
+                                    <RadioButton
+                                        android:id="@+id/rb_ownership_other"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/other" />
+                                </RadioGroup>
+                            </LinearLayout>
+
+                        </TableRow>
+
+
+                        <!--Other Ownership Status-->
+                        <TableRow
+                            android:id="@+id/tr_other_ownership_caption"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/please_specify"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow
+                            android:id="@+id/tr_other_ownership_question"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_other_ownership_type"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:inputType="textCapWords"
+                                    android:maxLength="100"
+                                    android:minHeight="@dimen/margin_35dp"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+
+                    </TableLayout>
+
+                </androidx.appcompat.widget.LinearLayoutCompat>
+
+            </androidx.cardview.widget.CardView>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

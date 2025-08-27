@@ -1,0 +1,551 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/dialog_holo_light_frame">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout_page_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="@color/album_card_header"
+            android:paddingVertical="@dimen/margin_5dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/tv_sub_parcel_caption"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:paddingStart="8dp"
+                android:paddingTop="@dimen/album_title_padding"
+                android:paddingEnd="4dp"
+                android:text="@string/sub_parcel"
+                android:textColor="#000"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_sub_parcel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/album_title_padding"
+                android:text="1"
+                android:textColor="#000"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/tv_sub_parcel_caption"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <TextView
+            android:id="@+id/tv_survey_date_time_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="@string/date_amp_time"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/layout_page_header" />
+
+        <TextView
+            android:id="@+id/tv_survey_date_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="125"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_survey_date_time_caption"
+            app:layout_constraintTop_toBottomOf="@+id/layout_page_header" />
+
+        <TextView
+            android:id="@+id/tv_property_details_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center"
+            android:text="@string/property_details"
+            android:textAllCaps="true"
+            android:textColor="@color/Black"
+            android:textSize="@dimen/text_size_large"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_survey_date_time_caption" />
+
+        <TextView
+            android:id="@+id/tv_survey_no_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="@string/property_no"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_property_details_header" />
+
+        <TextView
+            android:id="@+id/tv_survey_no"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="125"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_survey_no_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_property_details_header" />
+
+
+        <TextView
+            android:id="@+id/tv_area_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="@string/area_k_m_sf"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_survey_no_caption" />
+
+        <TextView
+            android:id="@+id/tv_area"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="2-5-125"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_area_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_survey_no_caption" />
+
+
+        <TextView
+            android:id="@+id/tv_interview_status_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="@string/survey_status"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_area_caption" />
+
+        <TextView
+            android:id="@+id/tv_interview_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Respondent Present"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_interview_status_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_area_caption" />
+
+        <View
+            android:id="@+id/tv_owner_details_divider"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:layout_marginBottom="@dimen/margin_5dp"
+            android:background="@color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_interview_status_caption" />
+
+        <TextView
+            android:id="@+id/tv_owner_details_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center"
+            android:text="@string/owner_details"
+            android:textAllCaps="true"
+            android:textColor="@color/Black"
+            android:textSize="@dimen/text_size_normal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_owner_details_divider" />
+
+        <TextView
+            android:id="@+id/tv_owner_name_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="Name:"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_owner_details_header" />
+
+        <TextView
+            android:id="@+id/tv_owner_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Habbash"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_owner_name_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_owner_details_header" />
+
+        <TextView
+            android:id="@+id/tv_father_husband_name_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="Father / Husband Name:"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_owner_name_caption" />
+
+        <TextView
+            android:id="@+id/tv_father_husband_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Mahmood"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_father_husband_name_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_owner_name_caption" />
+
+        <TextView
+            android:id="@+id/tv_gender_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="Gender:"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_father_husband_name_caption" />
+
+        <TextView
+            android:id="@+id/tv_gender"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Male"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_gender_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_father_husband_name_caption" />
+
+        <TextView
+            android:id="@+id/tv_cnic_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="CNIC:"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_gender_caption" />
+
+        <TextView
+            android:id="@+id/tv_cnic"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="3520278904061"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_cnic_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_gender_caption" />
+
+<!--        <TextView-->
+<!--            android:id="@+id/tv_cnic_source_caption"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:paddingStart="8dp"-->
+<!--            android:paddingTop="@dimen/album_title_padding"-->
+<!--            android:paddingEnd="4dp"-->
+<!--            android:text="CNIC Source:"-->
+<!--            android:textColor="#000"-->
+<!--            android:textSize="12sp"-->
+<!--            android:textStyle="bold"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@id/tv_cnic_caption" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/tv_cnic_source"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:paddingTop="@dimen/album_title_padding"-->
+<!--            android:text="Owner"-->
+<!--            android:textColor="#000"-->
+<!--            android:textSize="12sp"-->
+<!--            app:layout_constraintStart_toEndOf="@+id/tv_cnic_source_caption"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/tv_cnic_caption" />-->
+
+        <TextView
+            android:id="@+id/tv_mobile_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="Mobile:"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_cnic_caption" />
+
+        <TextView
+            android:id="@+id/tv_mobile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="03224788073"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_mobile_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_cnic_caption" />
+
+        <TextView
+            android:id="@+id/tv_respondent_status_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:paddingEnd="4dp"
+            android:text="Respondent Status:"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_mobile_caption" />
+
+        <TextView
+            android:id="@+id/tv_respondent_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Other (Uncle)"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_respondent_status_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_mobile_caption" />
+
+<!--        <View-->
+<!--            android:id="@+id/tv_ownership_status_divider"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="2dp"-->
+<!--            android:layout_marginTop="@dimen/margin_5dp"-->
+<!--            android:layout_marginBottom="@dimen/margin_5dp"-->
+<!--            android:background="@color/white"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/tv_mobile_source_caption" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/tv_ownership_status_header"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="center"-->
+<!--            android:layout_marginTop="@dimen/margin_5dp"-->
+<!--            android:gravity="center"-->
+<!--            android:text="@string/ownership_status"-->
+<!--            android:textAllCaps="true"-->
+<!--            android:textColor="@color/Black"-->
+<!--            android:textSize="@dimen/text_size_large"-->
+<!--            android:textStyle="bold"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/tv_ownership_status_divider" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/tv_ownership_type_caption"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:paddingStart="8dp"-->
+<!--            android:paddingTop="@dimen/album_title_padding"-->
+<!--            android:paddingEnd="4dp"-->
+<!--            android:text="Ownership Type:"-->
+<!--            android:textColor="#000"-->
+<!--            android:textSize="12sp"-->
+<!--            android:textStyle="bold"-->
+<!--            app:layout_constraintStart_toStartOf="parent"-->
+<!--            app:layout_constraintTop_toBottomOf="@id/tv_ownership_status_header" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/tv_ownership_type"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:gravity="center_vertical"-->
+<!--            android:paddingTop="@dimen/album_title_padding"-->
+<!--            android:text="Inherited"-->
+<!--            android:textColor="#000"-->
+<!--            android:textSize="12sp"-->
+<!--            app:layout_constraintStart_toEndOf="@+id/tv_ownership_type_caption"-->
+<!--            app:layout_constraintTop_toBottomOf="@+id/tv_ownership_status_header" />-->
+
+
+        <View
+            android:id="@+id/tv_occupancy_divider"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:layout_marginBottom="@dimen/margin_5dp"
+            android:background="@color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_respondent_status_caption" />
+
+        <TextView
+            android:id="@+id/tv_occupancy_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center"
+            android:text="@string/possession_occupancy_details"
+            android:textAllCaps="true"
+            android:textColor="@color/Black"
+            android:textSize="@dimen/text_size_large"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_occupancy_divider" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewFloors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_occupancy_header"
+            tools:listitem="@layout/card_view_floor" />
+
+        <View
+            android:id="@+id/tv_remarks_divider"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:layout_marginBottom="@dimen/margin_5dp"
+            android:background="@color/white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/recyclerViewFloors" />
+
+        <TextView
+            android:id="@+id/tv_remarks_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingVertical="@dimen/album_title_padding"
+            android:paddingStart="8dp"
+            android:paddingEnd="4dp"
+            android:text="@string/observations_comments"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_remarks_divider" />
+
+        <TextView
+            android:id="@+id/tv_remarks"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingVertical="@dimen/album_title_padding"
+            android:text="Inherited"
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_remarks_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_remarks_divider" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginHorizontal="@dimen/margin_2dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingTop="@dimen/margin_5dp"
+            android:paddingBottom="@dimen/margin_20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_remarks">
+
+            <Button
+                android:id="@+id/btn_upload_record"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_weight="3"
+                android:background="@drawable/register_btn"
+                android:minHeight="@dimen/margin_45dp"
+                android:text="@string/view_picture"
+                android:textColor="#fff" />
+
+        </LinearLayout>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

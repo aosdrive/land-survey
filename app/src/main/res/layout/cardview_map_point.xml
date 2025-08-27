@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        tools:ignore="MissingConstraints">
+
+        <!--add rest of layout-->
+        <LinearLayout
+            android:id="@+id/layout_action_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_cancel"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:background="@drawable/holo_background"
+                android:layout_margin="@dimen/margin_3dp"
+                android:gravity="center"
+                android:text="Cancel"
+                android:textAllCaps="false"
+                android:textColor="@color/black" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_start_survey"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="2"
+                android:layout_gravity="center"
+                android:background="@color/Orange"
+                android:layout_margin="@dimen/margin_3dp"
+                android:gravity="center"
+                android:text="Start Survey"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
+
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_revisit_survey"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="40dp"
+                android:layout_margin="@dimen/margin_3dp"
+                android:layout_gravity="center"
+                android:background="@color/Orange"
+                android:gravity="center"
+                android:text="@string/revisit"
+                android:visibility="gone"
+                android:textAllCaps="false"
+                android:textColor="@color/white" />
+
+            <!--            <ImageView-->
+            <!--                android:id="@+id/mapLocaton"-->
+            <!--                android:layout_width="0dp"-->
+            <!--                android:layout_height="35dp"-->
+            <!--                android:layout_marginLeft="3dp"-->
+            <!--                android:layout_marginRight="3dp"-->
+            <!--                android:layout_weight="1"-->
+            <!--                android:src="@drawable/map_pointer"-->
+            <!--                android:visibility="visible" />-->
+
+
+            <!--            <ImageView-->
+            <!--                android:id="@+id/directions"-->
+            <!--                android:layout_width="0dp"-->
+            <!--                android:layout_height="35dp"-->
+            <!--                android:layout_marginLeft="3dp"-->
+            <!--                android:layout_marginRight="3dp"-->
+            <!--                android:layout_weight="1"-->
+            <!--                android:src="@drawable/directions"-->
+            <!--                android:visibility="visible" />-->
+        </LinearLayout>
+    </LinearLayout>
+</androidx.appcompat.widget.LinearLayoutCompat>

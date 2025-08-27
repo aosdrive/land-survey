@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:layout_marginHorizontal="@dimen/margin_10dp"
+    android:layout_marginTop="@dimen/margin_10dp"
+    android:background="@android:color/white"
+    android:gravity="center_vertical">
+
+    <!-- RadioButton for selection -->
+    <RadioButton
+        android:id="@+id/radioButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"/>
+
+    <!-- TextView for displaying item details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/mauzaNameCaption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mauza: "
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"/>
+
+        <TextView
+            android:id="@+id/mauzaName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/areaNameCaption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Area: "
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"/>
+
+            <TextView
+                android:id="@+id/areaName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ImageButton for delete action -->
+    <ImageButton
+        android:id="@+id/imageButtonDelete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_delete"
+        android:contentDescription="Delete"
+        android:background="?attr/selectableItemBackgroundBorderless"/>
+</LinearLayout>
+
+
+
+
+
+    <!--&lt;!&ndash; res/layout/item_option.xml &ndash;&gt;-->
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:orientation="horizontal"-->
+<!--    android:layout_gravity="center_horizontal"-->
+<!--    android:gravity="center"-->
+<!--    android:paddingHorizontal="16dp"-->
+<!--    android:layout_margin="@dimen/margin_10dp">-->
+
+<!--    <RadioButton-->
+<!--        android:id="@+id/radioButton"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_weight="1"-->
+<!--        android:layout_height="wrap_content"/>-->
+
+<!--    <TextView-->
+<!--        android:id="@+id/textViewOption"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_weight="8"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginStart="8dp"-->
+<!--        android:text="Mauza: Fateh Ki\nArea: Fateh Ki-Area 1"-->
+<!--        android:textSize="16sp"/>-->
+
+<!--    <ImageButton-->
+<!--        android:id="@+id/imageButtonDelete"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_weight="2"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginStart="16dp"-->
+<!--        android:src="@android:drawable/ic_delete"-->
+<!--        android:contentDescription="Delete"/>-->
+<!--</LinearLayout>-->

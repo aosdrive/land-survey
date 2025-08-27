@@ -1,0 +1,354 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/margin_8dp"
+    android:layout_marginTop="@dimen/margin_3dp"
+    android:elevation="@dimen/margin_2dp"
+    app:cardUseCompatPadding="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!--        <LinearLayout-->
+        <!--            android:id="@+id/layout_page_header"-->
+        <!--            android:layout_width="0dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:background="@color/album_card_header"-->
+        <!--            android:orientation="horizontal"-->
+        <!--            app:layout_constraintEnd_toEndOf="parent"-->
+        <!--            app:layout_constraintStart_toStartOf="parent"-->
+        <!--            app:layout_constraintTop_toTopOf="parent">-->
+
+        <!--            <LinearLayout-->
+        <!--                android:layout_width="0dp"-->
+        <!--                android:layout_height="wrap_content"-->
+        <!--                android:layout_weight="6"-->
+        <!--                android:orientation="horizontal"-->
+        <!--                android:paddingTop="10dp"-->
+        <!--                android:paddingBottom="10dp">-->
+
+        <!--                <TextView-->
+        <!--                    android:id="@+id/tv_parcel_id_caption"-->
+        <!--                    android:layout_width="wrap_content"-->
+        <!--                    android:layout_height="wrap_content"-->
+        <!--                    android:gravity="center_vertical"-->
+        <!--                    android:paddingStart="8dp"-->
+
+        <!--                    android:paddingTop="@dimen/album_title_padding"-->
+        <!--                    android:text="@string/parcel_no"-->
+        <!--                    android:textColor="#000"-->
+        <!--                    android:textSize="16sp"-->
+        <!--                    android:textStyle="bold"-->
+        <!--                    app:layout_constraintStart_toStartOf="parent"-->
+        <!--                    app:layout_constraintTop_toBottomOf="@id/tv_area" />-->
+
+        <!--                <TextView-->
+        <!--                    android:id="@+id/tv_parcel_id"-->
+        <!--                    android:layout_width="wrap_content"-->
+        <!--                    android:layout_height="wrap_content"-->
+        <!--                    android:gravity="center_vertical"-->
+        <!--                    android:paddingStart="@dimen/album_title_padding"-->
+        <!--                    android:paddingTop="@dimen/album_title_padding"-->
+        <!--                    android:text=""-->
+        <!--                    android:textColor="#000"-->
+        <!--                    android:textSize="16sp"-->
+        <!--                    app:layout_constraintStart_toEndOf="@+id/tv_parcel_id_caption"-->
+        <!--                    app:layout_constraintTop_toBottomOf="@+id/tv_area" />-->
+
+        <!--            </LinearLayout>-->
+
+        <!--            <ImageView-->
+        <!--                android:id="@+id/iv_more"-->
+        <!--                android:layout_width="wrap_content"-->
+        <!--                android:layout_height="match_parent"-->
+        <!--                android:layout_marginEnd="@dimen/margin_5dp"-->
+        <!--                android:padding="@dimen/margin_8dp"-->
+        <!--                android:scaleType="centerCrop"-->
+        <!--                android:src="@drawable/baseline_more_vert_24" />-->
+
+        <!--        </LinearLayout>-->
+
+        <TextView
+            android:id="@+id/tv_parcel_id_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="@string/parcel_no"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_parcel_id"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_5dp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_parcel_id_caption"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tv_parcel_operation_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="@string/parcel_operation"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_id_caption" />
+
+        <TextView
+            android:id="@+id/tv_parcel_operation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_parcel_operation_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_id_caption" />
+
+        <TextView
+            android:id="@+id/tv_parcel_ids_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="@string/parcel_nos"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_operation_caption" />
+
+        <TextView
+            android:id="@+id/tv_parcel_ids"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_parcel_ids_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_operation_caption" />
+
+        <TextView
+            android:id="@+id/tv_date_time_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="@string/date"
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_parcel_ids_caption" />
+
+        <TextView
+            android:id="@+id/tv_date_time"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_date_time_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_ids_caption" />
+
+        <TextView
+            android:id="@+id/tv_abadi_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Katchi Abadi ID: "
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_date_time_caption" />
+
+        <TextView
+            android:id="@+id/tv_abadi"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="#000"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_abadi_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_date_time_caption" />
+
+        <TextView
+            android:id="@+id/tv_centroid_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Centroid: "
+            android:textColor="#000"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_abadi_caption" />
+
+        <TextView
+            android:id="@+id/tv_centroid"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_3dp"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="#000"
+            android:textSize="11sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_centroid_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_abadi_caption" />
+
+        <TextView
+            android:id="@+id/tv_revisit_caption"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="8dp"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text="Revisit: "
+            android:textColor="@color/Red"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_centroid_caption" />
+
+        <TextView
+            android:id="@+id/tv_revisit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/album_title_padding"
+            android:paddingTop="@dimen/album_title_padding"
+            android:text=""
+            android:textColor="@color/Red"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tv_revisit_caption"
+            app:layout_constraintTop_toBottomOf="@+id/tv_centroid_caption" />
+
+        <!--        <TextView-->
+        <!--            android:id="@+id/tv_parcel_id_caption"-->
+        <!--            android:layout_width="0dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:gravity="center_vertical"-->
+        <!--            android:paddingLeft="8dp"-->
+        <!--            android:paddingTop="@dimen/album_title_padding"-->
+        <!--            android:visibility="gone"-->
+        <!--            android:text="Parcel No: "-->
+        <!--            android:textColor="#000"-->
+        <!--            android:textSize="13sp"-->
+        <!--            android:textStyle="bold"-->
+        <!--            app:layout_constraintStart_toStartOf="parent"-->
+        <!--            app:layout_constraintTop_toBottomOf="@id/tv_area" />-->
+
+        <!--        <TextView-->
+        <!--            android:id="@+id/tv_parcel_id"-->
+        <!--            android:layout_width="0dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:gravity="center_vertical"-->
+        <!--            android:paddingLeft="@dimen/album_title_padding"-->
+        <!--            android:paddingTop="@dimen/album_title_padding"-->
+        <!--            android:text="15102"-->
+        <!--            android:visibility="gone"-->
+        <!--            android:textColor="#000"-->
+        <!--            android:textSize="13sp"-->
+        <!--            app:layout_constraintStart_toEndOf="@+id/tv_parcel_id_caption"-->
+        <!--            app:layout_constraintTop_toBottomOf="@+id/tv_area" />-->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginHorizontal="@dimen/margin_2dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_revisit_caption">
+
+<!--            <Button-->
+<!--                android:id="@+id/btn_upload_record"-->
+<!--                style="?android:attr/buttonBarButtonStyle"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginLeft="4dp"-->
+<!--                android:layout_marginRight="4dp"-->
+<!--                android:layout_marginBottom="@dimen/margin_6dp"-->
+<!--                android:layout_weight="4"-->
+<!--                android:background="@drawable/register_btn"-->
+<!--                android:minHeight="@dimen/margin_45dp"-->
+<!--                android:text="Re-Upload"-->
+<!--                android:textColor="#fff"-->
+<!--                android:textSize="@dimen/text_size_normal" />-->
+
+            <Button
+                android:id="@+id/btn_view_record"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginBottom="@dimen/margin_6dp"
+                android:layout_weight="1"
+                android:background="@color/colorPrimary"
+                android:minHeight="@dimen/margin_45dp"
+                android:text="@string/view"
+                android:textColor="#fff"
+                android:textSize="@dimen/text_size_normal" />
+
+
+        </LinearLayout>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

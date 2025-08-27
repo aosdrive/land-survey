@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/album_card_bg"
+    android:descendantFocusability="beforeDescendants"
+    android:fitsSystemWindows="true"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    tools:context=".activities.MenuActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/layout_page_header"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/margin_15dp"
+            android:divider="@color/light_grey"
+            android:orientation="vertical">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_download_saved_data"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/green">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/margin_10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_gravity="center"
+                        android:layout_margin="@dimen/margin_min"
+                        android:layout_weight="8"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/margin_2dp"
+                            android:gravity="center"
+                            android:text="@string/download_saved_data"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/text_size_xxlarge" />
+
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="2"
+                        android:contentDescription="@string/program_title"
+                        android:gravity="center"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/baseline_download_24" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_sent_records"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_5dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/margin_10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_gravity="center"
+                        android:layout_margin="@dimen/margin_min"
+                        android:layout_weight="8"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/margin_2dp"
+                            android:gravity="center"
+                            android:text="Surveyed Records"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/text_size_xxlarge" />
+
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="2"
+                        android:contentDescription="@string/program_title"
+                        android:gravity="center"
+                        android:scaleType="fitCenter"
+                        app:tint="@color/black"
+                        android:src="@drawable/baseline_preview_24" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_privacy_policy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_10dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/margin_10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_gravity="center"
+                        android:layout_margin="@dimen/margin_min"
+                        android:layout_weight="8"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/margin_2dp"
+                            android:gravity="center"
+                            android:text="@string/privacy_policy"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/text_size_xxlarge" />
+
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="2"
+                        android:contentDescription="@string/program_title"
+                        android:gravity="center"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/baseline_arrow_forward_ios_24" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_app_version"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_10dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/margin_10dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_gravity="center"
+                        android:layout_margin="@dimen/margin_min"
+                        android:layout_weight="8"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/margin_2dp"
+                            android:gravity="center"
+                            android:text="@string/app_version"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/text_size_xxlarge" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tv_version"
+                        android:layout_width="15dp"
+                        android:layout_height="match_parent"
+                        android:layout_margin="10dp"
+                        android:layout_weight="2"
+                        android:gravity="center"
+                        android:textColor="@color/row_heading_background"
+                        android:textSize="@dimen/text_size_normal" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

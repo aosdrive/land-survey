@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/fragmentMap">
+    <fragment
+        android:id="@+id/fragmentMap"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentMap"
+        android:label="FragmentMap"
+        tools:layout="@layout/fragment_map">
+        <action
+            android:id="@+id/action_fragmentMap_to_fragmentParcelDetails"
+            app:destination="@id/fragmentParcelDetails" />
+        <action
+            android:id="@+id/action_fragmentMap_to_fragmentSurveyList"
+            app:destination="@id/fragmentSurveyList" />
+        <action
+            android:id="@+id/action_fragmentMap_to_fragmentFormOccupancyDetails"
+            app:destination="@id/fragmentFormOccupancyDetails" />
+        <action
+            android:id="@+id/action_fragmentMap_to_fragmentFormRemarks"
+            app:destination="@id/fragmentFormRemarks" />
+        <action
+            android:id="@+id/action_fragmentMap_to_fragmentRejectedSubParcelList"
+            app:destination="@id/fragmentRejectedSubParcelList" />
+        <action
+            android:id="@+id/action_fragmentMap_to_fragmentSubParcelList"
+            app:destination="@id/fragmentSubParcelList" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentParcelDetails"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentParcelDetails"
+        android:label="FragmentParcelDetails"
+        tools:layout="@layout/fragment_parcel_details">
+        <action
+            android:id="@+id/action_fragmentParcelDetails_to_fragmentSurveyList"
+            app:destination="@id/fragmentSurveyList"
+            app:popUpTo="@id/fragmentMap"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_fragmentParcelDetails_to_fragmentSubParcelList"
+            app:destination="@id/fragmentSubParcelList"
+            app:popUpTo="@id/fragmentMap"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentSurveyList"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentSurveyList"
+        android:label="FragmentSurveyList"
+        tools:layout="@layout/fragment_survey_list">
+        <action
+            android:id="@+id/action_fragmentSurveyList_to_fragmentFormPropertyDetails"
+            app:destination="@id/fragmentFormPropertyDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentFormPropertyDetails"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentFormPropertyDetails"
+        android:label="Property Details"
+        tools:layout="@layout/fragment_form_property_details">
+<!--        <action-->
+<!--            android:id="@+id/action_fragmentFormPropertyDetails_to_fragmentFormOwnershipStatus"-->
+<!--            app:destination="@id/fragmentFormOwnershipStatus" />-->
+        <action
+            android:id="@+id/action_fragmentFormPropertyDetails_to_fragmentFormRemarks"
+            app:destination="@id/fragmentFormRemarks" />
+        <action
+            android:id="@+id/action_fragmentFormPropertyDetails_to_fragmentFormOccupancyDetails"
+            app:destination="@id/fragmentFormOccupancyDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentFormOccupancyDetails"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentFormOccupancyDetails"
+        android:label="Occupancy Details"
+        tools:layout="@layout/fragment_form_occupancy_details">
+        <action
+            android:id="@+id/action_fragmentFormOccupancyDetails_to_fragmentFormRemarks"
+            app:destination="@id/fragmentFormRemarks" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentFormRemarks"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentFormRemarks"
+        android:label="Remarks"
+        tools:layout="@layout/fragment_form_remarks">
+        <action
+            android:id="@+id/action_fragmentFormRemarks_to_fragmentSubParcelList"
+            app:destination="@id/fragmentSubParcelList"
+            app:popUpTo="@id/fragmentSubParcelList"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_fragmentFormRemarks_to_fragmentRejectedSubParcelList"
+            app:destination="@id/fragmentRejectedSubParcelList" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentSubParcelList"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentSubParcelList"
+        android:label="Fragment SubParcel List"
+        tools:layout="@layout/fragment_sub_parcel_list" >
+        <action
+            android:id="@+id/action_fragmentSubParcelList_to_fragmentSurveyList"
+            app:destination="@id/fragmentSurveyList" />
+        <action
+            android:id="@+id/action_fragmentSubParcelList_to_fragmentMap"
+            app:destination="@id/fragmentMap" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentRejectedSubParcelList"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentRejectedSubParcelList"
+        android:label="FragmentRejectedSubParcelList"
+        tools:layout="@layout/fragment_rejected_sub_parcel_list" >
+        <action
+            android:id="@+id/action_fragmentRejectedSubParcelList_to_fragmentSurveyList"
+            app:destination="@id/fragmentSurveyList" />
+        <action
+            android:id="@+id/action_fragmentRejectedSubParcelList_to_fragmentFormRemarks"
+            app:destination="@id/fragmentFormRemarks" />
+    </fragment>
+</navigation>

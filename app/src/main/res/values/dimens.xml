@@ -1,0 +1,285 @@
+<resources>
+    <dimen name="tvRightAddressMargin">115dp</dimen>
+    <dimen name="smallButtonWidth">130dp</dimen>
+    <dimen name="smallButtonHeight">55dp</dimen>
+    <dimen name="buttonCorners">5dp</dimen>
+    <dimen name="mediumButtonWidth">200dp</dimen>
+    <dimen name="mediumButtonHeight">45dp</dimen>
+    <dimen name="edittextHeight">60dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+
+
+    <dimen name="splash_logo_dimen">180dp</dimen>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">10dp</dimen>
+    <dimen name="activity_vertical_margin">10dp</dimen>
+    <dimen name="splash_logo_dimen_height">100dp</dimen>
+    <dimen name="splash_logo_dimen_width">80dp</dimen>
+    <dimen name="logo_small">35dp</dimen>
+    <dimen name="logo_large">38dp</dimen>
+
+    <dimen name="dimen_box_width">160dp</dimen>
+    <dimen name="dimen_box_height">95dp</dimen>
+
+    <dimen name="margin_xxxmin">1dp</dimen>
+    <dimen name="margin_xxmin">2dp</dimen>
+    <dimen name="margin_xmin">3dp</dimen>
+    <dimen name="margin_min">5dp</dimen>
+    <dimen name="margin_avg">7dp</dimen>
+    <dimen name="margin_max">12dp</dimen>
+    <dimen name="margin_maxx">15dp</dimen>
+    <dimen name="margin_maxxx">15dp</dimen>
+    <dimen name="margin_maxxxx">23dp</dimen>
+    <dimen name="margin_maxxxxx">50dp</dimen>
+
+    <dimen name="text_size_xsmall">10sp</dimen>
+    <dimen name="text_size_small">11sp</dimen>
+    <dimen name="text_size_normal">12sp</dimen>
+    <dimen name="text_size_large">14sp</dimen>
+    <dimen name="text_size_xlarge">15sp</dimen>
+    <dimen name="text_size_xxlarge">17sp</dimen>
+    <dimen name="text_size_xxxlarge">18sp</dimen>
+    <dimen name="text_size_xxxxlarge">20sp</dimen>
+    <dimen name="text_size_xxxxxlarge">22sp</dimen>
+    <dimen name="action_btn_text_size">10sp</dimen>
+    <dimen name="edit_confirm_btn_height">30dp</dimen>
+    <dimen name="header_padding">10dp</dimen>
+    <dimen name="heading_text_size">26sp</dimen>
+    <dimen name="textview_text_size">24sp</dimen>
+
+    <dimen name="margin_all_form">5dp</dimen>
+    <dimen name="album_title_padding">@dimen/margin_2dp</dimen>
+
+    <dimen name="toolbar_main_title_size">@dimen/margin_17sp</dimen>
+    <dimen name="toolbar_sub_title_size">@dimen/margin_16sp</dimen>
+    <dimen name="header_title_size">@dimen/margin_17sp</dimen>
+    <dimen name="cardview_main_title_size">@dimen/margin_17sp</dimen>
+    <dimen name="cardview_sub_title_size">@dimen/margin_16sp</dimen>
+    <dimen name="cardview_additional_title_size">@dimen/margin_14sp</dimen>
+    <dimen name="edittext_title_size">@dimen/margin_15sp</dimen>
+    <dimen name="edittext_input_size">@dimen/margin_16sp</dimen>
+    <dimen name="edittext_height">@dimen/margin_45dp</dimen>
+    <dimen name="textArea_height">@dimen/margin_90dp</dimen>
+    <dimen name="table_title_bar_size">@dimen/margin_55dp</dimen>
+    <dimen name="table_title_size">@dimen/margin_16sp</dimen>
+    <dimen name="table_row_title_size">@dimen/margin_15sp</dimen>
+    <dimen name="radiobutton_title_size">@dimen/margin_15sp</dimen>
+
+    <dimen name="margin_1sp">1.00sp</dimen>
+    <dimen name="margin_2sp">2.00sp</dimen>
+    <dimen name="margin_3sp">3.00sp</dimen>
+    <dimen name="margin_4sp">4.00sp</dimen>
+    <dimen name="margin_5sp">5.00sp</dimen>
+    <dimen name="margin_6sp">6.00sp</dimen>
+    <dimen name="margin_7sp">7.00sp</dimen>
+    <dimen name="margin_8sp">8.00sp</dimen>
+    <dimen name="margin_9sp">9.00sp</dimen>
+    <dimen name="margin_10sp">10.00sp</dimen>
+    <dimen name="margin_11sp">11.00sp</dimen>
+    <dimen name="margin_12sp">12.00sp</dimen>
+    <dimen name="margin_13sp">13.00sp</dimen>
+    <dimen name="margin_14sp">14.00sp</dimen>
+    <dimen name="margin_15sp">15.00sp</dimen>
+    <dimen name="margin_16sp">16.00sp</dimen>
+    <dimen name="margin_17sp">17.00sp</dimen>
+    <dimen name="margin_18sp">18.00sp</dimen>
+    <dimen name="margin_19sp">19.00sp</dimen>
+    <dimen name="margin_20sp">20.00sp</dimen>
+    <dimen name="margin_21sp">21.00sp</dimen>
+    <dimen name="margin_22sp">22.00sp</dimen>
+    <dimen name="margin_23sp">23.00sp</dimen>
+    <dimen name="margin_24sp">24.00sp</dimen>
+    <dimen name="margin_25sp">25.00sp</dimen>
+    <dimen name="margin_26sp">26.00sp</dimen>
+    <dimen name="margin_27sp">27.00sp</dimen>
+    <dimen name="margin_28sp">28.00sp</dimen>
+    <dimen name="margin_29sp">29.00sp</dimen>
+    <dimen name="margin_30sp">30.00sp</dimen>
+    <dimen name="margin_31sp">31.00sp</dimen>
+    <dimen name="margin_32sp">32.00sp</dimen>
+    <dimen name="margin_33sp">33.00sp</dimen>
+    <dimen name="margin_34sp">34.00sp</dimen>
+    <dimen name="margin_35sp">35.00sp</dimen>
+    <dimen name="margin_36sp">36.00sp</dimen>
+    <dimen name="margin_37sp">37.00sp</dimen>
+    <dimen name="margin_38sp">38.00sp</dimen>
+    <dimen name="margin_39sp">39.00sp</dimen>
+    <dimen name="margin_40sp">40.00sp</dimen>
+    <dimen name="margin_41sp">41.00sp</dimen>
+    <dimen name="margin_42sp">42.00sp</dimen>
+    <dimen name="margin_43sp">43.00sp</dimen>
+    <dimen name="margin_44sp">44.00sp</dimen>
+    <dimen name="margin_45sp">45.00sp</dimen>
+    <dimen name="margin_46sp">46.00sp</dimen>
+    <dimen name="margin_47sp">47.00sp</dimen>
+    <dimen name="margin_48sp">48.00sp</dimen>
+    <dimen name="margin_49sp">49.00sp</dimen>
+    <dimen name="margin_50sp">50.00sp</dimen>
+    <dimen name="margin_51sp">51.00sp</dimen>
+    <dimen name="margin_52sp">52.00sp</dimen>
+    <dimen name="margin_53sp">53.00sp</dimen>
+    <dimen name="margin_54sp">54.00sp</dimen>
+    <dimen name="margin_55sp">55.00sp</dimen>
+    <dimen name="margin_56sp">56.00sp</dimen>
+    <dimen name="margin_57sp">57.00sp</dimen>
+    <dimen name="margin_58sp">58.00sp</dimen>
+    <dimen name="margin_59sp">59.00sp</dimen>
+    <dimen name="margin_60sp">60.00sp</dimen>
+    <dimen name="margin_61sp">61.00sp</dimen>
+    <dimen name="margin_62sp">62.00sp</dimen>
+    <dimen name="margin_63sp">63.00sp</dimen>
+    <dimen name="margin_64sp">64.00sp</dimen>
+    <dimen name="margin_65sp">65.00sp</dimen>
+    <dimen name="margin_66sp">66.00sp</dimen>
+    <dimen name="margin_67sp">67.00sp</dimen>
+    <dimen name="margin_68sp">68.00sp</dimen>
+    <dimen name="margin_69sp">69.00sp</dimen>
+    <dimen name="margin_70sp">70.00sp</dimen>
+    <dimen name="margin_71sp">71.00sp</dimen>
+    <dimen name="margin_72sp">72.00sp</dimen>
+    <dimen name="margin_73sp">73.00sp</dimen>
+    <dimen name="margin_74sp">74.00sp</dimen>
+    <dimen name="margin_75sp">75.00sp</dimen>
+    <dimen name="margin_76sp">76.00sp</dimen>
+    <dimen name="margin_77sp">77.00sp</dimen>
+    <dimen name="margin_78sp">78.00sp</dimen>
+    <dimen name="margin_79sp">79.00sp</dimen>
+    <dimen name="margin_80sp">80.00sp</dimen>
+    <dimen name="margin_81sp">81.00sp</dimen>
+    <dimen name="margin_82sp">82.00sp</dimen>
+    <dimen name="margin_83sp">83.00sp</dimen>
+    <dimen name="margin_84sp">84.00sp</dimen>
+    <dimen name="margin_85sp">85.00sp</dimen>
+    <dimen name="margin_86sp">86.00sp</dimen>
+    <dimen name="margin_87sp">87.00sp</dimen>
+    <dimen name="margin_88sp">88.00sp</dimen>
+    <dimen name="margin_89sp">89.00sp</dimen>
+    <dimen name="margin_90sp">90.00sp</dimen>
+    <dimen name="margin_91sp">91.00sp</dimen>
+    <dimen name="margin_92sp">92.00sp</dimen>
+    <dimen name="margin_93sp">93.00sp</dimen>
+    <dimen name="margin_94sp">94.00sp</dimen>
+    <dimen name="margin_95sp">95.00sp</dimen>
+    <dimen name="margin_96sp">96.00sp</dimen>
+    <dimen name="margin_97sp">97.00sp</dimen>
+    <dimen name="margin_98sp">98.00sp</dimen>
+    <dimen name="margin_99sp">99.00sp</dimen>
+    <dimen name="margin_100sp">100.00sp</dimen>
+
+    <dimen name="margin_1dp">1.00dp</dimen>
+    <dimen name="margin_2dp">2.00dp</dimen>
+    <dimen name="margin_3dp">3.00dp</dimen>
+    <dimen name="margin_4dp">4.00dp</dimen>
+    <dimen name="margin_5dp">5.00dp</dimen>
+    <dimen name="margin_6dp">6.00dp</dimen>
+    <dimen name="margin_7dp">7.00dp</dimen>
+    <dimen name="margin_8dp">8.00dp</dimen>
+    <dimen name="margin_9dp">9.00dp</dimen>
+    <dimen name="margin_10dp">10.00dp</dimen>
+    <dimen name="margin_11dp">11.00dp</dimen>
+    <dimen name="margin_12dp">12.00dp</dimen>
+    <dimen name="margin_13dp">13.00dp</dimen>
+    <dimen name="margin_14dp">14.00dp</dimen>
+    <dimen name="margin_15dp">15.00dp</dimen>
+    <dimen name="margin_16dp">16.00dp</dimen>
+    <dimen name="margin_17dp">17.00dp</dimen>
+    <dimen name="margin_18dp">18.00dp</dimen>
+    <dimen name="margin_19dp">19.00dp</dimen>
+    <dimen name="margin_20dp">20.00dp</dimen>
+    <dimen name="margin_21dp">21.00dp</dimen>
+    <dimen name="margin_22dp">22.00dp</dimen>
+    <dimen name="margin_23dp">23.00dp</dimen>
+    <dimen name="margin_24dp">24.00dp</dimen>
+    <dimen name="margin_25dp">25.00dp</dimen>
+    <dimen name="margin_26dp">26.00dp</dimen>
+    <dimen name="margin_27dp">27.00dp</dimen>
+    <dimen name="margin_28dp">28.00dp</dimen>
+    <dimen name="margin_29dp">29.00dp</dimen>
+    <dimen name="margin_30dp">30.00dp</dimen>
+    <dimen name="margin_31dp">31.00dp</dimen>
+    <dimen name="margin_32dp">32.00dp</dimen>
+    <dimen name="margin_33dp">33.00dp</dimen>
+    <dimen name="margin_34dp">34.00dp</dimen>
+    <dimen name="margin_35dp">35.00dp</dimen>
+    <dimen name="margin_36dp">36.00dp</dimen>
+    <dimen name="margin_37dp">37.00dp</dimen>
+    <dimen name="margin_38dp">38.00dp</dimen>
+    <dimen name="margin_39dp">39.00dp</dimen>
+    <dimen name="margin_40dp">40.00dp</dimen>
+    <dimen name="margin_41dp">41.00dp</dimen>
+    <dimen name="margin_42dp">42.00dp</dimen>
+    <dimen name="margin_43dp">43.00dp</dimen>
+    <dimen name="margin_44dp">44.00dp</dimen>
+    <dimen name="margin_45dp">45.00dp</dimen>
+    <dimen name="margin_46dp">46.00dp</dimen>
+    <dimen name="margin_47dp">47.00dp</dimen>
+    <dimen name="margin_48dp">48.00dp</dimen>
+    <dimen name="margin_49dp">49.00dp</dimen>
+    <dimen name="margin_50dp">50.00dp</dimen>
+    <dimen name="margin_51dp">51.00dp</dimen>
+    <dimen name="margin_52dp">52.00dp</dimen>
+    <dimen name="margin_53dp">53.00dp</dimen>
+    <dimen name="margin_54dp">54.00dp</dimen>
+    <dimen name="margin_55dp">55.00dp</dimen>
+    <dimen name="margin_56dp">56.00dp</dimen>
+    <dimen name="margin_57dp">57.00dp</dimen>
+    <dimen name="margin_58dp">58.00dp</dimen>
+    <dimen name="margin_59dp">59.00dp</dimen>
+    <dimen name="margin_60dp">60.00dp</dimen>
+    <dimen name="margin_61dp">61.00dp</dimen>
+    <dimen name="margin_62dp">62.00dp</dimen>
+    <dimen name="margin_63dp">63.00dp</dimen>
+    <dimen name="margin_64dp">64.00dp</dimen>
+    <dimen name="margin_65dp">65.00dp</dimen>
+    <dimen name="margin_66dp">66.00dp</dimen>
+    <dimen name="margin_67dp">67.00dp</dimen>
+    <dimen name="margin_68dp">68.00dp</dimen>
+    <dimen name="margin_69dp">69.00dp</dimen>
+    <dimen name="margin_70dp">70.00dp</dimen>
+    <dimen name="margin_71dp">71.00dp</dimen>
+    <dimen name="margin_72dp">72.00dp</dimen>
+    <dimen name="margin_73dp">73.00dp</dimen>
+    <dimen name="margin_74dp">74.00dp</dimen>
+    <dimen name="margin_75dp">75.00dp</dimen>
+    <dimen name="margin_76dp">76.00dp</dimen>
+    <dimen name="margin_77dp">77.00dp</dimen>
+    <dimen name="margin_78dp">78.00dp</dimen>
+    <dimen name="margin_79dp">79.00dp</dimen>
+    <dimen name="margin_80dp">80.00dp</dimen>
+    <dimen name="margin_81dp">81.00dp</dimen>
+    <dimen name="margin_82dp">82.00dp</dimen>
+    <dimen name="margin_83dp">83.00dp</dimen>
+    <dimen name="margin_84dp">84.00dp</dimen>
+    <dimen name="margin_85dp">85.00dp</dimen>
+    <dimen name="margin_86dp">86.00dp</dimen>
+    <dimen name="margin_87dp">87.00dp</dimen>
+    <dimen name="margin_88dp">88.00dp</dimen>
+    <dimen name="margin_89dp">89.00dp</dimen>
+    <dimen name="margin_90dp">90.00dp</dimen>
+    <dimen name="margin_91dp">91.00dp</dimen>
+    <dimen name="margin_92dp">92.00dp</dimen>
+    <dimen name="margin_93dp">93.00dp</dimen>
+    <dimen name="margin_94dp">94.00dp</dimen>
+    <dimen name="margin_95dp">95.00dp</dimen>
+    <dimen name="margin_96dp">96.00dp</dimen>
+    <dimen name="margin_97dp">97.00dp</dimen>
+    <dimen name="margin_98dp">98.00dp</dimen>
+    <dimen name="margin_99dp">99.00dp</dimen>
+    <dimen name="margin_100dp">100.00dp</dimen>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</resources>

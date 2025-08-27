@@ -1,0 +1,220 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/margin_5dp"
+    android:elevation="@dimen/margin_2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingVertical="@dimen/margin_3dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/margin_5dp"
+            android:paddingTop="@dimen/margin_4dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_survey_no_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:text="Dwelling No."
+                    android:textAllCaps="true"
+                    android:textColor="@color/DimGray"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_survey_no"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1.8"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:text="NA"
+                    android:textColor="@color/rounded_container_border"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_area_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:text="Area"
+                    android:textAllCaps="true"
+                    android:textColor="@color/DimGray"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_area"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:text="19-0-8"
+                    android:textColor="@color/rounded_container_border"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_attach"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/register_btn"
+                    android:gravity="center"
+                    android:paddingLeft="2dp"
+                    android:paddingTop="10dp"
+                    android:paddingRight="2dp"
+                    android:paddingBottom="10dp"
+                    android:text="@string/select"
+                    android:textAllCaps="true"
+                    android:textColor="@color/white"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewPartitions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="4dp"
+                tools:ignore="ResourceCycle" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
+
+    <!--<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"-->
+    <!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+    <!--    android:id="@+id/card_view"-->
+    <!--    android:layout_width="match_parent"-->
+    <!--    android:layout_height="wrap_content"-->
+    <!--    android:layout_marginHorizontal="@dimen/margin_3dp"-->
+    <!--    android:elevation="@dimen/margin_2dp"-->
+    <!--    app:cardUseCompatPadding="true">-->
+
+    <!--    <androidx.constraintlayout.widget.ConstraintLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:paddingHorizontal="@dimen/margin_5dp"-->
+    <!--        android:paddingVertical="@dimen/margin_3dp">-->
+
+    <!--        <LinearLayout-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:gravity="center_vertical"-->
+    <!--            android:orientation="horizontal"-->
+    <!--            app:layout_constraintEnd_toEndOf="parent"-->
+    <!--            app:layout_constraintStart_toStartOf="parent"-->
+    <!--            app:layout_constraintTop_toTopOf="parent">-->
+
+    <!--            <TextView-->
+    <!--                android:id="@+id/tv_survey_no"-->
+    <!--                android:layout_width="0dp"-->
+    <!--                android:layout_height="wrap_content"-->
+    <!--                android:layout_weight="1.8"-->
+    <!--                android:gravity="center"-->
+    <!--                android:paddingLeft="2dp"-->
+    <!--                android:paddingTop="10dp"-->
+    <!--                android:paddingRight="2dp"-->
+    <!--                android:paddingBottom="10dp"-->
+    <!--                android:textColor="@color/Black"-->
+    <!--                android:textSize="12sp" />-->
+
+    <!--            <TextView-->
+    <!--                android:id="@+id/tv_owner_name"-->
+    <!--                android:layout_width="0dp"-->
+    <!--                android:layout_height="wrap_content"-->
+    <!--                android:layout_weight="3"-->
+    <!--                android:gravity="center"-->
+    <!--                android:paddingLeft="2dp"-->
+    <!--                android:paddingTop="10dp"-->
+    <!--                android:paddingRight="2dp"-->
+    <!--                android:paddingBottom="10dp"-->
+    <!--                android:textColor="@color/Black"-->
+    <!--                android:textSize="12sp" />-->
+
+    <!--            <TextView-->
+    <!--                android:id="@+id/tv_father_husband_name"-->
+    <!--                android:layout_width="0dp"-->
+    <!--                android:layout_height="wrap_content"-->
+    <!--                android:layout_weight="3"-->
+    <!--                android:gravity="center"-->
+    <!--                android:paddingLeft="2dp"-->
+    <!--                android:paddingTop="10dp"-->
+    <!--                android:paddingRight="2dp"-->
+    <!--                android:paddingBottom="10dp"-->
+    <!--                android:textColor="@color/Black"-->
+    <!--                android:textSize="12sp" />-->
+
+    <!--            <TextView-->
+    <!--                android:id="@+id/tv_area"-->
+    <!--                android:layout_width="0dp"-->
+    <!--                android:layout_height="wrap_content"-->
+    <!--                android:layout_weight="3"-->
+    <!--                android:gravity="center"-->
+    <!--                android:paddingLeft="2dp"-->
+    <!--                android:paddingTop="10dp"-->
+    <!--                android:paddingRight="2dp"-->
+    <!--                android:paddingBottom="10dp"-->
+    <!--                android:textColor="@color/Black"-->
+    <!--                android:textSize="12sp" />-->
+
+    <!--            <TextView-->
+    <!--                android:id="@+id/tv_attach"-->
+    <!--                android:layout_width="0dp"-->
+    <!--                android:layout_height="@dimen/margin_50dp"-->
+    <!--                android:layout_weight="1.5"-->
+    <!--                android:background="@drawable/register_btn"-->
+    <!--                android:gravity="center"-->
+    <!--                android:paddingLeft="2dp"-->
+    <!--                android:paddingTop="10dp"-->
+    <!--                android:paddingRight="2dp"-->
+    <!--                android:paddingBottom="10dp"-->
+    <!--                android:text="@string/select"-->
+    <!--                android:textAllCaps="true"-->
+    <!--                android:textColor="@color/white"-->
+    <!--                android:textSize="10sp" />-->
+
+    <!--        </LinearLayout>-->
+
+
+    <!--    </androidx.constraintlayout.widget.ConstraintLayout>-->
+    <!--</androidx.cardview.widget.CardView>-->

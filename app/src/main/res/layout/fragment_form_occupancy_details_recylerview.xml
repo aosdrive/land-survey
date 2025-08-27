@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/album_card_bg">
+
+    <TextView
+        android:id="@+id/tv_details"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:textColor="@color/white"
+        android:textSize="@dimen/header_title_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/listitem_text_activated"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/possession_occupancy_details"
+        android:textColor="@color/black"
+        android:textSize="@dimen/margin_14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_details" />
+
+    <TextView
+        android:id="@+id/tv_page_number"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/_4_5"
+        android:textColor="@color/black"
+        android:textSize="@dimen/text_size_small"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_header"
+        app:layout_constraintEnd_toEndOf="@+id/tv_header"
+        app:layout_constraintTop_toTopOf="@+id/tv_header" />
+
+    <LinearLayout
+        android:id="@+id/layout_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/margin_50dp"
+        android:layout_marginHorizontal="@dimen/margin_3dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sv_property_demarcation_form">
+
+        <Button
+            style="?android:attr/buttonBarButtonStyle"
+            android:id="@+id/btn_previous"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableStart="@drawable/baseline_arrow_back_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_15dp"
+            android:paddingEnd="@dimen/margin_30dp"
+            android:text="@string/previous"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+        <Button
+            style="?android:attr/buttonBarButtonStyle"
+            android:id="@+id/btn_next"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableEnd="@drawable/baseline_arrow_forward_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_30dp"
+            android:paddingEnd="@dimen/margin_15dp"
+            android:text="@string/next"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/sv_property_demarcation_form"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/layout_bottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/layout_main_included"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <LinearLayout
+                    android:id="@+id/layout_floor_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewFloors"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:listitem="@layout/card_recyclerview_add_floor" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingVertical="10dp"
+                    android:background="@color/album_card_bg"
+                    android:orientation="vertical">
+
+                    <Button
+                        style="?android:attr/buttonBarButtonStyle"
+                        android:id="@+id/addFloorBtn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="50dp"
+                        android:layout_gravity="center"
+                        android:background="#970000"
+                        android:gravity="center"
+                        android:minWidth="200dp"
+                        android:paddingHorizontal="@dimen/margin_20dp"
+                        android:text="@string/add_floor"
+                        android:textColor="#ffffff"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

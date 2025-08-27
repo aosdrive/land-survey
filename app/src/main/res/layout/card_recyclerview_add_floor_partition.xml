@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cv_floor_partition_1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="0dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardPreventCornerOverlap="false"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/mainLinearLayoutCompact"
+        android:layout_width="match_parent"
+        android:layout_marginBottom="@dimen/margin_4dp"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/dialog_holo_light_frame"
+        android:orientation="vertical">
+
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/album_card_form_bg"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/priorityTView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="5dp"
+                    android:text="@string/partition"
+                    android:textColor="@color/black"
+                    android:textSize="17sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/img_delete_partition"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_delete"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:contentDescription="@string/delete_icon" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@color/white" />
+
+            <TableLayout
+                android:id="@+id/tlayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/margin_7dp"
+                android:layout_marginVertical="2dp">
+
+                <TableRow
+                    android:layout_gravity="center"
+                    android:layout_marginTop="5dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:text="@string/asterisk"
+                        android:textColor="@color/textCompulsoryColor"
+                        android:textSize="@dimen/edittext_title_size" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/landuse_type"
+                        android:textColor="@color/Black"
+                        android:textSize="@dimen/edittext_title_size" />
+
+                </TableRow>
+
+                <TableRow>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/margin_4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/textfield_area_bg"
+                        android:padding="@dimen/margin_4dp">
+
+                        <RadioGroup
+                            android:id="@+id/rg_landuse_type"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <RadioButton
+                                android:layout_width="match_parent"
+                                android:layout_height="25dp"
+                                android:text="@string/residential" />
+
+                            <RadioButton
+                                android:layout_width="match_parent"
+                                android:layout_height="25dp"
+                                android:text="@string/commercial" />
+                        </RadioGroup>
+                    </LinearLayout>
+                </TableRow>
+
+                <TableRow android:id="@+id/tr_commercial_activity_type_caption"
+                    android:visibility="visible"
+                    android:layout_marginTop="5dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:text="@string/asterisk"
+                        android:textColor="@color/textCompulsoryColor"
+                        android:textSize="@dimen/edittext_title_size" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/commercial_activity_type"
+                        android:textColor="@color/Black"
+                        android:textSize="@dimen/edittext_title_size" />
+                </TableRow>
+
+                <TableRow android:id="@+id/tr_commercial_activity_type"
+                    android:visibility="visible"
+                    android:layout_marginTop="5dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/edittext_height"
+                        android:layout_weight="1"
+                        android:background="@drawable/textfield_area_bg">
+
+<!--                        <androidx.appcompat.widget.AppCompatEditText-->
+<!--                            android:id="@+id/et_commercial_activity_type"-->
+<!--                            android:layout_width="match_parent"-->
+<!--                            android:layout_height="match_parent"-->
+<!--                            android:layout_gravity="center"-->
+<!--                            android:layout_margin="5dp"-->
+<!--                            android:background="@android:color/transparent"-->
+<!--                            android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"-->
+<!--                            android:focusable="true"-->
+<!--                            android:focusableInTouchMode="true"-->
+<!--                            android:imeOptions="actionNext"-->
+<!--                            android:inputType="textCapWords"-->
+<!--                            android:maxLength="100"-->
+<!--                            android:padding="2dp"-->
+<!--                            android:textColor="@color/Black"-->
+<!--                            android:textSize="@dimen/edittext_input_size" />-->
+
+                        <AutoCompleteTextView
+                            android:id="@+id/et_commercial_activity_type"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:layout_margin="5dp"
+                            android:background="@android:color/transparent"
+                            android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:imeOptions="actionNext"
+                            android:inputType="textCapWords"
+                            android:maxLength="100"
+                            android:padding="2dp"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/edittext_input_size" />
+
+<!--                        <ImageView-->
+<!--                            android:id="@+id/img_reset_commercial_activity"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="match_parent"-->
+<!--                            android:src="@drawable/baseline_close_24"-->
+<!--                            android:visibility="gone"-->
+<!--                            app:layout_constraintEnd_toEndOf="parent"-->
+<!--                            app:layout_constraintTop_toTopOf="parent" />-->
+
+                    </LinearLayout>
+                </TableRow>
+
+                <TableRow android:layout_marginTop="5dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:text="@string/asterisk"
+                        android:textColor="@color/textCompulsoryColor"
+                        android:textSize="@dimen/edittext_title_size" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/occupancy"
+                        android:textColor="@color/Black"
+                        android:textSize="@dimen/edittext_title_size" />
+                </TableRow>
+
+                <TableRow android:layout_marginBottom="@dimen/margin_5dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/margin_4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/textfield_area_bg"
+                        android:padding="@dimen/margin_4dp">
+
+                        <RadioGroup
+                            android:id="@+id/rg_occupancy_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <RadioButton
+                                android:layout_width="match_parent"
+                                android:layout_height="25dp"
+                                android:layout_weight="1"
+                                android:text="@string/self" />
+
+                            <RadioButton
+                                android:layout_width="match_parent"
+                                android:layout_height="25dp"
+                                android:layout_weight="1"
+                                android:text="@string/tenant" />
+                        </RadioGroup>
+
+                    </LinearLayout>
+                </TableRow>
+
+            </TableLayout>
+
+        </androidx.appcompat.widget.LinearLayoutCompat>
+
+<!--        <androidx.appcompat.widget.LinearLayoutCompat-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:background="@color/album_card_form_bg"-->
+<!--            android:orientation="vertical">-->
+
+<!--            <View-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="2dp"-->
+<!--                android:layout_marginTop="@dimen/margin_5dp"-->
+<!--                android:layout_marginBottom="@dimen/margin_5dp"-->
+<!--                android:background="@color/white" />-->
+
+<!--            <TextView-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_above="@+id/linearLayout"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_5dp"-->
+<!--                android:gravity="center"-->
+<!--                android:text="@string/tenant_details"-->
+<!--                android:textAllCaps="true"-->
+<!--                android:textColor="@color/Black"-->
+<!--                android:textSize="@dimen/text_size_xlarge"-->
+<!--                android:textStyle="bold" />-->
+
+<!--            <androidx.appcompat.widget.LinearLayoutCompat-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginTop="5dp"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:gravity="start"-->
+<!--                    android:text="@string/asterisk"-->
+<!--                    android:textColor="@color/textCompulsoryColor"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:text="@string/name"-->
+<!--                    android:textColor="@color/Black"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+<!--            </androidx.appcompat.widget.LinearLayoutCompat>-->
+
+<!--            <androidx.appcompat.widget.AppCompatEditText-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginVertical="@dimen/margin_5dp"-->
+<!--                android:background="@drawable/textfield_area_bg"-->
+<!--                android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"-->
+<!--                android:focusable="true"-->
+<!--                android:focusableInTouchMode="true"-->
+<!--                android:inputType="textCapWords"-->
+<!--                android:maxLength="100"-->
+<!--                android:minHeight="@dimen/edittext_height"-->
+<!--                android:padding="@dimen/margin_8dp"-->
+<!--                android:textColor="@color/Black"-->
+<!--                android:textSize="@dimen/edittext_input_size" />-->
+
+<!--            <androidx.appcompat.widget.LinearLayoutCompat-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginTop="5dp"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:gravity="start"-->
+<!--                    android:text="@string/asterisk"-->
+<!--                    android:textColor="@color/textCompulsoryColor"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:text="@string/father_husband_name"-->
+<!--                    android:textColor="@color/Black"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+<!--            </androidx.appcompat.widget.LinearLayoutCompat>-->
+
+<!--            <androidx.appcompat.widget.AppCompatEditText-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginVertical="@dimen/margin_5dp"-->
+<!--                android:background="@drawable/textfield_area_bg"-->
+<!--                android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"-->
+<!--                android:focusable="true"-->
+<!--                android:focusableInTouchMode="true"-->
+<!--                android:inputType="textCapWords"-->
+<!--                android:maxLength="100"-->
+<!--                android:minHeight="@dimen/edittext_height"-->
+<!--                android:padding="@dimen/margin_8dp"-->
+<!--                android:tag="@string/tag_tenant"-->
+<!--                android:textColor="@color/Black"-->
+<!--                android:textSize="@dimen/edittext_input_size" />-->
+
+<!--            <androidx.appcompat.widget.LinearLayoutCompat-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginTop="5dp"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:gravity="start"-->
+<!--                    android:text="  "-->
+<!--                    android:textColor="@color/textCompulsoryColor"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="@string/cnic_no"-->
+<!--                    android:textColor="@color/Black"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+
+<!--                <ImageView-->
+<!--                    android:id="@+id/iv_cnic_info"-->
+<!--                    android:layout_width="20dp"-->
+<!--                    android:layout_height="20dp"-->
+<!--                    android:layout_marginStart="@dimen/margin_5dp"-->
+<!--                    android:visibility="gone"-->
+<!--                    android:contentDescription="@string/info"-->
+<!--                    android:gravity="center"-->
+<!--                    android:scaleType="fitXY"-->
+<!--                    android:src="@android:drawable/ic_dialog_info"-->
+<!--                    app:tint="@color/Gray" />-->
+<!--            </androidx.appcompat.widget.LinearLayoutCompat>-->
+
+<!--            <androidx.appcompat.widget.AppCompatEditText-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginVertical="@dimen/margin_5dp"-->
+<!--                android:background="@drawable/textfield_area_bg"-->
+<!--                android:digits="0123456789"-->
+<!--                android:focusable="true"-->
+<!--                android:focusableInTouchMode="true"-->
+<!--                android:inputType="number"-->
+<!--                android:maxLength="13"-->
+<!--                android:minHeight="@dimen/edittext_height"-->
+<!--                android:padding="@dimen/margin_8dp"-->
+<!--                android:tag="@string/tag_tenant"-->
+<!--                android:textColor="@color/Black"-->
+<!--                android:textSize="@dimen/edittext_input_size" />-->
+
+<!--            <androidx.appcompat.widget.LinearLayoutCompat-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginTop="5dp"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:gravity="start"-->
+<!--                    android:text="  "-->
+<!--                    android:textColor="@color/textCompulsoryColor"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="@string/mobile_no"-->
+<!--                    android:textColor="@color/Black"-->
+<!--                    android:textSize="@dimen/edittext_title_size" />-->
+
+<!--                <ImageView-->
+<!--                    android:id="@+id/iv_mobile_info"-->
+<!--                    android:layout_width="20dp"-->
+<!--                    android:layout_height="20dp"-->
+<!--                    android:layout_marginStart="@dimen/margin_5dp"-->
+<!--                    android:contentDescription="@string/info"-->
+<!--                    android:gravity="center"-->
+<!--                    android:scaleType="fitXY"-->
+<!--                    android:visibility="gone"-->
+<!--                    android:src="@android:drawable/ic_dialog_info"-->
+<!--                    app:tint="@color/Gray" />-->
+<!--            </androidx.appcompat.widget.LinearLayoutCompat>-->
+
+<!--            <androidx.appcompat.widget.AppCompatEditText-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_8dp"-->
+<!--                android:layout_marginVertical="@dimen/margin_5dp"-->
+<!--                android:background="@drawable/textfield_area_bg"-->
+<!--                android:digits="0123456789"-->
+<!--                android:focusable="true"-->
+<!--                android:focusableInTouchMode="true"-->
+<!--                android:inputType="number"-->
+<!--                android:maxLength="11"-->
+<!--                android:minHeight="@dimen/edittext_height"-->
+<!--                android:padding="@dimen/margin_8dp"-->
+<!--                android:tag="@string/tag_tenant"-->
+<!--                android:textColor="@color/Black"-->
+<!--                android:textSize="@dimen/edittext_input_size" />-->
+
+<!--        </androidx.appcompat.widget.LinearLayoutCompat>-->
+
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+</androidx.cardview.widget.CardView>

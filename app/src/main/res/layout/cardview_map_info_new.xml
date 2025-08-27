@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/card_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent">
+
+        <LinearLayout
+            android:layout_width="260dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            tools:ignore="MissingConstraints">
+
+            <LinearLayout
+                android:id="@+id/layout_parcel_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:orientation="vertical"
+                android:paddingHorizontal="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="9"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tv_parcel_id_caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="right"
+                            android:text="Parcel No: "
+                            android:textColor="@color/black"
+                            android:textSize="@dimen/margin_18sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_parcel_no_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="left"
+                            android:text=""
+                            android:textColor="@color/black"
+                            android:textSize="@dimen/margin_18sp"
+                            android:textStyle="bold" />
+
+
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/delete"
+                        android:layout_width="5dp"
+                        android:layout_height="35dp"
+                        android:layout_weight="0.7"
+                        android:src="@drawable/baseline_delete_24"
+                        android:visibility="visible" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_parcel_no_uni_caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="Unique Id: "
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/margin_10sp" />
+
+                    <TextView
+                        android:id="@+id/tv_parcel_no_uni_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="left"
+                        android:text=""
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/margin_10sp" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_parcel_area_caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="Area: "
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/margin_10sp" />
+
+                    <TextView
+                        android:id="@+id/tv_parcel_area_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="left"
+                        android:text=""
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/margin_10sp" />
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_parcel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/margin_5dp"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <TextView
+                    android:id="@+id/rg_parcel_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Operation:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/margin_12sp"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/rg_parcel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="5dp"
+                    android:paddingVertical="@dimen/margin_5dp"
+                    android:textColor="@color/black">
+
+
+                    <RadioButton
+                        android:id="@+id/rb_same"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/margin_24dp"
+                        android:checked="true"
+                        android:text="Same"
+                        android:textSize="@dimen/margin_12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_split"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/margin_24dp"
+                        android:layout_marginHorizontal="@dimen/margin_5dp"
+                        android:text="Split"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/margin_12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_merge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/margin_24dp"
+                        android:text="Merge"
+                        android:textColor="@color/black"
+                        android:textSize="@dimen/margin_12sp"
+                        android:visibility="visible" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_split_parcel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/margin_5dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_split_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/margin_5dp"
+                    android:text="Sub-parcels:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/margin_12sp"
+                    android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatEditText
+                    android:id="@+id/et_split_parcel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    android:background="@drawable/textfield_area_bg"
+                    android:digits="0123456789"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:inputType="number"
+                    android:maxLength="2"
+                    android:minHeight="@dimen/margin_35dp"
+                    android:paddingHorizontal="@dimen/margin_10dp"
+                    android:paddingVertical="@dimen/margin_2dp"
+                    android:textColor="@color/Black"
+                    android:textSize="@dimen/margin_12sp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_merge_parcel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/margin_5dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tv_merge_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/margin_5dp"
+                    android:text="Parcel to merge:"
+                    android:textColor="@android:color/black"
+                    android:textSize="@dimen/margin_12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_merge_parcel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    android:background="@drawable/textfield_area_bg"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/margin_35dp"
+                    android:paddingHorizontal="@dimen/margin_10dp"
+                    android:paddingVertical="@dimen/margin_5dp"
+                    android:text=""
+                    android:textSize="@dimen/margin_12sp" />
+
+                <TextView
+                    android:id="@+id/tv_merge_parcel_hi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_margin="5dp"
+                    android:background="@drawable/textfield_area_bg"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/margin_35dp"
+                    android:paddingHorizontal="@dimen/margin_10dp"
+                    android:paddingVertical="@dimen/margin_5dp"
+                    android:text=""
+                    android:textSize="@dimen/margin_12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!--add rest of layout-->
+            <LinearLayout
+                android:id="@+id/layout_action_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="10dp"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_cancel"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:layout_marginRight="@dimen/margin_3dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/holo_background"
+                    android:gravity="center"
+                    android:text="Cancel"
+                    android:textAllCaps="false"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/margin_12sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_start_survey"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="@dimen/margin_3dp"
+                    android:layout_weight="2"
+                    android:background="@color/Orange"
+                    android:gravity="center"
+                    android:text="Start Survey"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/margin_12sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_revisit_survey"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="@dimen/margin_3dp"
+                    android:layout_weight="2"
+                    android:background="@color/Orange"
+                    android:gravity="center"
+                    android:text="@string/revisit"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btn_retake_pictures_survey"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:layout_margin="@dimen/margin_3dp"
+                    android:layout_weight="2"
+                    android:background="@color/Orange"
+                    android:gravity="center"
+                    android:text="@string/continued"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/mapLocaton"
+                    android:layout_width="5dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="0.7"
+                    android:src="@drawable/map_pointer"
+                    android:visibility="visible" />
+
+                <ImageView
+                    android:id="@+id/directions"
+                    android:layout_width="5dp"
+                    android:layout_height="35dp"
+                    android:layout_weight="0.7"
+                    android:src="@drawable/directions"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+
+        </LinearLayout>
+    </FrameLayout>
+</androidx.appcompat.widget.LinearLayoutCompat>

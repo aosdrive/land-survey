@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
+    android:background="@drawable/edittextstyle"
+    android:gravity="start|center_vertical"
+    android:lineSpacingExtra="5dp"
+    android:maxLines="50"
+    android:minHeight="45dp"
+    android:padding="8dp"
+    android:textColor="#000" />

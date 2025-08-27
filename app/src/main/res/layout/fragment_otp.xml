@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/layout_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:id="@+id/layout_page_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/listitem_text_activated"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="@string/this_application_is_not_intended_for_general_public_access"
+            android:textColor="@color/white"
+            android:textSize="@dimen/margin_12sp" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/white"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/layout_page_header"
+        app:layout_constraintBottom_toTopOf="@id/layout_page_footer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:id="@+id/surveyForm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/logoLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="100dp"
+                    android:layout_marginTop="@dimen/margin_10dp"
+                    android:contentDescription="@string/government_of_punjab"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/ic_logo_pulse_cropped" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/program_department_name"
+                    android:textAllCaps="true"
+                    android:textColor="@color/dark_green"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/program_government_name"
+                    android:textAllCaps="true"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/text_size_normal" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="10dp"
+                android:background="@android:drawable/dialog_holo_light_frame"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/group_top"
+                    android:padding="13dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:shadowColor="#908d8f8b"
+                        android:shadowDx="2"
+                        android:shadowDy="2"
+                        android:shadowRadius="4"
+                        android:text="@string/otp_verification"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/cardview_main_title_size"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/album_card_form_bg"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <!-- OTP Field -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="10dp">
+
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/asterisk"
+                            android:textColor="@color/textCompulsoryColor"
+                            android:textSize="@dimen/edittext_title_size"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginStart="4dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/otp"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/edittext_title_size"
+                            android:layout_gravity="center_vertical" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/edittext_height"
+                        android:background="@drawable/textfield_area_bg"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="5dp">
+
+                        <androidx.appcompat.widget.AppCompatEditText
+                            android:id="@+id/et_otp"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:layout_margin="5dp"
+                            android:background="@android:color/transparent"
+                            android:digits="0123456789"
+                            android:focusable="true"
+                            android:focusableInTouchMode="true"
+                            android:imeOptions="actionNext"
+                            android:inputType="number"
+                            android:maxLength="5"
+                            android:padding="2dp"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/edittext_input_size" />
+                    </LinearLayout>
+
+                    <!-- Resend OTP TextView -->
+                    <TextView
+                        android:id="@+id/tv_resend_code"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="@string/resend_otp"
+                        android:textColor="#ed4949"
+                        android:visibility="gone"
+                        android:textSize="14dp"
+                        android:layout_marginTop="10dp" />
+
+                    <!-- Timer TextView -->
+                    <TextView
+                        android:id="@+id/tv_timer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="#ed4949"
+                        android:visibility="gone"
+                        android:textSize="14dp"
+                        android:layout_marginTop="10dp" />
+
+                    <!-- Submit Button -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="10dp">
+
+                        <com.github.leandroborgesferreira.loadingbutton.customViews.CircularProgressButton
+                            android:id="@+id/btn_submit"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/mediumButtonHeight"
+                            android:background="@drawable/blue_background"
+                            android:gravity="center"
+                            android:text="@string/verify"
+                            android:textColor="#fff"
+                            android:textSize="@dimen/text_size_xxlarge"
+                            android:textStyle="bold"
+                            app:spinning_bar_color="@color/white" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/layout_page_footer"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/margin_45dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="@dimen/margin_50dp"
+            android:layout_height="@dimen/margin_50dp"
+            android:paddingVertical="5dp"
+            android:contentDescription="@string/government_of_punjab"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_logo_pulse_cropped" />
+
+        <TextView
+            android:id="@+id/tv_footer"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:paddingEnd="@dimen/margin_5dp"
+            android:text="@string/footer_main_menu"
+            android:textColor="@color/row_heading_background"
+            android:textSize="@dimen/text_size_normal" />
+
+        <ImageView
+            android:layout_width="@dimen/margin_40dp"
+            android:layout_height="@dimen/margin_40dp"
+            android:contentDescription="@string/government_of_punjab"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_plra_logo" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

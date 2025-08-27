@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cv_floor_partition_1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:drawable/dialog_holo_light_frame"
+    app:cardCornerRadius="0dp"
+    app:cardElevation="0dp"
+    android:layout_marginVertical="@dimen/margin_5dp"
+    app:cardPreventCornerOverlap="false"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/album_card_form_bg"
+        android:paddingBottom="@dimen/margin_5dp"
+        android:orientation="vertical">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_partition_header"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@color/album_card_header"
+                android:gravity="center"
+                android:padding="5dp"
+                android:text="@string/partition"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_landuse_type_caption"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingTop="@dimen/margin_5dp"
+                android:paddingEnd="4dp"
+                android:text="@string/landuse_type"
+                android:textColor="#000"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_partition_header" />
+
+            <TextView
+                android:id="@+id/tv_landuse_type"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingTop="@dimen/margin_5dp"
+                android:text="@string/residential"
+                android:textColor="#000"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/tv_landuse_type_caption"
+                app:layout_constraintTop_toBottomOf="@+id/tv_partition_header" />
+
+            <TextView
+                android:id="@+id/tv_commercial_activity_type_caption"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingTop="@dimen/album_title_padding"
+                android:paddingEnd="4dp"
+                android:text="@string/commercial_activity_type"
+                android:textColor="#000"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_landuse_type_caption" />
+
+            <TextView
+                android:id="@+id/tv_commercial_activity_type"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingTop="@dimen/album_title_padding"
+                android:text="Shop"
+                android:textColor="#000"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/tv_commercial_activity_type_caption"
+                app:layout_constraintTop_toBottomOf="@+id/tv_landuse_type_caption" />
+
+            <TextView
+                android:id="@+id/tv_occupancy_type_caption"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingTop="@dimen/album_title_padding"
+                android:paddingEnd="4dp"
+                android:text="@string/occupancy"
+                android:textColor="#000"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_commercial_activity_type_caption" />
+
+            <TextView
+                android:id="@+id/tv_occupancy_type"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingTop="@dimen/album_title_padding"
+                android:text="@string/tenant"
+                android:textColor="#000"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@+id/tv_occupancy_type_caption"
+                app:layout_constraintTop_toBottomOf="@+id/tv_commercial_activity_type_caption" />
+
+<!--            <View-->
+<!--                android:id="@+id/tv_tenant_details_divider"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="2dp"-->
+<!--                android:layout_marginTop="@dimen/margin_5dp"-->
+<!--                android:layout_marginBottom="@dimen/margin_5dp"-->
+<!--                android:background="@color/white"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_occupancy_type_caption" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_details_header"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="center"-->
+<!--                android:layout_marginHorizontal="@dimen/margin_5dp"-->
+<!--                android:layout_marginTop="@dimen/margin_5dp"-->
+<!--                android:gravity="center"-->
+<!--                android:text="@string/tenant_details"-->
+<!--                android:textAllCaps="true"-->
+<!--                android:textColor="@color/Black"-->
+<!--                android:textSize="@dimen/text_size_normal"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_details_divider" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_name_caption"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingStart="8dp"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:paddingEnd="4dp"-->
+<!--                android:text="@string/name"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textStyle="bold"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_details_header" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_name"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:text="@string/tenant"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                app:layout_constraintStart_toEndOf="@+id/tv_tenant_name_caption"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_details_header" />-->
+
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_father_name_caption"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingStart="8dp"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:paddingEnd="4dp"-->
+<!--                android:text="@string/father_husband_name"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textStyle="bold"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_name_caption" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_father_name"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:text="@string/tenant"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                app:layout_constraintStart_toEndOf="@+id/tv_tenant_father_name_caption"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_name_caption" />-->
+
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_cnic_caption"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingStart="8dp"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:paddingEnd="4dp"-->
+<!--                android:text="@string/cnic_no"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textStyle="bold"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_father_name_caption" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_cnic"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:text="@string/tenant"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                app:layout_constraintStart_toEndOf="@+id/tv_tenant_cnic_caption"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_father_name_caption" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_mobile_caption"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingStart="8dp"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:paddingEnd="4dp"-->
+<!--                android:text="@string/mobile_no"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                android:textStyle="bold"-->
+<!--                app:layout_constraintStart_toStartOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_cnic_caption" />-->
+
+<!--            <TextView-->
+<!--                android:id="@+id/tv_tenant_mobile"-->
+<!--                android:layout_width="0dp"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:paddingTop="@dimen/album_title_padding"-->
+<!--                android:text="@string/tenant"-->
+<!--                android:textColor="#000"-->
+<!--                android:textSize="12sp"-->
+<!--                app:layout_constraintStart_toEndOf="@+id/tv_tenant_mobile_caption"-->
+<!--                app:layout_constraintTop_toBottomOf="@+id/tv_tenant_cnic_caption" />-->
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
+</androidx.cardview.widget.CardView>

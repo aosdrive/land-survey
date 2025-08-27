@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/auth_graph"
+    app:startDestination="@id/loginFragment">
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.LoginFragment"
+        android:label="LoginFragment"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginFragment_to_forgotFragment"
+            app:destination="@id/forgotFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_otpVerificationFragment"
+            app:destination="@id/otpVerificationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/forgotFragment"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.ForgotFragment"
+        android:label="ForgotFragment"
+        tools:layout="@layout/fragment_forgot_password">
+        <argument
+            android:name="cnic"
+            android:defaultValue="NA"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_forgotFragment_to_otpVerificationFragment"
+            app:destination="@id/otpVerificationFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/otpVerificationFragment"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.OtpVerificationFragment"
+        android:label="OtpVerificationFragment"
+        tools:layout="@layout/fragment_otp">
+        <argument
+            android:name="cnic"
+            android:defaultValue="NA"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_otpVerificationFragment_to_updateFragment"
+            app:destination="@id/updateFragment"/>
+        <action
+            android:id="@+id/action_otpVerificationFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+    <fragment
+        android:id="@+id/updateFragment"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.UpdateFragment"
+        android:label="UpdateFragment"
+        tools:layout="@layout/fragment_update_password">
+        <argument
+            android:name="cnic"
+            android:defaultValue="NA"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_updateFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"/>
+        <action
+            android:id="@+id/action_updateFragment_to_successFragment"
+            app:destination="@id/successFragment"
+            app:enterAnim="@anim/zoom_in"
+            app:exitAnim="@android:anim/fade_out"/>
+    </fragment>
+    <fragment
+        android:id="@+id/successFragment"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.SuccessFragment"
+        android:label="SuccessFragment"
+        tools:layout="@layout/fragment_success">
+        <action
+            android:id="@+id/action_successFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"/>
+    </fragment>
+
+</navigation>

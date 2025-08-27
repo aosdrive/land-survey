@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <TextView
+        android:id="@+id/tv_details"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:textColor="@color/white"
+        android:textSize="@dimen/header_title_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/listitem_text_activated"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/parcel_status"
+        android:textColor="@color/black"
+        android:textSize="@dimen/margin_14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_details" />
+
+    <LinearLayout
+        android:id="@+id/layout_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/margin_50dp"
+        android:layout_marginHorizontal="@dimen/margin_3dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sv_property_demarcation_form">
+
+        <!--        <Button-->
+        <!--            android:id="@+id/btn_previous"-->
+        <!--            android:layout_width="0dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:layout_marginRight="@dimen/margin_2dp"-->
+        <!--            android:layout_weight="1"-->
+        <!--            android:background="@drawable/register_btn"-->
+        <!--            android:drawableLeft="@drawable/baseline_arrow_back_ios_24"-->
+        <!--            android:drawableTint="@color/white"-->
+        <!--            android:gravity="center"-->
+        <!--            android:minHeight="@dimen/margin_50dp"-->
+        <!--            android:paddingLeft="@dimen/margin_15dp"-->
+        <!--            android:paddingRight="@dimen/margin_30dp"-->
+        <!--            android:text="@string/previous"-->
+        <!--            android:textColor="#fff"-->
+        <!--            android:textSize="@dimen/text_size_xxlarge"-->
+        <!--            android:textStyle="bold" />-->
+
+        <Button
+            android:id="@+id/btn_next"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableEnd="@drawable/baseline_arrow_forward_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_30dp"
+            android:paddingEnd="@dimen/margin_15dp"
+            android:text="@string/next"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/sv_property_demarcation_form"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/layout_bottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/dialog_holo_light_frame">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_parcel_operations"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/album_card_form_bg"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="@dimen/margin_10dp"
+                        android:visibility="gone">
+
+                        <TableRow
+                            android:layout_marginTop="10dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/parcel_operation"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_margin="@dimen/margin_4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg"
+                                android:padding="@dimen/margin_4dp">
+
+                                <RadioGroup
+                                    android:id="@+id/rg_parcel_division"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content">
+
+                                    <RadioButton
+                                        android:id="@+id/rb_same"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="25dp"
+                                        android:layout_weight="1"
+                                        android:checked="true"
+                                        android:text="@string/same" />
+
+                                    <RadioButton
+                                        android:id="@+id/rb_split"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="25dp"
+                                        android:layout_weight="1"
+                                        android:text="@string/split" />
+
+                                    <RadioButton
+                                        android:id="@+id/rb_merge"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="25dp"
+                                        android:layout_weight="1"
+                                        android:text="@string/merge" />
+                                </RadioGroup>
+
+                            </LinearLayout>
+
+                        </TableRow>
+
+                        <!--Split Parcel-->
+                        <TableRow
+                            android:id="@+id/tr_split_parcel_caption"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/sub_parcels"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow
+                            android:id="@+id/tr_split_parcel"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <!--                            <LinearLayout-->
+                            <!--                                android:layout_width="0dp"-->
+                            <!--                                android:layout_height="wrap_content"-->
+                            <!--                                android:layout_weight="1"-->
+                            <!--                                android:background="@drawable/textfield_area_bg">-->
+
+                            <!--                                <TextView-->
+                            <!--                                    android:id="@+id/tv_split_parcel"-->
+                            <!--                                    android:layout_width="match_parent"-->
+                            <!--                                    android:layout_height="wrap_content"-->
+                            <!--                                    android:layout_gravity="center"-->
+                            <!--                                    android:layout_margin="5dp"-->
+                            <!--                                    android:gravity="center_vertical"-->
+                            <!--                                    android:minHeight="@dimen/margin_35dp"-->
+                            <!--                                    android:paddingHorizontal="@dimen/margin_10dp"-->
+                            <!--                                    android:paddingVertical="@dimen/margin_5dp"-->
+                            <!--                                    android:text="Tap to select"-->
+                            <!--                                    android:textSize="@dimen/edittext_input_size" />-->
+                            <!--                            </LinearLayout>-->
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_split_parcel"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="0123456789"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:inputType="number"
+                                    android:maxLength="2"
+                                    android:minHeight="@dimen/margin_35dp"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <!--Merge Parcel-->
+                        <TableRow
+                            android:id="@+id/tr_merge_parcel_caption"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/parcel_to_merge"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow
+                            android:id="@+id/tr_merge_parcel"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <!--                                <androidx.appcompat.widget.AppCompatEditText-->
+                                <!--                                    android:id="@+id/et_merge_parcel"-->
+                                <!--                                    android:layout_width="match_parent"-->
+                                <!--                                    android:layout_height="wrap_content"-->
+                                <!--                                    android:layout_gravity="center"-->
+                                <!--                                    android:layout_margin="5dp"-->
+                                <!--                                    android:background="@android:color/transparent"-->
+                                <!--                                    android:clickable="true"-->
+                                <!--                                    android:digits="0123456789,"-->
+                                <!--                                    android:enabled="false"-->
+                                <!--                                    android:focusable="true"-->
+                                <!--                                    android:focusableInTouchMode="false"-->
+                                <!--                                    android:hint="Tap to select"-->
+                                <!--                                    android:inputType="none"-->
+                                <!--                                    android:minHeight="@dimen/margin_35dp"-->
+                                <!--                                    android:padding="2dp"-->
+                                <!--                                    android:textColor="@color/Black"-->
+                                <!--                                    android:textSize="@dimen/edittext_input_size" />-->
+
+                                <TextView
+                                    android:id="@+id/tv_merge_parcel"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:gravity="center_vertical"
+                                    android:minHeight="@dimen/margin_35dp"
+                                    android:paddingHorizontal="@dimen/margin_10dp"
+                                    android:paddingVertical="@dimen/margin_5dp"
+                                    android:text=""
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                    </TableLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_discrepancy_picture"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="2dp"
+                            android:layout_marginTop="5dp"
+                            android:background="@color/white"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/priorityTView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center"
+                            android:text="@string/discrepancy_picture"
+                            android:textAllCaps="true"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/edittext_title_size"
+                            android:textStyle="bold" />
+
+                        <!--                        <View-->
+                        <!--                            android:layout_width="match_parent"-->
+                        <!--                            android:layout_height="2dp"-->
+                        <!--                            android:layout_marginTop="5dp"-->
+                        <!--                            android:background="#d2d2d2" />-->
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginVertical="10dp"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:gravity="center">
+
+                                <ImageView
+                                    android:id="@+id/image_parcel_discrepancy"
+                                    android:layout_width="100dp"
+                                    android:layout_height="100dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@string/picture_icon"
+                                    android:src="@drawable/ic_camera_colored" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:id="@+id/btn_layout"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:layout_weight="1"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+
+                                <Button
+                                    android:id="@+id/viewBtn"
+                                    style="?android:attr/buttonBarButtonStyle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_margin="2dp"
+                                    android:background="#006607"
+                                    android:minWidth="110dp"
+                                    android:padding="10dp"
+                                    android:text="@string/view_picture"
+                                    android:textColor="#ffffff"
+                                    android:textSize="@dimen/margin_12sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+
+                    </LinearLayout>
+
+                </androidx.appcompat.widget.LinearLayoutCompat>
+
+            </androidx.cardview.widget.CardView>
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

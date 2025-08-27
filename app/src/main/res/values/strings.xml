@@ -1,0 +1,344 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="government_of_punjab">Government of the Punjab</string>
+    <string name="password">Password</string>
+
+    <string name="error_username_field_empty">CNIC field can\'t be empty</string>
+    <string name="error_otp_field_empty">OTP field can\'t be empty</string>
+    <string name="error_password_field_empty">Password field can\'t be empty</string>
+    <string name="invalid_password">Password must be at least 8 characters.</string>
+    <string name="default_password_error">Enter new password instead of default password.</string>
+    <string name="password_do_not_match">Both passwords must match</string>
+    <string name="not_a_valid_cnic">This is not a valid CNIC</string>
+    <string name="not_a_valid_otp">This is not a valid OTP</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="export_vector_tiles">Download Vector Tiles</string>
+    <string name="close_vector_tile_preview">Close vector tile preview</string>
+    <string name="title_activity_map">MapActivity</string>
+
+    <string name="lorem_ipsum">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
+        volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
+        dui nec risus.
+    </string>
+
+    <string name="app_name">Land Survey</string>
+    <string name="header_title">Land Survey</string>
+    <string name="footer_main_menu">Version | Developed by - ZD</string>
+    <!--    <string name="footer_main_menu">Version \nPunjab Urban Land Systems Enhancement</string>-->
+    <!--    <string name="footer_main_loginn">Version</string>-->
+    <string name="footer_main_login">Version \n©2025 Developed by - PICS</string>
+    <!--    <string name="footer_main_login">Version \nGovernment of the Punjab</string>-->
+
+    <string name="program_title">Private Entity</string>
+    <string name="program_department_name">Survey Project</string>
+    <string name="program_government_name">Zaraat Dost</string>
+
+    <string name="search">Search</string>
+    <string name="save">Save</string>
+
+    <string name="no_imei">Your Mobile has no IMEI Number, Please change the mobile for using this app.</string>
+    <string name="no_gps">Your Mobile do not have GPS sensor, Please change the mobile for using this app.</string>
+
+
+    <string name="logout">Logout</string>
+    <string name="upload_all">Upload All</string>
+    <string name="please_select_an_option">Please select an option</string>
+
+    <string-array name="spinner_options">
+        <item>@string/please_select_an_option</item>
+        <item>Option 1</item>
+        <item>Option 2</item>
+        <item>Option 3</item>
+    </string-array>
+
+    <!--    <string name="continued_status" tools:ignore="ExtraTranslation">Continued</string>-->
+    <!--    <string name="declined_status" tools:ignore="ExtraTranslation">Declined</string>-->
+    <!--    <string name="not_at_home_status" tools:ignore="ExtraTranslation">Not at Property</string>-->
+
+    <!--    <string-array name="survey_status">-->
+    <!--        <item>@string/continued_status</item>-->
+    <!--        <item>@string/declined_status</item>-->
+    <!--        <item>@string/not_at_home_status</item>-->
+    <!--    </string-array>-->
+
+    <string name="present_respondent_status" tools:ignore="ExtraTranslation">Respondent Present</string>
+    <string name="declined_respondent_status" tools:ignore="ExtraTranslation">Respondent Declined Response</string>
+    <string name="not_present_respondent_status" tools:ignore="ExtraTranslation">Respondent Not Present</string>
+    <string name="empty_plot_status" tools:ignore="ExtraTranslation">Empty Plot</string>
+
+    <string-array name="respondent_status">
+        <item>@string/present_respondent_status</item>
+        <item>@string/declined_respondent_status</item>
+        <item>@string/not_present_respondent_status</item>
+        <item>@string/empty_plot_status</item>
+    </string-array>
+
+    <string-array name="respondent_revisit_status">
+        <item>@string/present_respondent_status</item>
+        <item>@string/declined_respondent_status</item>
+        <item>@string/empty_plot_status</item>
+    </string-array>
+
+    <string-array name="respondent_status_revisit">
+        <item>@string/present_respondent_status</item>
+        <item>@string/declined_respondent_status</item>
+        <item>@string/not_present_respondent_status</item>
+    </string-array>
+
+    <string-array name="other_respondent_relation">
+        <item>@string/please_select_an_option</item>
+        <item>Owner</item>
+        <item>Tenant</item>
+        <item>Buyer</item>
+        <item>Parent</item>
+        <item>Sibling</item>
+        <item>Spouse</item>
+        <item>Child</item>
+        <item>Grand Child</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="cnic_mobile_type">
+        <item>Owner</item>
+        <item>Parent</item>
+        <item>Sibling</item>
+        <item>Spouse</item>
+        <item>Child</item>
+        <item>Grand Child</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="occupant_cnic_mobile_type">
+        <item>Occupant</item>
+        <item>Parent</item>
+        <item>Sibling</item>
+        <item>Spouse</item>
+        <item>Child</item>
+        <item>Grand Child</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="picture_options">
+        <item>@string/please_select_an_option</item>
+        <item>Property</item>
+        <item>CNIC Front</item>
+        <item>CNIC Back</item>
+        <item>Respondent</item>
+        <item>Registry</item>
+        <item>Stamp Paper</item>
+        <item>Electricity Bill</item>
+        <item>Gas Bill</item>
+        <item>Water Bill</item>
+        <item>Telephone Bill</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="picture_options_limited">
+        <item>@string/please_select_an_option</item>
+        <item>Property</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="building_floors_option">
+        <!--        <item>@string/please_select_an_option</item>-->
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="split_parcel_option">
+        <item>@string/please_select_an_option</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+    </string-array>
+
+    <string name="_2_5">2/5</string>
+    <string name="_1_5">1/4</string>
+    <string name="_1_6">1/6</string>
+    <string name="_2_6">2/6</string>
+    <string name="_3_6">3/6</string>
+    <string name="_3_5">3/5</string>
+    <string name="_4_5">4/5</string>
+    <string name="_5_6">5/6</string>
+
+    <string name="tile_cache_folder">/Maps/</string>
+    <string name="tag_tenant">tenant_layout</string>
+    <string name="capture_pictures">Captured Picture</string>
+    <string name="delete">Delete</string>
+    <string name="view">View</string>
+    <string name="select_katchi_abadi">Select Area</string>
+    <string name="evidence_remarks">Evidence / Remarks</string>
+    <string name="asterisk">"* "</string>
+    <string name="take_pictures">Take Pictures:</string>
+    <string name="add_picture">Add Picture</string>
+    <string name="write_observations_comments">Write observations/comments:</string>
+    <string name="observations_comments">Observations/comments:</string>
+    <string name="property_details">Property Details</string>
+    <string name="main_menu">Main Menu</string>
+    <string name="welcome">Welcome,</string>
+    <string name="assigned_mauza">Assigned Mauza:</string>
+    <string name="download_data">Sync Data (Online)</string>
+    <string name="download_the_data_to_start_survey">Download the data to start survey</string>
+    <string name="start_survey">Start Survey</string>
+    <string name="initiate_ownership_data_collection">Initiate data collection for Parcels</string>
+    <string name="saved_records">Saved Records</string>
+    <string name="view_and_upload_all_the_saved_records">View and upload all saved records</string>
+    <string name="settings">Settings</string>
+    <string name="change_the_application_settings">Change the application settings</string>
+    <string name="securely_logout_form_your_account">Securely logout form your account</string>
+    <string name="pulse_logo">Pulse Logo</string>
+    <string name="no_records_to_display">No record to display.</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="app_version">App Version</string>
+    <string name="units_survey_list">Units Survey List</string>
+    <string name="all">All</string>
+    <string name="available">Available</string>
+    <string name="attached">Attached</string>
+    <!--    <string name="enter_unit_name_or_father_husband_name">Enter Unit #, Name or Father/Husband Name</string>-->
+    <string name="search_icon">Search Icon</string>
+    <string name="unit">Division #</string>
+    <string name="owner_name">Owner Name:</string>
+    <string name="father_husband_name">Father/Husband Name:</string>
+    <string name="pictures">Pictures</string>
+    <string name="right_arrow">Right Arrow</string>
+    <string name="left_arrow">Left Arrow</string>
+    <string name="add_partition">Add Division</string>
+    <string name="partition">Division</string>
+    <string name="delete_icon">Delete Icon</string>
+    <string name="landuse_type">Landuse type:</string>
+    <string name="residential">Residential</string>
+    <string name="commercial">Commercial</string>
+    <string name="commercial_activity_type">Commercial Activity Type:</string>
+    <string name="occupancy">Occupancy:</string>
+    <string name="self">Self</string>
+    <string name="first_owner">First owner</string>
+    <string name="tenant">Tenant</string>
+    <string name="tenant_details">Tenant Details</string>
+    <string name="name">Name:</string>
+    <string name="cnic_no">CNIC No:</string>
+    <string name="info">Info</string>
+    <string name="mobile_no">Mobile No:</string>
+    <string name="picture_icon">Picture Icon</string>
+    <string name="view_picture">View Picture</string>
+    <string name="type">Type:</string>
+    <string name="please_specify">Please specify:</string>
+    <string name="same">Same</string>
+    <string name="split">Split</string>
+    <string name="merge">Merge</string>
+    <string name="sub_parcels">Sub-parcels:</string>
+    <string name="tap_to_select">Tap to select</string>
+    <string name="parcel_to_merge">Parcel to merge:</string>
+    <string name="parcel_operation">Parcel Operation:</string>
+    <string name="parcel_nos">Parcel Nos:</string>
+    <!--    <string name="date_amp_time"><![CDATA[Date & Time:]]></string>-->
+    <string name="date_amp_time">Visit Date &amp; Time:</string>
+    <string name="date">Visit Date:</string>
+    <string name="latitude_amp_longitude">Latitude &amp; Longitude:</string>
+    <string name="upload">Upload</string>
+    <string name="select">Select</string>
+    <string name="please_confirm_below_information" tools:ignore="ExtraTranslation">Please confirm below information before starting survey?</string>
+    <string name="property_no">Dwelling No:</string>
+    <string name="parcel_no">Parcel No:</string>
+    <string name="parcel">Parcel</string>
+    <string name="owners_list">Owners List</string>
+    <string name="enter_property_name_or_father_husband_name">Enter Dwelling #, Name or CNIC</string>
+    <string name="property_no_caption">Property Number</string>
+    <string name="owner_name_caption">Owner Name</string>
+    <string name="father_husband_name_caption">Father/Husband Name</string>
+    <string name="area_n_k_m_sf">Area\n(K-M-SF)</string>
+    <string name="area_k_m_sf">Area (K-M-SF)</string>
+    <string name="add_occupant">Add Occupant</string>
+    <string name="parcel_status">Parcel Status</string>
+    <string name="discrepancy_picture">Discrepancy Picture</string>
+    <string name="map">Map</string>
+    <string name="total_parcels">Total Parcels:</string>
+    <string name="custom_arrow"><![CDATA[->]]></string>
+    <string name="unsurveyed_parcels">Unsurveyed</string>
+    <string name="surveyed_parcels">Surveyed</string>
+    <string name="retake_picture_parcels">Retake Pictures</string>
+    <string name="revisit_parcels">Revisit Required</string>
+    <string name="locked_parcels">Locked</string>
+    <string name="location_button">Location Button</string>
+    <string name="login">Login</string>
+    <string name="cnic">CNIC</string>
+    <string name="to_your_account">to your account</string>
+    <string name="login_caption">Login</string>
+    <string name="this_application_is_not_intended_for_general_public_access">This application is not intended for General Public access.</string>
+    <string name="property_number">Dwelling Number:</string>
+    <string name="kanal">Kanal:</string>
+    <string name="marla">Marla:</string>
+    <string name="square_feet">Square Feet:</string>
+    <string name="calculated_area">Calculated Area:</string>
+    <string name="survey_status">Survey Status:</string>
+    <string name="respondent_status">Respondent Status at Property:</string>
+    <string name="property_status">Property Status:</string>
+    <string name="owner_details">Respondent Details</string>
+    <string name="owner_father_husband_name">Respondent Father/Husband Name:</string>
+    <string name="owner_gender">Respondent Gender:</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string name="transgender">Transgender</string>
+    <string name="please_specify_status">Please specify status:</string>
+    <string name="ownership_status">Ownership Status</string>
+    <string name="ownership_type">Ownership type:</string>
+    <string name="inherited">Inherited</string>
+    <string name="buyer">Buyer</string>
+    <string name="other">Other</string>
+    <string name="possession_occupancy_details">Possession / Occupancy Details</string>
+    <string name="add_floor">Add Floor</string>
+    <string name="occupancy_status">Occupancy Status</string>
+    <string name="self_occupancy">Self Occupancy</string>
+    <string name="multiple_occupancy">Multiple Occupancy</string>
+    <string name="update">Update</string>
+    <string name="sub_parcel">Sub-Parcel:</string>
+    <string name="sub_parcel_list">Sub-Parcel List</string>
+    <string name="parcel_id_dynamic">Parcel No: %1$s</string>
+    <string name="total_sub_parcels">Total Sub-Parcels (%1$s)</string>
+    <string name="revisit">Revisit</string>
+    <string name="forgot_password">Forgot Password</string>
+    <string name="submit">Submit</string>
+    <string name="otp">OTP</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="otp_verification">OTP Verification</string>
+    <string name="update_password">Update Password</string>
+    <string name="send">Send</string>
+    <string name="verify">Verify</string>
+    <string name="password_changed">Password Changed!</string>
+    <string name="password_changed_successfully">Your password has been changed successfully.</string>
+    <string name="continued">Continue</string>
+    <string name="incorrect_password">Password should have at least one uppercase letter, one lowercase letter, and one number.</string>
+    <string name="_1_4">1/4</string>
+    <string name="_2_4">2/4</string>
+    <string name="_3_4">3/4</string>
+    <string name="_2_3">2/3</string>
+    <string name="view_list_of_owners">List of owners</string>
+    <string name="download_saved_data">Download Saved Data</string>
+    <string name="resend_otp">Resend OTP</string>
+
+    <string name="occupant_details">Occupant Details</string>
+    <string name="occupant_name">Occupant Name:</string>
+    <string name="occupant_father_husband_name">Occupant Father/Husband Name:</string>
+    <string name="occupant_gender">Occupant Gender:</string>
+
+    <string name="respondent_details">Respondent Details</string>
+    <string name="respondent_name">Respondent Name:</string>
+    <string name="respondent_father_husband_name">Respondent Father/Husband Name:</string>
+    <string name="respondent_gender">Respondent Gender:</string>
+    <string name="respondent_cnic">Respondent CNIC:</string>
+    <string name="respondent_mobile">Respondent Mobile:</string>
+    <string name="respondent_relation_status">Respondent Status:</string>
+    <string name="theme">theme</string>
+
+</resources>

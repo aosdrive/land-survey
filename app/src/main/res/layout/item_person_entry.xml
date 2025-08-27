@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_margin="8dp"
+    android:layout_height="wrap_content"
+    card_view:cardCornerRadius="12dp"
+    card_view:cardElevation="4dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_margin="12dp"
+        android:padding="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/etFirstName"
+            android:hint="First Name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/spinnerRelationtext"
+            android:text="Relation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <Spinner
+            android:id="@+id/spinnerRelation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:textColor="#000000"
+            android:layout_marginTop="4dp" />
+
+
+        <EditText
+            android:id="@+id/etLastName"
+            android:hint="Last Name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etNic"
+            android:hint="CNIC"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etMobile"
+            android:hint="Mobile Number"
+            android:inputType="phone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+
+
+        <EditText
+            android:id="@+id/etReligion"
+            android:hint="Solar"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/OwnershipType"
+            android:text="Ownership Type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+        <Spinner
+            android:id="@+id/spinnerOwnership"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:textColor="#000000"
+            android:layout_marginTop="4dp" />
+
+
+        <TextView
+            android:text="Select Gender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <Spinner
+            android:id="@+id/spinnerGender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:textColor="#000000"
+            android:layout_marginTop="4dp" />
+
+
+        <EditText
+            android:id="@+id/etPersonArea"
+            android:hint="Person Area"
+            android:inputType="numberDecimal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/etGrowerCode"
+            android:hint="Grower Code"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <EditText
+            android:id="@+id/etExtra1"
+            android:hint="Extra 1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            />
+
+        <EditText
+            android:id="@+id/etExtra2"
+            android:hint="Extra 2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/etMauzaId"
+            android:hint="Mauza ID"
+            android:inputType="number"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/etMauzaName"
+            android:hint="Mauza Name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+      <EditText
+            android:id="@+id/etPersonId"
+            android:hint="personId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/etSurveyId"
+            android:hint="surveyId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+
+        <Button
+            android:id="@+id/btnRemove"
+            android:text="Remove"
+            android:backgroundTint="@android:color/holo_red_dark"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

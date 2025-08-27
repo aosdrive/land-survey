@@ -1,0 +1,778 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <TextView
+        android:id="@+id/tv_details"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/colorPrimary"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text=""
+        android:textColor="@color/white"
+        android:textSize="@dimen/header_title_size"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_header"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="9"
+        android:background="@color/listitem_text_activated"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/property_details"
+        android:textColor="@color/black"
+        android:textSize="@dimen/margin_14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_details" />
+
+    <TextView
+        android:id="@+id/tv_page_number"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:minHeight="50dp"
+        android:padding="10dp"
+        android:text="@string/_2_5"
+        android:textColor="@color/black"
+        android:textSize="@dimen/text_size_small"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_header"
+        app:layout_constraintEnd_toEndOf="@+id/tv_header"
+        app:layout_constraintTop_toTopOf="@+id/tv_header" />
+
+    <LinearLayout
+        android:id="@+id/layout_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/margin_50dp"
+        android:layout_marginHorizontal="@dimen/margin_3dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sv_property_demarcation_form">
+
+        <Button
+            android:id="@+id/btn_previous"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableStart="@drawable/baseline_arrow_back_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_15dp"
+            android:paddingEnd="@dimen/margin_30dp"
+            android:text="@string/previous"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_next"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/margin_2dp"
+            android:layout_weight="1"
+            android:background="@drawable/register_btn"
+            android:drawableEnd="@drawable/baseline_arrow_forward_ios_24"
+            android:drawableTint="@color/white"
+            android:gravity="center"
+            android:minHeight="@dimen/margin_50dp"
+            android:paddingStart="@dimen/margin_30dp"
+            android:paddingEnd="@dimen/margin_15dp"
+            android:text="@string/next"
+            android:textColor="#fff"
+            android:textSize="@dimen/text_size_xxlarge"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/sv_property_demarcation_form"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/layout_bottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_header">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_owner_1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:drawable/dialog_holo_light_frame"
+                    android:orientation="vertical">
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/album_card_form_bg"
+                        android:padding="@dimen/margin_8dp">
+
+                        <TableRow>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/property_number"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="5dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/edittext_height"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_property_number"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="0123456789qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM()/ .-_"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="textCapWords"
+                                    android:maxLength="15"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="5dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:gravity="start"
+                                    android:text="@string/asterisk"
+                                    android:textColor="@color/textCompulsoryColor"
+                                    android:textSize="@dimen/edittext_title_size" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/kanal"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_title_size" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:gravity="start"
+                                    android:text="@string/asterisk"
+                                    android:textColor="@color/textCompulsoryColor"
+                                    android:textSize="@dimen/edittext_title_size" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/marla"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_title_size" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:gravity="start"
+                                    android:text="@string/asterisk"
+                                    android:textColor="@color/textCompulsoryColor"
+                                    android:textSize="@dimen/edittext_title_size" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="@string/square_feet"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_title_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="5dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/edittext_height"
+                                android:layout_weight="1"
+                                android:orientation="horizontal">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_area_kanal"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/textfield_area_bg"
+                                    android:digits="0123456789"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:gravity="center_vertical"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number"
+                                    android:maxLength="2"
+                                    android:padding="7dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_area_marla"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_marginHorizontal="5dp"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/textfield_area_bg"
+                                    android:digits="0123456789"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:gravity="center_vertical"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number"
+                                    android:maxLength="2"
+                                    android:padding="7dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_area_sfeet"
+                                    android:layout_width="0dp"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_weight="1"
+                                    android:background="@drawable/textfield_area_bg"
+                                    android:digits="0123456789"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:gravity="center_vertical"
+                                    android:imeOptions="actionDone"
+                                    android:inputType="number"
+                                    android:maxLength="3"
+                                    android:padding="7dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <TableRow
+                            android:layout_margin="5dp"
+                            android:layout_marginBottom="@dimen/margin_20dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:id="@+id/tv_calculated_area"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/calculated_area"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/survey_status"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginVertical="@dimen/margin_4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg"
+                                android:padding="@dimen/margin_4dp">
+
+                                <Spinner
+                                    android:id="@+id/spn_category"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:focusable="false"
+                                    android:gravity="center_vertical"
+                                    android:padding="2dp"
+                                    android:spinnerMode="dropdown"
+                                    android:tag="category"
+                                    android:textSize="25sp" />
+
+                            </LinearLayout>
+
+                        </TableRow>
+                    </TableLayout>
+
+                </androidx.appcompat.widget.LinearLayoutCompat>
+
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_owner_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/cv_owner_1">
+
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:drawable/dialog_holo_light_frame"
+                    android:orientation="vertical">
+
+                    <TableLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/album_card_form_bg"
+                        android:padding="@dimen/margin_8dp">
+
+                        <TextView
+                            android:id="@+id/tv_details_caption"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_marginTop="@dimen/margin_5dp"
+                            android:gravity="center"
+                            android:text="@string/respondent_details"
+                            android:textAllCaps="true"
+                            android:textColor="@color/Black"
+                            android:textSize="@dimen/edittext_title_size"
+                            android:textStyle="bold" />
+
+                        <TableRow android:layout_marginTop="@dimen/margin_5dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:id="@+id/tv_name_caption"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/respondent_name"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="5dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="@dimen/edittext_height"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_name"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM ,.-_"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="textCapWords"
+                                    android:maxLength="200"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:id="@+id/tv_father_name_caption"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/respondent_father_husband_name"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="@dimen/edittext_height"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_father_husband_name"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="textCapWords"
+                                    android:maxLength="200"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:id="@+id/tv_gender_caption"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/respondent_gender"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginVertical="@dimen/margin_4dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg"
+                                android:padding="@dimen/margin_4dp">
+
+                                <RadioGroup
+                                    android:id="@+id/rg_gender"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content">
+
+                                    <RadioButton
+                                        android:id="@+id/rb_gender_male"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="@dimen/margin_25dp"
+                                        android:text="@string/male"
+                                        android:textSize="@dimen/margin_13sp" />
+
+                                    <RadioButton
+                                        android:id="@+id/rb_gender_female"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="@dimen/margin_25dp"
+                                        android:text="@string/female"
+                                        android:textSize="@dimen/margin_13sp" />
+
+                                    <RadioButton
+                                        android:id="@+id/rg_gender_transgender"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="@dimen/margin_25dp"
+                                        android:text="@string/transgender"
+                                        android:textSize="@dimen/margin_13sp" />
+                                </RadioGroup>
+                            </LinearLayout>
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/respondent_cnic"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/edittext_height"
+                                android:layout_weight="1.5"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_cnic_no"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="@dimen/margin_5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="0123456789"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number"
+                                    android:maxLength="13"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/respondent_mobile"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/edittext_height"
+                                android:layout_weight="1.5"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_mobile_no"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="0123456789"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:imeOptions="actionNext"
+                                    android:inputType="number"
+                                    android:maxLength="11"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/respondent_relation_status"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                        </TableRow>
+
+                        <TableRow android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="@dimen/edittext_height"
+                                android:layout_marginStart="@dimen/margin_5dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <Spinner
+                                    android:id="@+id/spn_respondent_relation_status"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:entries="@array/other_respondent_relation"
+                                    android:focusable="false"
+                                    android:padding="2dp"
+                                    android:spinnerMode="dropdown"
+                                    android:tag="category"
+                                    android:textSize="25sp" />
+                            </LinearLayout>
+                        </TableRow>
+
+                        <!--Other Mobile Relation-->
+                        <TableRow
+                            android:id="@+id/tr_other_respondent_relation_caption"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:text="@string/asterisk"
+                                android:textColor="@color/textCompulsoryColor"
+                                android:textSize="@dimen/edittext_title_size" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/please_specify_status"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/edittext_title_size" />
+                        </TableRow>
+
+                        <TableRow
+                            android:id="@+id/tr_other_respondent_relation"
+                            android:layout_marginTop="5dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@drawable/textfield_area_bg">
+
+                                <androidx.appcompat.widget.AppCompatEditText
+                                    android:id="@+id/et_other_respondent_relation"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:layout_margin="5dp"
+                                    android:background="@android:color/transparent"
+                                    android:digits="qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM .-_"
+                                    android:focusable="true"
+                                    android:focusableInTouchMode="true"
+                                    android:inputType="textCapWords"
+                                    android:maxLength="100"
+                                    android:minHeight="@dimen/margin_35dp"
+                                    android:padding="2dp"
+                                    android:textColor="@color/Black"
+                                    android:textSize="@dimen/edittext_input_size" />
+                            </LinearLayout>
+                        </TableRow>
+
+                    </TableLayout>
+
+                </androidx.appcompat.widget.LinearLayoutCompat>
+
+            </androidx.cardview.widget.CardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nah_graph"
+    app:startDestination="@id/fragmentNAHSubParcelList">
+    <fragment
+        android:id="@+id/fragmentNAHSubParcelList"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.not_at_home.FragmentNAHSubParcelList"
+        android:label="Fragment SubParcel List"
+        tools:layout="@layout/fragment_nah_sub_parcel_list">
+        <action
+            android:id="@+id/action_fragmentNAHSubParcelList_to_fragmentNAHPropertyDetails"
+            app:destination="@id/fragmentNAHPropertyDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentNAHPropertyDetails"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.not_at_home.FragmentNAHPropertyDetails"
+        android:label="Property Details"
+        tools:layout="@layout/fragment_nah_property_details">
+        <action
+            android:id="@+id/action_fragmentFormNAHPropertyDetails_to_fragmentNAHRemarks"
+            app:destination="@id/fragmentNAHRemarks" />
+        <action
+            android:id="@+id/action_fragmentNAHPropertyDetails_to_fragmentNAHOccupancyDetails"
+            app:destination="@id/fragmentNAHOccupancyDetails" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentNAHOwnershipStatus"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.not_at_home.FragmentNAHOwnershipStatus"
+        android:label="Ownership Status"
+        tools:layout="@layout/fragment_nah_ownership_status"/>
+    <fragment
+        android:id="@+id/fragmentNAHOccupancyDetails"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.not_at_home.FragmentNAHOccupancyDetails"
+        android:label="Occupancy Details"
+        tools:layout="@layout/fragment_nah_occupancy_details">
+        <action
+            android:id="@+id/action_fragmentNAHOccupancyDetails_to_fragmentNAHRemarks"
+            app:destination="@id/fragmentNAHRemarks" />
+    </fragment>
+    <fragment
+        android:id="@+id/fragmentNAHRemarks"
+        android:name="pk.gop.pulse.katchiAbadi.fragments.not_at_home.FragmentNAHRemarks"
+        android:label="Remarks"
+        tools:layout="@layout/fragment_nah_remarks">
+        <action
+            android:id="@+id/action_fragmentNAHRemarks_to_fragmentNAHSubParcelList"
+            app:destination="@id/fragmentNAHSubParcelList"
+            app:popUpTo="@id/fragmentNAHSubParcelList"
+            app:popUpToInclusive="true" />
+    </fragment>
+</navigation>

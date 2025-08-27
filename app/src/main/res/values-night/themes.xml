@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base Dark Theme - Override the light theme for night mode -->
+    <style name="Theme.Survey" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/dark_primary</item>
+        <item name="colorPrimaryDark">@color/dark_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/dark_primary_variant</item>
+        <item name="colorSecondary">@color/dark_secondary</item>
+        <item name="colorSecondaryVariant">@color/dark_secondary_variant</item>
+
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/dark_on_surface</item>
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="colorOnBackground">@color/dark_on_background</item>
+
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/dark_text_primary</item>
+        <item name="android:textColorSecondary">@color/dark_text_secondary</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Control colors -->
+        <item name="colorControlNormal">@color/dark_control</item>
+        <item name="colorControlActivated">@color/dark_control_activated</item>
+        <item name="colorControlHighlight">@color/dark_control_highlight</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/dark_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Action bar -->
+        <item name="actionBarStyle">@style/DarkActionBar</item>
+        <item name="toolbarStyle">@style/DarkToolbar</item>
+
+        <!-- Icons -->
+        <item name="colorTertiary">@color/dark_icon_color</item>
+
+        <!-- Menu items -->
+        <item name="actionMenuTextColor">@color/white</item>
+        <item name="android:textColorSecondaryInverse">@color/white</item>
+
+        <item name="android:spinnerDropDownItemStyle">@style/SpinnerDropdownText</item>
+        <item name="android:spinnerItemStyle">@style/SpinnerSelectedText</item>
+        <item name="android:popupBackground">@color/white</item>
+
+    </style>
+
+
+    <!-- Style for the spinner selected item -->
+    <style name="SpinnerSelectedText" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textColor">@color/spinner_selected_color</item>
+    </style>
+
+    <!-- Style for dropdown items -->
+    <style name="SpinnerDropdownText" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textColor">@color/spinner_selected_color</item>
+    </style>
+
+
+    <!-- Dark Action Bar Style -->
+    <style name="DarkActionBar" parent="Widget.MaterialComponents.ActionBar.Solid">
+        <item name="android:background">@color/dark_primary</item>
+        <item name="titleTextStyle">@style/DarkActionBar.TitleText</item>
+        <item name="subtitleTextStyle">@style/DarkActionBar.SubtitleText</item>
+        <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
+    </style>
+
+    <style name="DarkActionBar.TitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="DarkActionBar.SubtitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Subtitle">
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <!-- Dark Toolbar Style -->
+    <style name="DarkToolbar" parent="Widget.MaterialComponents.Toolbar">
+        <item name="android:background">@color/dark_primary</item>
+        <item name="titleTextColor">@color/white</item>
+        <item name="subtitleTextColor">@color/white</item>
+        <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
+    </style>
+
+</resources>
