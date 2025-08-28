@@ -29,7 +29,14 @@ interface SurveyPersonDao {
     @Query("SELECT * FROM survey_persons")
     suspend fun getAllPersons(): List<SurveyPersonEntity>
 
-
+    @Query("""
+        SELECT growerCode 
+        FROM survey_persons 
+        WHERE surveyId IN (
+            SELECT pkId FROM new_surveys WHERE parcelId = :parcelId
+        )
+    """)
+    suspend fun getGrowerCodesForParcel(parcelId: Long): List<String>
 
 
 }

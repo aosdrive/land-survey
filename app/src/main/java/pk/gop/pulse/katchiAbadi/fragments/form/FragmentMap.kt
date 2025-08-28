@@ -104,6 +104,7 @@ import pk.gop.pulse.katchiAbadi.common.TileManager
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.response.SubParcelStatus
+import pk.gop.pulse.katchiAbadi.data.repository.NewSurveyRepositoryImpl
 import pk.gop.pulse.katchiAbadi.databinding.FragmentMapBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelEntity
@@ -121,7 +122,8 @@ import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class FragmentMap : Fragment() {
-
+    @Inject
+    lateinit var newSurveyRepository: NewSurveyRepositoryImpl
     private lateinit var refreshReceiver: BroadcastReceiver
 
     private val viewModel: SharedFormViewModel by activityViewModels()
@@ -884,6 +886,25 @@ class FragmentMap : Fragment() {
 
         surveyLabelGraphics.graphics.add(labelGraphic)
         surveyParcelsGraphics.graphics.add(parcelGraphic)
+
+
+        // 🔑 Now fetch grower codes asynchronously and update label text
+        if (parcel.surveyStatusCode == 2) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val codes = newSurveyRepository.getGrowerCodesForParcel(parcel.id)
+                val growerText = if (codes.isNotEmpty()) {
+                    "${codes.joinToString(", ")}"
+                } else {
+                    "N/A"
+                }
+                withContext(Dispatchers.Main) {
+                    (labelGraphic.symbol as? TextSymbol)?.text =
+                        "${parcel.parcelNo}\n${parcel.khewatInfo}\n$growerText"
+                    surveyLabelGraphics.graphics.remove(labelGraphic)
+                    surveyLabelGraphics.graphics.add(labelGraphic) // force refresh
+                }
+            }
+        }
     }
 
     private fun restoreOriginalGraphics() {
@@ -1408,7 +1429,11 @@ class FragmentMap : Fragment() {
 
         tvParcelNo.text = attr["parcel_no"].toString()
         tvParcelNoUni.text = attr["khewatInfo"].toString()
-        tvParcelArea.text = "${attr["area"]} Sq. Ft."
+//        tvParcelArea.text = "${attr["area"]} Sq. Ft."
+        val areaSqFt = attr["area"].toString().toDoubleOrNull() ?: 0.0
+        val areaAcre = areaSqFt / 43560.0
+        tvParcelArea.text = String.format(Locale.US, "%.2f Acres", areaAcre)
+
 
         // Ensure MapView has a valid map
         if (binding.parcelMapview.map == null) {

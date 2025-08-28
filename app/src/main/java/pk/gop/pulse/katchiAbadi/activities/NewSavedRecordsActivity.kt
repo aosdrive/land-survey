@@ -24,6 +24,7 @@ import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySavedRecordsBinding
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.presentation.survey_list.NewSurveyViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 
 @AndroidEntryPoint
 class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClickListener {
@@ -81,23 +82,17 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
 
                     is Resource.Success -> {
                         Utility.dismissProgressAlertDialog()
-                        Toast.makeText(
-                            this@NewSavedRecordsActivity,
-                            "Deleted successfully",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
+                        ToastUtil.showShort(this@NewSavedRecordsActivity, "Deleted successfully")
                         // Refresh the map if it exists
                         refreshMapIfVisible()
                     }
 
                     is Resource.Error -> {
                         Utility.dismissProgressAlertDialog()
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             this@NewSavedRecordsActivity,
-                            result.message ?: "Error deleting",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                            result.message ?: "Error deleting"
+                        )
                     }
 
                     else -> {}
@@ -115,11 +110,7 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
 
                     is Resource.Success -> {
                         Utility.dismissProgressAlertDialog()
-                        Toast.makeText(
-                            this@NewSavedRecordsActivity,
-                            "Uploaded successfully",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        ToastUtil.showShort(this@NewSavedRecordsActivity, "Uploaded successfully")
                         if (uploadType == Constants.UPLOAD_ALL) {
                             uploadNextSurvey()
                         }
@@ -127,11 +118,10 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
 
                     is Resource.Error -> {
                         Utility.dismissProgressAlertDialog()
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             this@NewSavedRecordsActivity,
-                            result.message ?: "Upload failed",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                            result.message ?: "Upload failed"
+                        )
                         Log.e("Error", result.message ?: "Unknown error")
                     }
 
@@ -159,7 +149,7 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
     }
 
     override fun onItemClicked(survey: NewSurveyNewEntity) {
-        logSurveyData(survey)
+//        logSurveyData(survey)
         val intent = Intent(this, ViewRecordActivity::class.java).apply {
             putExtra("parcelNo", survey.parcelNo)
             putExtra("uniqueId", survey.pkId)
@@ -210,33 +200,29 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
                 viewModel.uploadData(this@NewSavedRecordsActivity, survey)
             } else {
                 Utility.dismissProgressAlertDialog()
-                Toast.makeText(
-                    this@NewSavedRecordsActivity,
-                    "All records uploaded",
-                    Toast.LENGTH_SHORT
-                ).show()
+                ToastUtil.showShort(this@NewSavedRecordsActivity, "All records Uploaded")
             }
         }
     }
 
-    private fun logSurveyData(survey: NewSurveyNewEntity) {
-        Log.d("SurveyData", "=== SURVEY RECORD DATA ===")
-        Log.d("SurveyData", "Primary Key ID: ${survey.pkId}")
-        Log.d("SurveyData", "Property Type: ${survey.propertyType}")
-        Log.d("SurveyData", "Ownership Status: ${survey.ownershipStatus}")
-        Log.d("SurveyData", "Variety: ${survey.variety}")
-        Log.d("SurveyData", "Crop Type: ${survey.cropType}")
-        Log.d("SurveyData", "Crop: ${survey.crop}")
-        Log.d("SurveyData", "Year: ${survey.year}")
-        Log.d("SurveyData", "Area: ${survey.area}")
-        Log.d("SurveyData", "Is Geometry Correct: ${survey.isGeometryCorrect}")
-        Log.d("SurveyData", "Remarks: ${survey.remarks}")
-        Log.d("SurveyData", "Mauza ID: ${survey.mauzaId}")
-        Log.d("SurveyData", "Area Name: ${survey.areaName}")
-        Log.d("SurveyData", "Parcel ID: ${survey.parcelId}")
-        Log.d("SurveyData", "Parcel No: ${survey.parcelNo}")
-        Log.d("SurveyData", "Sub Parcel No: ${survey.subParcelNo}")
-        Log.d("SurveyData", "Status Bit: ${survey.statusBit}")
-        Log.d("SurveyData", "=== END SURVEY DATA ===")
-    }
+//    private fun logSurveyData(survey: NewSurveyNewEntity) {
+//        Log.d("SurveyData", "=== SURVEY RECORD DATA ===")
+//        Log.d("SurveyData", "Primary Key ID: ${survey.pkId}")
+//        Log.d("SurveyData", "Property Type: ${survey.propertyType}")
+//        Log.d("SurveyData", "Ownership Status: ${survey.ownershipStatus}")
+//        Log.d("SurveyData", "Variety: ${survey.variety}")
+//        Log.d("SurveyData", "Crop Type: ${survey.cropType}")
+//        Log.d("SurveyData", "Crop: ${survey.crop}")
+//        Log.d("SurveyData", "Year: ${survey.year}")
+//        Log.d("SurveyData", "Area: ${survey.area}")
+//        Log.d("SurveyData", "Is Geometry Correct: ${survey.isGeometryCorrect}")
+//        Log.d("SurveyData", "Remarks: ${survey.remarks}")
+//        Log.d("SurveyData", "Mauza ID: ${survey.mauzaId}")
+//        Log.d("SurveyData", "Area Name: ${survey.areaName}")
+//        Log.d("SurveyData", "Parcel ID: ${survey.parcelId}")
+//        Log.d("SurveyData", "Parcel No: ${survey.parcelNo}")
+//        Log.d("SurveyData", "Sub Parcel No: ${survey.subParcelNo}")
+//        Log.d("SurveyData", "Status Bit: ${survey.statusBit}")
+//        Log.d("SurveyData", "=== END SURVEY DATA ===")
+//    }
 }

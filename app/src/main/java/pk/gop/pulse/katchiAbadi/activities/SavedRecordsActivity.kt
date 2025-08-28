@@ -29,6 +29,7 @@ import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySavedRecordsBinding
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyMergeDetails
 import pk.gop.pulse.katchiAbadi.presentation.saved.SavedViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -91,11 +92,10 @@ class SavedRecordsActivity : AppCompatActivity(),
 
                     is Resource.Success -> {
                         Utility.dismissProgressAlertDialog()
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             context,
-                            "Record Deleted",
-                            Toast.LENGTH_LONG
-                        ).show()
+                            "Record Deleted"
+                        )
                     }
 
                     is Resource.Error -> {
@@ -122,11 +122,10 @@ class SavedRecordsActivity : AppCompatActivity(),
 
                         if (uploadType.equals(Constants.UPLOAD_SINGLE_RECORD, ignoreCase = true)) {
                             Utility.dismissProgressAlertDialog()
-                            Toast.makeText(
+                            ToastUtil.showShort(
                                 context,
-                                "Data Uploaded Successfully",
-                                Toast.LENGTH_LONG
-                            ).show()
+                                "Data Uploaded Successfully"
+                            )
                         } else {
                             postAllSavedData()
                         }
@@ -157,14 +156,16 @@ class SavedRecordsActivity : AppCompatActivity(),
                                 }
 
                                 // Session has expired
-                                Toast.makeText(
+                                ToastUtil.showShort(
                                     this@SavedRecordsActivity,
-                                    "Session expired",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                    "Session expired"
+                                )
 
                             } else {
-                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                ToastUtil.showShort(
+                                    context,
+                                    msg
+                                )
                             }
                         }
 
@@ -283,7 +284,10 @@ class SavedRecordsActivity : AppCompatActivity(),
                                 16f // Change the size according to your preference
                             negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
                         } else {
-                            Toast.makeText(context, "No record found.", Toast.LENGTH_SHORT).show()
+                            ToastUtil.showShort(
+                                context,
+                                "No record found."
+                            )
                         }
                     }
                 } else {

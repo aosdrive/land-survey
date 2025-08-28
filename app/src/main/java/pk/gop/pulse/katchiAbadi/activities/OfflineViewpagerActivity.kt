@@ -11,6 +11,7 @@ import pk.gop.pulse.katchiAbadi.adapter.ViewPagerAdapter
 import pk.gop.pulse.katchiAbadi.databinding.ActivityViewpagerBinding
 import pk.gop.pulse.katchiAbadi.common.ImageDetails
 import dagger.hilt.android.AndroidEntryPoint
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.util.*
 
 @AndroidEntryPoint
@@ -34,7 +35,8 @@ class OfflineViewpagerActivity : AppCompatActivity(), ViewPager.OnPageChangeList
         try {
             val bundle = intent.getBundleExtra("bundle_data")
             if (bundle != null) {
-                imagePathList = (bundle.getSerializable("imagePathList") as ArrayList<ImageDetails>?)!!
+                imagePathList =
+                    (bundle.getSerializable("imagePathList") as ArrayList<ImageDetails>?)!!
                 adapter = ViewPagerAdapter(this, imagePathList)
                 binding.viewPager.adapter = adapter
             }
@@ -52,11 +54,10 @@ class OfflineViewpagerActivity : AppCompatActivity(), ViewPager.OnPageChangeList
         binding.fabLeft.setOnClickListener {
             val current = binding.viewPager.currentItem
             if (current == 0) {
-                Toast.makeText(
+                ToastUtil.showShort(
                     applicationContext,
-                    "Already Viewing First Image",
-                    Toast.LENGTH_SHORT
-                ).show()
+                    "Already Viewing First Image"
+                )
             } else {
                 binding.viewPager.currentItem = current - 1
             }
@@ -65,8 +66,10 @@ class OfflineViewpagerActivity : AppCompatActivity(), ViewPager.OnPageChangeList
         binding.fabRight.setOnClickListener {
             val current = binding.viewPager.currentItem
             if (current == imagePathList.size - 1) {
-                Toast.makeText(applicationContext, "Already Viewing Last Image", Toast.LENGTH_SHORT)
-                    .show()
+                ToastUtil.showShort(
+                    applicationContext,
+                    "Already Viewing Last Image"
+                )
             } else {
                 binding.viewPager.currentItem = current + 1
             }

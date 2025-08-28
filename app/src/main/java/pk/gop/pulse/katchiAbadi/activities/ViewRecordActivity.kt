@@ -26,6 +26,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.SurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.presentation.saved.SavedViewModel
 import pk.gop.pulse.katchiAbadi.presentation.survey_list.NewSurveyViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 
 @AndroidEntryPoint
 class ViewRecordActivity : AppCompatActivity(), ViewRecordClickListener {
@@ -97,8 +98,10 @@ class ViewRecordActivity : AppCompatActivity(), ViewRecordClickListener {
                     binding.noRecordText.text = "No record found"
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Error loading data: ${e.message}", Toast.LENGTH_LONG)
-                    .show()
+                ToastUtil.showShort(
+                    context,
+                    "Error loading data: ${e.message}"
+                )
             }
         }
     }
@@ -151,8 +154,10 @@ class ViewRecordActivity : AppCompatActivity(), ViewRecordClickListener {
                 binding.recyclerView.visibility = View.VISIBLE
                 binding.noRecordText.visibility = View.GONE
             } catch (e: Exception) {
-                Toast.makeText(context, "Error loading persons: ${e.message}", Toast.LENGTH_LONG)
-                    .show()
+                ToastUtil.showShort(
+                    context,
+                    "Error loading persons: ${e.message}"
+                )
             }
         }
     }
@@ -225,7 +230,10 @@ class ViewRecordActivity : AppCompatActivity(), ViewRecordClickListener {
                 startActivity(intent)
             } catch (e: Exception) {
                 e.printStackTrace()
-                Toast.makeText(context, "Error while showing images", Toast.LENGTH_SHORT).show()
+                ToastUtil.showShort(
+                    context,
+                    "Error while showing images"
+                )
             }
         } else {
             Utility.dialog(context, "Images cannot be viewed.", "Alert!")

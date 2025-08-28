@@ -3,7 +3,6 @@ package pk.gop.pulse.katchiAbadi.activities
 
 import OwnerSelectionDialog
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -26,7 +25,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -45,8 +43,8 @@ import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyNewBinding
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
-import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
@@ -159,7 +157,7 @@ class SurveyActivity : AppCompatActivity() {
             if (granted) {
                 captureImage()
             } else {
-                Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show()
+                ToastUtil.showShort(this, "Camera permission is required")
             }
         }
 
@@ -277,8 +275,7 @@ class SurveyActivity : AppCompatActivity() {
                 val customVariety = input.text.toString()
                 if (customVariety.isNotBlank()) {
                     selectedVariety = customVariety
-                    Toast.makeText(this, "Selected Variety: $customVariety", Toast.LENGTH_SHORT)
-                        .show()
+                    ToastUtil.showShort(this, "Selected Variety: $customVariety")
                 } else {
                     // If empty, set to "Other" and keep spinner on "Other"
                     selectedVariety = "Other"
@@ -288,7 +285,7 @@ class SurveyActivity : AppCompatActivity() {
                     val otherPosition = varietyAdapter.getPosition("Other")
                     binding.etVariety.setSelection(otherPosition)
                     isSettingSpinnerProgrammatically = false
-                    Toast.makeText(this, "Selected Variety: Other", Toast.LENGTH_SHORT).show()
+                    ToastUtil.showShort(this, "Selected Variety: Other")
                 }
                 dialog.dismiss()
             }
@@ -300,7 +297,7 @@ class SurveyActivity : AppCompatActivity() {
                 val otherPosition = varietyAdapter.getPosition("Other")
                 binding.etVariety.setSelection(otherPosition)
                 isSettingSpinnerProgrammatically = false
-                Toast.makeText(this, "Selected Variety: Other", Toast.LENGTH_SHORT).show()
+                ToastUtil.showShort(this, "Selected Variety: Other")
                 dialog.dismiss()
             }
             .show()
@@ -329,7 +326,7 @@ class SurveyActivity : AppCompatActivity() {
                     val otherPosition = cropAdapter.getPosition("Other")
                     binding.etCropType.setSelection(otherPosition)
                     isSettingSpinnerProgrammatically = false
-                    Toast.makeText(this, "Selected Crop Type: Other", Toast.LENGTH_SHORT).show()
+                    ToastUtil.showShort(this, "Selected Crop Type: Other")
                 }
                 dialog.dismiss()
             }
@@ -361,7 +358,7 @@ class SurveyActivity : AppCompatActivity() {
                 }
 
                 if (owners.isEmpty()) {
-                    Toast.makeText(context, "No owner data found.", Toast.LENGTH_SHORT).show()
+                    ToastUtil.showShort(context, "No owner data found.")
                 } else {
                     OwnerSelectionDialog(context, owners) { selectedPerson ->
                         personEntryHelper.addPersonView(selectedPerson, editable = true)
@@ -488,7 +485,7 @@ class SurveyActivity : AppCompatActivity() {
             cameraLauncher.launch(tempImageUri!!)
         } catch (e: Exception) {
             Log.e("Camera", "Error setting up camera: ${e.message}", e)
-            Toast.makeText(this, "Error setting up camera: ${e.message}", Toast.LENGTH_SHORT).show()
+            ToastUtil.showShort(context, "Error setting up camera: ${e.message}")
         }
     }
 
@@ -507,7 +504,7 @@ class SurveyActivity : AppCompatActivity() {
             )
 
             if (!success) {
-                Toast.makeText(this, "Photo capture was cancelled", Toast.LENGTH_SHORT).show()
+                ToastUtil.showShort(context, "Photo capture was cancelled")
                 return@registerForActivityResult
             }
 
@@ -545,8 +542,7 @@ class SurveyActivity : AppCompatActivity() {
 
                     if (finalFile == null) {
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Failed to get photo", Toast.LENGTH_SHORT)
-                                .show()
+                            ToastUtil.showShort(context, "Failed to get photo")
                         }
                         return@launch
                     }
@@ -560,13 +556,12 @@ class SurveyActivity : AppCompatActivity() {
                         viewModel.addImage(image)
                         database.imageDao().insertImage(image)
                         imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
-                        Toast.makeText(context, "Photo added successfully", Toast.LENGTH_SHORT)
-                            .show()
+                        ToastUtil.showShort(context, "Photo added successfully")
                     }
                 } catch (e: Exception) {
                     Log.e("Camera", "Error handling image: ${e.message}", e)
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        ToastUtil.showShort(context, "Error: ${e.message}")
                     }
                 }
             }
@@ -711,8 +706,7 @@ class SurveyActivity : AppCompatActivity() {
 
 
                 }
-
-                Toast.makeText(context, "Survey saved locally", Toast.LENGTH_SHORT).show()
+                ToastUtil.showShort(context, "Survey saved locally")
                 finish()
             }
         }
@@ -722,7 +716,7 @@ class SurveyActivity : AppCompatActivity() {
         val mauzaName = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
         val areaName =
             sharedPreferences.getString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, "")
-        Toast.makeText(context, "MauzaID: $mauzaName ($areaName)", Toast.LENGTH_SHORT).show()
+        ToastUtil.showShort(context, "MauzaID: $mauzaName ($areaName)")
     }
 
 

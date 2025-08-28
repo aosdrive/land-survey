@@ -25,6 +25,7 @@ import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.databinding.ActivityNotAtHomeBinding
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
 import pk.gop.pulse.katchiAbadi.presentation.not_at_home.SharedNAHViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -66,14 +67,18 @@ class NotAtHomeActivity : AppCompatActivity() {
             ls = object : LocationListener {
                 override fun onProviderEnabled(provider: String) {}
                 override fun onProviderDisabled(provider: String) {}
+
                 @Deprecated("Deprecated in Java")
-                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+                override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+                }
+
                 override fun onLocationChanged(location: Location) {
 
                     if (Build.VERSION.SDK_INT < 31) {
                         if (!location.isFromMockProvider) {
                             ls?.let { lm?.removeUpdates(it) }
-                            viewModel.currentLocation = Utility.convertGpsTimeToString(location.time)
+                            viewModel.currentLocation =
+                                Utility.convertGpsTimeToString(location.time)
                         } else {
                             ls?.let { lm?.removeUpdates(it) }
                             Utility.exitApplication(
@@ -85,7 +90,8 @@ class NotAtHomeActivity : AppCompatActivity() {
                     } else {
                         if (!location.isMock) {
                             ls?.let { lm?.removeUpdates(it) }
-                            viewModel.currentLocation = Utility.convertGpsTimeToString(location.time)
+                            viewModel.currentLocation =
+                                Utility.convertGpsTimeToString(location.time)
                         } else {
                             ls?.let { lm?.removeUpdates(it) }
                             Utility.exitApplication(
@@ -110,8 +116,10 @@ class NotAtHomeActivity : AppCompatActivity() {
 //                lm?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 1f, it)
             }
         } catch (e: Exception) {
-            Toast.makeText(context, "Current Location Exception :${e.message}", Toast.LENGTH_SHORT)
-                .show()
+            ToastUtil.showShort(
+                context,
+                "Current Location Exception :${e.message}"
+            )
         }
     }
 }

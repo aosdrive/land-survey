@@ -18,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyFormBinding
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 
 @AndroidEntryPoint
 class SurveyFormActivity : AppCompatActivity() {
@@ -123,8 +124,7 @@ class SurveyFormActivity : AppCompatActivity() {
 //                lm?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 1f, it)
             }
         } catch (e: Exception) {
-            Toast.makeText(context, "Current Location Exception :${e.message}", Toast.LENGTH_SHORT)
-                .show()
+            ToastUtil.showShort(this, "Current Location Exception :${e.message}")
         }
     }
 }

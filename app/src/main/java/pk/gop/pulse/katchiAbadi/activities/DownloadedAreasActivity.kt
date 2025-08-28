@@ -25,6 +25,7 @@ import pk.gop.pulse.katchiAbadi.common.DownloadType
 import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.databinding.ActivityDownloadedAreasBinding
+import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import java.io.File
 import javax.inject.Inject
 @AndroidEntryPoint
@@ -125,7 +126,7 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
             android.R.id.home -> {
                 // Navigate back or finish the activity
 //                onBackPressedDispatcher.onBackPressed()
-                startActivity(Intent(this, MenuActivity::class.java))
+                IntentUtil.startActivity(this, MenuActivity::class.java)
                 finish()
 
                 true

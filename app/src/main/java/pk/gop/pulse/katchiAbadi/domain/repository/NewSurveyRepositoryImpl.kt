@@ -299,5 +299,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
         return personDao.getPersonsForSurvey(surveyId)
     }
 
+     suspend fun getGrowerCodesForParcel(parcelId: Long): List<String> {
+        return personDao.getGrowerCodesForParcel(parcelId)
+    }
 
 }

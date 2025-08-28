@@ -40,6 +40,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.post.Partition
 import pk.gop.pulse.katchiAbadi.data.remote.post.Pictures
 import pk.gop.pulse.katchiAbadi.data.remote.post.SurveyPost
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySettingsBinding
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -127,8 +128,10 @@ class SettingsActivity : AppCompatActivity() {
                             16f // Change the size according to your preference
                         negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
                     } else {
-
-                        Toast.makeText(context, "No record found.", Toast.LENGTH_SHORT).show()
+                        ToastUtil.showShort(
+                            context,
+                            "No record found."
+                        )
                     }
                 }
             }
@@ -451,25 +454,30 @@ class SettingsActivity : AppCompatActivity() {
 
                     withContext(Dispatchers.Main) {
                         progressDialog.dismiss()
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             context,
-                            "File saved to Downloads folder",
-                            Toast.LENGTH_LONG
-                        ).show()
+                            "File saved to Downloads folder"
+                        )
                     }
 
                 } ?: run {
                     withContext(Dispatchers.Main) {
                         progressDialog.dismiss()
-                        Toast.makeText(context, "Failed to create file", Toast.LENGTH_LONG).show()
+                        ToastUtil.showShort(
+                            context,
+                            "Failed to create file"
+                        )
                     }
                 }
 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     progressDialog.dismiss()
-                    Toast.makeText(context, "Exception Occurred:\n${e.message}", Toast.LENGTH_SHORT)
-                        .show()
+                    ToastUtil.showShort(
+                        context,
+                        "Exception Occurred:\n" +
+                                "${e.message}"
+                    )
                 }
             }
         }

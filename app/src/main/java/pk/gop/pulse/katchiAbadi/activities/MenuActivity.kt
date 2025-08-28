@@ -63,6 +63,8 @@ import pk.gop.pulse.katchiAbadi.databinding.ActivityMenuBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.presentation.menu.MenuViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
@@ -300,8 +302,10 @@ class MenuActivity : AppCompatActivity() {
                     }
 
                     if (downloadedAreas.isNotEmpty()) {
-                        val intent = Intent(this@MenuActivity, DownloadedAreasActivity::class.java)
-                        startActivity(intent)
+                        IntentUtil.startActivity(
+                            this@MenuActivity,
+                            DownloadedAreasActivity::class.java
+                        )
                     } else {
                         AlertDialog.Builder(this@MenuActivity)
                             .setTitle("Notice")
@@ -401,14 +405,10 @@ class MenuActivity : AppCompatActivity() {
 
                         llStartSurvey.setBackgroundColor(Color.LTGRAY)
                         llPropertyList.setBackgroundColor(Color.LTGRAY)
-
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             this@MenuActivity,
-                            "Parcels/TPK is not available, download the data",
-                            Toast.LENGTH_SHORT
-                        ).show()
-
-
+                            "Parcels/TPK is not available, download the data"
+                        )
                     }
                 }
             }
@@ -432,9 +432,10 @@ class MenuActivity : AppCompatActivity() {
                             startActivity(this)
                         }
                     } else {
-                        Toast.makeText(
-                            context, "No saved record available yet.", Toast.LENGTH_LONG
-                        ).show()
+                        ToastUtil.showShort(
+                            this@MenuActivity,
+                            "No saved record available yet."
+                        )
                     }
                 }
             }
@@ -476,12 +477,16 @@ class MenuActivity : AppCompatActivity() {
                                 }
 
                                 // Session has expired
-                                Toast.makeText(
-                                    this@MenuActivity, "Session expired", Toast.LENGTH_SHORT
-                                ).show()
 
+                                ToastUtil.showShort(
+                                    this@MenuActivity,
+                                    "Session expired"
+                                )
                             } else {
-                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                ToastUtil.showShort(
+                                    context,
+                                    msg
+                                )
                             }
                         }
 
@@ -511,11 +516,10 @@ class MenuActivity : AppCompatActivity() {
                         val settings = it.info
 
                         if (mauzaList.isEmpty()) {
-                            Toast.makeText(
+                            ToastUtil.showShort(
                                 context,
-                                "No Mauzas assigned to this user.",
-                                Toast.LENGTH_LONG
-                            ).show()
+                                "No Mauzas assigned to this user."
+                            )
                             return@collect
                         }
 
@@ -612,11 +616,10 @@ class MenuActivity : AppCompatActivity() {
 
                                         val areaList = areaResponse.areas
                                         if (areaList.isEmpty()) {
-                                            Toast.makeText(
+                                            ToastUtil.showShort(
                                                 this@MenuActivity,
-                                                "No areas found for this Mauza.",
-                                                Toast.LENGTH_LONG
-                                            ).show()
+                                                "No areas found for this Mauza."
+                                            )
                                             return@launch
                                         }
 
@@ -625,11 +628,10 @@ class MenuActivity : AppCompatActivity() {
 
                                     } catch (e: Exception) {
                                         Utility.dismissProgressAlertDialog()
-                                        Toast.makeText(
+                                        ToastUtil.showShort(
                                             this@MenuActivity,
-                                            "Error fetching areas: ${e.message}",
-                                            Toast.LENGTH_LONG
-                                        ).show()
+                                            "Error fetching areas: ${e.message}"
+                                        )
                                     }
                                 }
                             }
@@ -651,11 +653,10 @@ class MenuActivity : AppCompatActivity() {
 
                     is ResourceSealed.Error -> {
                         Utility.dismissProgressAlertDialog()
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             context,
-                            it.message ?: "Something went wrong",
-                            Toast.LENGTH_LONG
-                        ).show()
+                            it.message ?: "Something went wrong"
+                        )
                     }
 
                     else -> Unit
@@ -696,21 +697,18 @@ class MenuActivity : AppCompatActivity() {
                     when (result) {
                         is Resource.Success -> {
                             downloadMapNew()
-
-                            Toast.makeText(
+                            ToastUtil.showShort(
                                 this@MenuActivity,
-                                "Download successful!",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                                "Download successful!"
+                            )
                             // Optionally navigate or refresh UI
                         }
 
                         is Resource.Error -> {
-                            Toast.makeText(
+                            ToastUtil.showShort(
                                 this@MenuActivity,
-                                result.message ?: "Download failed.",
-                                Toast.LENGTH_LONG
-                            ).show()
+                                result.message ?: "Download failed."
+                            )
                         }
 
                         is Resource.Loading -> TODO()
@@ -1166,9 +1164,10 @@ class MenuActivity : AppCompatActivity() {
                         destinationFile.deleteRecursively()
                         downloadComplete = false
 //                        deleteUnSyncedData()
-
-                        Toast.makeText(this@MenuActivity, "Download Incomplete", Toast.LENGTH_SHORT)
-                            .show()
+                        ToastUtil.showShort(
+                            this@MenuActivity,
+                            "Download Incomplete"
+                        )
                     }
                 }
             }
@@ -1443,10 +1442,10 @@ class MenuActivity : AppCompatActivity() {
                                         llSelectedAbadi.visibility = View.INVISIBLE
                                     }
                                 }
-
-                                Toast.makeText(
-                                    context, "Data downloaded successfully", Toast.LENGTH_LONG
-                                ).show()
+                                ToastUtil.showShort(
+                                    context,
+                                    "Data downloaded successfully"
+                                )
                             } else {
                                 val builder = AlertDialog.Builder(this@MenuActivity)
                                     .setMessage("Do you want to select the current downloaded area to start survey?")
@@ -1501,20 +1500,16 @@ class MenuActivity : AppCompatActivity() {
                                                 llSelectedAbadi.visibility = View.INVISIBLE
                                             }
                                         }
-
-                                        Toast.makeText(
+                                        ToastUtil.showShort(
                                             context,
-                                            "Data downloaded successfully",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-
+                                            "Data downloaded successfully"
+                                        )
                                         dialog.dismiss()
                                     }.setNegativeButton("No") { dialog, _ ->
-                                        Toast.makeText(
+                                        ToastUtil.showShort(
                                             context,
-                                            "Data downloaded successfully",
-                                            Toast.LENGTH_LONG
-                                        ).show()
+                                            "Data downloaded successfully"
+                                        )
                                         dialog.dismiss()
                                     }
 
@@ -1550,12 +1545,10 @@ class MenuActivity : AppCompatActivity() {
 
 //                        deleteUnSyncedData()
 
-                        Toast.makeText(
+                        ToastUtil.showShort(
                             this@MenuActivity,
-                            "Download Incomplete",
-                            Toast.LENGTH_SHORT
+                            "Data Incomplete"
                         )
-                            .show()
                     }
 
                 }
@@ -1791,7 +1784,10 @@ class MenuActivity : AppCompatActivity() {
             try {
                 checkDatabaseAndFileStatus(1) // Retry up to 1 time
             } catch (e: Exception) {
-                Toast.makeText(context, "Resume Error: ${e.message}", Toast.LENGTH_LONG).show()
+                ToastUtil.showShort(
+                    context,
+                    "Resume Error: ${e.message}"
+                )
             }
         }
     }

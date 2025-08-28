@@ -85,22 +85,4 @@ class NewSurveyViewModel @Inject constructor(
             )
         }
     }
-
-    // Method to load surveys with khewat info
-//    fun loadSurveysWithKhewatInfo() {
-//        viewModelScope.launch {
-//            try {
-//                val surveysWithKhewatData = getSurveysWithKhewatInfo()
-//                _surveysWithKhewat.emit(surveysWithKhewatData)
-//            } catch (e: Exception) {
-//                // Handle error - could emit an error state or log
-//                _surveysWithKhewat.emit(emptyList())
-//            }
-//        }
-//    }
-
-    // In your ViewModel, replace the _surveysWithKhewat and related methods with:
-
-
-// Remove the loadSurveysWithKhewatInfo method as it's no longer needed
 }
