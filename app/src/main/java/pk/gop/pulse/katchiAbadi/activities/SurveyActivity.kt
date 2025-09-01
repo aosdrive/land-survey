@@ -165,21 +165,32 @@ class SurveyActivity : AppCompatActivity() {
     private var selectedVariety: String? = null
 
     // Add these as class-level variables
-
-    // Add these as class-level variables
     private var isSettingSpinnerProgrammatically = false
 
     private fun setupSpinners() {
         val ownershipStatusList = listOf("Self", "On Lease")
         val propertyTypeList = listOf("Farm Survey", "Other")
         val imageTypeList = listOf("CNIC", "Property", "Other Document", "Discrepancy Pic")
-        val cropList = listOf("Sugarcane", "Wheat", "Rice", "Cotton", "Maize", "Other")
+        val cropList = listOf(
+            "Sugarcane",
+            "Wheat",
+            "Rice",
+            "Cotton",
+            "Maize",
+            "Plot",
+            "Sesame Seeds",
+            "Uncultivated Area",
+            "Vegetables",
+            "Fodder",
+            "Orchard",
+            "Other"
+        )
         val cropTypeList = listOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "Other")
         val varietyList = listOf(
-            "CP 77400",
-            "CPF 253",
-            "CPF 246",
-            "NSG 59",
+            "CP-77400",
+            "CPF-253",
+            "CPF-246",
+            "NSG-59",
             "J-16-639",
             "J-16-487",
             "YTFG-236",
@@ -190,6 +201,8 @@ class SurveyActivity : AppCompatActivity() {
             "CPF-251",
             "CPF-252",
             "CPF-237",
+            "CPF-236",
+            "CSSG-676",
             "Other"
         )
 

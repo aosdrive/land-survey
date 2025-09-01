@@ -53,6 +53,27 @@ interface ActiveParcelDao {
     @Query("SELECT surveyStatusCode FROM active_parcels WHERE id = :parcelId")
     suspend fun getSurveyStatus(parcelId: Long): Int?
 
+    @Query("SELECT MAX(id) FROM active_parcels")
+    suspend fun getMaxParcelId(): Long?
+
+    // Transaction method to handle parcel splitting
+    @Transaction
+    suspend fun splitParcel(originalParcelId: Long, newParcels: List<ActiveParcelEntity>): List<Long> {
+        // Delete the original parcel
+        deleteParcelById(originalParcelId)
+
+        // Insert new split parcels and return their IDs
+        return insertParcels(newParcels)
+    }
+
+    @Query("DELETE FROM active_parcels WHERE id = :parcelId")
+    suspend fun deleteParcelById(parcelId: Long)
+
+    // Helper method to insert multiple parcels and return their IDs
+    @Insert
+    suspend fun insertParcels(parcels: List<ActiveParcelEntity>): List<Long>
+
+
 //    val surveyStatusCode: Int,
 //    val surveyId: Int
 

@@ -104,43 +104,35 @@ object AppModule {
 
     @Provides
     @Singleton
+
     fun provideOkHttpClient(sharedPreferences: SharedPreferences): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .protocols(listOf(Protocol.HTTP_1_1))
-            .addInterceptor {
-                val modifiedRequest = it.request().newBuilder()
-                    .addHeader(
-                        "Authorization",
-                        "Bearer ${
-                            sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "").toString()
-                        }"
-                    )
-                    .build()
-                it.proceed(modifiedRequest)
+            .addInterceptor { chain ->
+                val requestBuilder = chain.request().newBuilder()
+                val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, null)
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                chain.proceed(requestBuilder.build())
             }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.HEADERS
+                    level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                    else HttpLoggingInterceptor.Level.NONE
                 }
             )
-            .addInterceptor(
-                HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
-                }
-            )
-            .readTimeout(20, TimeUnit.MINUTES)
-            .connectTimeout(2, TimeUnit.MINUTES)
-            .writeTimeout(2, TimeUnit.MINUTES)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .followRedirects(true)
             .followSslRedirects(true)
             .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
-            .cache(cache = null)
 
-        // SSL Configuration for Development
+        // Allow all SSL certs in debug mode
         if (BuildConfig.DEBUG) {
             try {
-                // Create a trust manager that does not validate certificate chains
                 val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                     override fun checkClientTrusted(
                         chain: Array<X509Certificate>,
@@ -157,14 +149,14 @@ object AppModule {
                     override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
                 })
 
-                // Install the all-trusting trust manager
-                val sslContext = SSLContext.getInstance("SSL")
-                sslContext.init(null, trustAllCerts, SecureRandom())
+                val sslContext = SSLContext.getInstance("SSL").apply {
+                    init(null, trustAllCerts, SecureRandom())
+                }
 
-                // Create an ssl socket factory with our all-trusting manager
-                val sslSocketFactory = sslContext.socketFactory
-
-                builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+                builder.sslSocketFactory(
+                    sslContext.socketFactory,
+                    trustAllCerts[0] as X509TrustManager
+                )
                 builder.hostnameVerifier { _, _ -> true }
             } catch (e: Exception) {
                 throw RuntimeException(e)
@@ -173,6 +165,76 @@ object AppModule {
 
         return builder.build()
     }
+
+//    fun provideOkHttpClient(sharedPreferences: SharedPreferences): OkHttpClient {
+//        val builder = OkHttpClient.Builder()
+//            .protocols(listOf(Protocol.HTTP_1_1))
+//            .addInterceptor {
+//                val modifiedRequest = it.request().newBuilder()
+//                    .addHeader(
+//                        "Authorization",
+//                        "Bearer ${
+//                            sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "").toString()
+//                        }"
+//                    )
+//                    .build()
+//                it.proceed(modifiedRequest)
+//            }
+//            .addInterceptor(
+//                HttpLoggingInterceptor().apply {
+//                    level = HttpLoggingInterceptor.Level.HEADERS
+//                }
+//            )
+//            .addInterceptor(
+//                HttpLoggingInterceptor().apply {
+//                    level = HttpLoggingInterceptor.Level.BODY
+//                }
+//            )
+//            .readTimeout(20, TimeUnit.MINUTES)
+//            .connectTimeout(2, TimeUnit.MINUTES)
+//            .writeTimeout(2, TimeUnit.MINUTES)
+//            .retryOnConnectionFailure(true)
+//            .followRedirects(true)
+//            .followSslRedirects(true)
+//            .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+//            .cache(cache = null)
+//
+//        // SSL Configuration for Development
+//        if (BuildConfig.DEBUG) {
+//            try {
+//                // Create a trust manager that does not validate certificate chains
+//                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+//                    override fun checkClientTrusted(
+//                        chain: Array<X509Certificate>,
+//                        authType: String
+//                    ) {
+//                    }
+//
+//                    override fun checkServerTrusted(
+//                        chain: Array<X509Certificate>,
+//                        authType: String
+//                    ) {
+//                    }
+//
+//                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+//                })
+//
+//                // Install the all-trusting trust manager
+//                val sslContext = SSLContext.getInstance("SSL")
+//                sslContext.init(null, trustAllCerts, SecureRandom())
+//
+//                // Create an ssl socket factory with our all-trusting manager
+//                val sslSocketFactory = sslContext.socketFactory
+//
+//                builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+//                builder.hostnameVerifier { _, _ -> true }
+//            } catch (e: Exception) {
+//                throw RuntimeException(e)
+//            }
+//        }
+//
+//        return builder.build()
+//    }
 
     @Provides
     @Singleton

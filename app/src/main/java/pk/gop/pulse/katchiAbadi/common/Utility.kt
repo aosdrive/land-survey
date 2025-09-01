@@ -24,6 +24,7 @@ import com.esri.arcgisruntime.geometry.GeometryEngine
 import com.esri.arcgisruntime.geometry.Point
 import com.esri.arcgisruntime.geometry.PointCollection
 import com.esri.arcgisruntime.geometry.Polygon
+import com.esri.arcgisruntime.geometry.PolygonBuilder
 import com.esri.arcgisruntime.geometry.SpatialReference
 import pk.gop.pulse.katchiAbadi.R
 import java.io.File
@@ -408,85 +409,188 @@ class Utility {
         }
 
         fun simplifyPolygon(polygon: Polygon): Polygon {
-            return GeometryEngine.simplify(polygon) as Polygon
+            return try {
+                GeometryEngine.simplify(polygon) as Polygon
+            } catch (e: Exception) {
+                Log.w("Utility", "Failed to simplify polygon, returning original: ${e.message}")
+                polygon
+            }
         }
 
-        // Updated getMultiPolygonFromString method
+        // Improved getMultiPolygonFromString method
         fun getMultiPolygonFromString(
             strMultiPolyGeom: String,
             wgs84: SpatialReference
         ): List<Polygon> {
-            val cleanedGeom = strMultiPolyGeom
-                .removePrefix("MULTIPOLYGON (((")
-                .removeSuffix(")))")
-                .trim()
+            return try {
+                Log.d("GEOMETRY_PARSE", "Parsing MULTIPOLYGON: $strMultiPolyGeom")
 
-            val polygonStrings = cleanedGeom.split(")), ((")
-            val polygons = mutableListOf<Polygon>()
+                val cleanedGeom = strMultiPolyGeom
+                    .removePrefix("MULTIPOLYGON(((")
+                    .removePrefix("MULTIPOLYGON (((")
+                    .removeSuffix(")))")
+                    .trim()
 
-            for (polygonString in polygonStrings) {
-                val points = PointCollection(wgs84)
-                val coordinates = polygonString.split(",")
+                // Split by polygon boundaries: )), ((
+                val polygonStrings = cleanedGeom.split(Regex("""\)\s*\)\s*,\s*\(\s*\("""))
+                val polygons = mutableListOf<Polygon>()
 
-                for (coordinate in coordinates) {
-                    val trimmed = coordinate.trim()
-                    val pointSplit = trimmed.split(" ").filter { it.isNotEmpty() }
+                for ((index, polygonString) in polygonStrings.withIndex()) {
+                    Log.d("GEOMETRY_PARSE", "Processing polygon $index: $polygonString")
 
-                    if (pointSplit.size == 2) {
-                        points.add(
-                            Point(
-                                pointSplit[0].toDouble(),
-                                pointSplit[1].toDouble()
-                            )
-                        )
+                    val points = parseCoordinateString(polygonString, wgs84)
+                    if (!points.isEmpty()) {
+                        val polygon = Polygon(points)
+                        if (!polygon.isEmpty) {
+                            polygons.add(polygon)
+                            Log.d("GEOMETRY_PARSE", "Successfully added polygon $index")
+                        }
+                    } else {
+                        Log.w("GEOMETRY_PARSE", "Failed to parse polygon $index")
                     }
                 }
 
-                polygons.add(Polygon(points))
-            }
+                Log.d("GEOMETRY_PARSE", "Parsed ${polygons.size} polygons from MULTIPOLYGON")
+                return polygons
 
-            return polygons
+            } catch (e: Exception) {
+                Log.e("GEOMETRY_PARSE", "Error parsing MULTIPOLYGON: ${e.message}", e)
+                return emptyList()
+            }
         }
 
-        fun getPolygonFromString(strPolyGeom: String, wgs84: SpatialReference): Polygon {
+        // Improved getPolygonFromString method with better error handling
+        fun getPolygonFromString(strPolyGeom: String, wgs84: SpatialReference): Polygon? {
+            return try {
+                Log.d("GEOMETRY_PARSE", "Parsing POLYGON: $strPolyGeom")
 
-            val cleanedGeom = strPolyGeom.removePrefix("POLYGON ((").removeSuffix("))")
+                // Clean the geometry string
+                val cleanedGeom = strPolyGeom
+                    .removePrefix("POLYGON((")
+                    .removePrefix("POLYGON ((")
+                    .removeSuffix("))")
+                    .removeSuffix("))")
+                    .trim()
 
-            Log.d("TAG", "Cleaned Geom: $cleanedGeom")
+                Log.d("GEOMETRY_PARSE", "Cleaned geometry: $cleanedGeom")
 
-            val geomParts =
-                cleanedGeom.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            val points = PointCollection(wgs84)
-            for (geomPart in geomParts) {
-                val trimmed = geomPart.trim()
-                val pointSplit =
-                    trimmed.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                points.add(
-                    Point(
-                        pointSplit[0].replace("(", "").trim { it <= ' ' }.toDouble(),
-                        pointSplit[1].replace(")", "").trim { it <= ' ' }.toDouble()
-                    )
+                // Handle multiple rings (exterior + holes)
+                val rings = cleanedGeom.split("),(").map { it.trim() }
+
+                if (rings.isEmpty()) {
+                    Log.e("GEOMETRY_PARSE", "No rings found in polygon")
+                    return null
+                }
+
+                // Parse exterior ring
+                val exteriorRing =
+                    parseCoordinateString(rings[0].replace("(", "").replace(")", ""), wgs84)
+                if (exteriorRing.isEmpty()) {
+                    Log.e("GEOMETRY_PARSE", "Failed to parse exterior ring")
+                    return null
+                }
+
+                val polygonBuilder = PolygonBuilder(wgs84)
+                polygonBuilder.addPoints(exteriorRing)
+
+                // Parse interior rings (holes) if any
+                for (i in 1 until rings.size) {
+                    val interiorRing =
+                        parseCoordinateString(rings[i].replace("(", "").replace(")", ""), wgs84)
+                    if (!interiorRing.isEmpty()) {
+                        polygonBuilder.addPoints(interiorRing)
+                    }
+                }
+
+                val polygon = polygonBuilder.toGeometry()
+
+                if (polygon.isEmpty) {
+                    Log.e("GEOMETRY_PARSE", "Created polygon is empty")
+                    return null
+                }
+
+                Log.d(
+                    "GEOMETRY_PARSE",
+                    "Successfully parsed polygon with ${polygon.parts.size} parts"
                 )
+                return polygon
+
+            } catch (e: Exception) {
+                Log.e("GEOMETRY_PARSE", "Error parsing POLYGON: ${e.message}", e)
+                return null
             }
-            return Polygon(points)
         }
 
-        fun getPolyFromString(strPolyGeom: String, wgs84: SpatialReference): Polygon {
-            val geomParts =
-                strPolyGeom.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-            val points = PointCollection(wgs84)
-            for (geomPart in geomParts) {
-                val trimmed = geomPart.trim()
-                val pointSplit =
-                    trimmed.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                points.add(
-                    Point(
-                        pointSplit[0].replace("(", "").trim { it <= ' ' }.toDouble(),
-                        pointSplit[1].replace(")", "").trim { it <= ' ' }.toDouble()
-                    )
-                )
+        // Improved getPolyFromString for malformed geometry strings
+        fun getPolyFromString(strPolyGeom: String, wgs84: SpatialReference): Polygon? {
+            return try {
+                Log.d("GEOMETRY_PARSE", "Parsing malformed geometry: $strPolyGeom")
+
+                // Try to extract coordinate pairs from the string
+                val coordinatePattern = Regex("""(-?\d+\.?\d*)\s+(-?\d+\.?\d*)""")
+                val matches = coordinatePattern.findAll(strPolyGeom)
+
+                val points = PointCollection(wgs84)
+                var coordinateCount = 0
+
+                for (match in matches) {
+                    val x = match.groupValues[1].toDoubleOrNull()
+                    val y = match.groupValues[2].toDoubleOrNull()
+
+                    if (x != null && y != null) {
+                        points.add(Point(x, y, wgs84))
+                        coordinateCount++
+                    }
+                }
+
+                if (coordinateCount < 3) {
+                    Log.e("GEOMETRY_PARSE", "Insufficient coordinates found: $coordinateCount")
+                    return null
+                }
+
+                Log.d("GEOMETRY_PARSE", "Parsed $coordinateCount coordinates from malformed string")
+                return Polygon(points)
+
+            } catch (e: Exception) {
+                Log.e("GEOMETRY_PARSE", "Error parsing malformed geometry: ${e.message}", e)
+                return null
             }
-            return Polygon(points)
+        }
+
+        // Helper function to parse coordinate string into PointCollection
+        private fun parseCoordinateString(
+            coordinateString: String,
+            wgs84: SpatialReference
+        ): PointCollection {
+            val points = PointCollection(wgs84)
+
+            try {
+                val coordinates = coordinateString.split(",")
+
+                for (coordinate in coordinates) {
+                    val trimmed = coordinate.trim()
+                        .replace("(", "")
+                        .replace(")", "")
+
+                    val pointSplit = trimmed.split(Regex("""\s+""")).filter { it.isNotEmpty() }
+
+                    if (pointSplit.size >= 2) {
+                        val x = pointSplit[0].toDoubleOrNull()
+                        val y = pointSplit[1].toDoubleOrNull()
+
+                        if (x != null && y != null) {
+                            points.add(Point(x, y, wgs84))
+                        } else {
+                            Log.w("GEOMETRY_PARSE", "Invalid coordinate pair: $trimmed")
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("GEOMETRY_PARSE", "Error parsing coordinates: ${e.message}", e)
+            }
+
+            return points
         }
     }
 }

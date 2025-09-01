@@ -1266,13 +1266,18 @@ class MenuActivity : AppCompatActivity() {
                             polygonsList.add(simplifiedPolygon)
                         }
                     } else if (parcelGeom.contains("POLYGON ((")) {
-                        val polygon =
-                            Utility.simplifyPolygon(Utility.getPolygonFromString(parcelGeom, wgs84))
-                        polygonsList.add(polygon)
+                        Utility.getPolygonFromString(parcelGeom, wgs84)?.let { parsedPolygon ->
+                            val polygon = Utility.simplifyPolygon(parsedPolygon)
+                            polygonsList.add(polygon)
+                        } ?: Log.w("downloadMapTiles", "Skipped invalid POLYGON WKT: $parcelGeom")
                     } else {
-                        val polygon =
-                            Utility.simplifyPolygon(Utility.getPolyFromString(parcelGeom, wgs84))
-                        polygonsList.add(polygon)
+                        Utility.getPolyFromString(parcelGeom, wgs84)?.let { parsedPolygon ->
+                            val polygon = Utility.simplifyPolygon(parsedPolygon)
+                            polygonsList.add(polygon)
+                        } ?: Log.w(
+                            "downloadMapTiles",
+                            "Skipped invalid malformed geometry: $parcelGeom"
+                        )
                     }
                 }
 

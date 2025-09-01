@@ -118,6 +118,7 @@ class ViewRecordActivity : AppCompatActivity(), ViewRecordClickListener {
         displayData.add("Crop" to survey.crop)
         displayData.add("Year" to survey.year)
         displayData.add("Area" to survey.area)
+        displayData.add("Remarks" to survey.remarks)
 //        displayData.add("Is Geometry Correct" to survey.isGeometryCorrect.toString())
 //        displayData.add("Remarks" to survey.remarks)
 //        displayData.add("Mauza ID" to survey.mauzaId.toString())
