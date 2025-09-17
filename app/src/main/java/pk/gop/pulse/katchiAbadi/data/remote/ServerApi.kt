@@ -6,7 +6,6 @@ import OwnerResponse
 import pk.gop.pulse.katchiAbadi.data.remote.post.RetakePicturesPost
 import pk.gop.pulse.katchiAbadi.data.remote.post.SurveyPost
 import pk.gop.pulse.katchiAbadi.data.remote.request.LoginRequest
-import pk.gop.pulse.katchiAbadi.data.remote.response.ApiResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.BasicApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.BasicInfoDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.Info
@@ -18,10 +17,10 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelCreationRequest
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Headers
@@ -107,6 +106,15 @@ interface ServerApi {
         @Header("Authorization") token: String,
         @Body json: List<SurveyPostNew>
     ): Response<PostApiDto>
+
+    @POST("api/MobileData/AddParcel")
+    @Headers("Content-Type: application/json")
+    suspend fun createParcel(
+        @Header("Authorization") token: String,
+        @Body parcels: List<ParcelCreationRequest>
+    ): Response<PostApiDto>
+
+
 
 
     @POST

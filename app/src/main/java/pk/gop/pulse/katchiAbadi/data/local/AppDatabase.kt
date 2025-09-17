@@ -59,6 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration1to2)
                     .addMigrations(migration2to3)
                     .addMigrations(migration3to4)
+                    .addMigrations(migration4to5) // Add this line
                     .build()
                 INSTANCE = instance
                 instance
@@ -105,5 +106,11 @@ val migration3to4 = object : Migration(3, 4) {
         db.execSQL("ALTER TABLE TempSurveyFormEntity ADD COLUMN isRevisit INTEGER NOT NULL DEFAULT 0")
         db.execSQL("ALTER TABLE NotAtHomeSurveyFormEntity ADD COLUMN isRevisit INTEGER NOT NULL DEFAULT 0")
 
+    }
+}
+
+val migration4to5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE active_parcels ADD COLUMN isActivate INTEGER NOT NULL DEFAULT 1")
     }
 }

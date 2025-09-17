@@ -21,7 +21,9 @@ data class ActiveParcelEntity(
     val parcelAreaKMF: String?,
     val parcelAreaAbadiDeh: String?,
     val surveyStatusCode: Int,
-    val surveyId: Int?
+    val surveyId: Int?,
+    val isActivate: Boolean = true  // Added IsActivate attribute with default value
+
 )
 
 object SurveyStatusCodes {

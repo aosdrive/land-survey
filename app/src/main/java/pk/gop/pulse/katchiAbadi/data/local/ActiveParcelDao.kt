@@ -56,11 +56,82 @@ interface ActiveParcelDao {
     @Query("SELECT MAX(id) FROM active_parcels")
     suspend fun getMaxParcelId(): Long?
 
+
+    // Updated to include only active parcels
+    @Query("SELECT * FROM active_parcels WHERE mauzaId = :mauzaId AND areaAssigned = :area AND isActivate = 1")
+    suspend fun getActiveParcelsByMauzaAndArea(mauzaId: Long, area: String): List<ActiveParcelEntity>
+
+    // Updated to include only active areas
+    @Query("SELECT DISTINCT mauzaId, mauzaName, areaAssigned FROM active_parcels WHERE isActivate = 1")
+    suspend fun getDistinctActiveDownloadedAreas(): List<MauzaAreaEntry>
+
+    @Query("SELECT COUNT(*) FROM active_parcels WHERE mauzaId = :mauzaId AND areaAssigned = :area AND isActivate = 1")
+    suspend fun getActiveParcelsCountByMauzaAndArea(mauzaId: Long, area: String): Int
+
+
+    // Get only active unsurveyed parcels
+    @Query("SELECT * FROM active_parcels where surveyId is null and mauzaId = :mauzaId and parcelNo != :parcelNo and isActivate = 1 order by parcelNo ")
+    suspend fun getAllActiveUnSurveyedParcels(mauzaId: Long, parcelNo: Long): List<ActiveParcelEntity>
+
+
+    // New methods for IsActivate management
+    @Query("UPDATE active_parcels SET isActivate = :isActivate WHERE id = :parcelId")
+    suspend fun updateParcelActivationStatus(parcelId: Long, isActivate: Boolean)
+
+    @Query("UPDATE active_parcels SET isActivate = 0 WHERE id = :parcelId")
+    suspend fun deactivateParcel(parcelId: Long)
+
+    @Query("UPDATE active_parcels SET isActivate = 1 WHERE id = :parcelId")
+    suspend fun activateParcel(parcelId: Long)
+
+    @Query("SELECT * FROM active_parcels WHERE isActivate = 1")
+    suspend fun getAllActiveParcels(): List<ActiveParcelEntity>
+
+    @Query("SELECT * FROM active_parcels WHERE isActivate = 0")
+    suspend fun getAllDeactivatedParcels(): List<ActiveParcelEntity>
+
+    @Query("SELECT * FROM active_parcels WHERE pkid = :pkid")
+    suspend fun getParcelByPkid(pkid: Long): ActiveParcelEntity?
+
+    @Query("SELECT * FROM active_parcels WHERE id IN (:ids) AND isActivate = 1")
+    suspend fun searchActiveParcels(ids: List<Long>): List<ActiveParcelEntity>
+
+
+    // Add these methods to your ActiveParcelDao interface:
+
+    @Query("UPDATE active_parcels SET isActivate = :isActivate WHERE pkid = :pkid")
+    suspend fun updateParcelActivationStatusByPkid(pkid: Long, isActivate: Boolean)
+
+    @Query("UPDATE active_parcels SET isActivate = 0 WHERE pkid = :pkid")
+    suspend fun deactivateParcelByPkid(pkid: Long)
+
+    @Query("UPDATE active_parcels SET isActivate = 1 WHERE pkid = :pkid")
+    suspend fun activateParcelByPkid(pkid: Long)
+
+    // Also add this for debugging
+    @Query("SELECT COUNT(*) FROM active_parcels WHERE parcelNo = :parcelNo AND isActivate = 1 AND mauzaId = :mauzaId AND areaAssigned = :area")
+    suspend fun countActiveParcelsByNumber(parcelNo: Long, mauzaId: Long, area: String): Int
+
+
+    // Add these to your ActiveParcelDao interface:
+
+    @Query("SELECT * FROM active_parcels WHERE parcelNo = :parcelNo AND mauzaId = :mauzaId AND areaAssigned = :area ORDER BY subParcelNo")
+    suspend fun getParcelsByNumber(parcelNo: Long, mauzaId: Long, area: String): List<ActiveParcelEntity>
+
+    @Query("SELECT * FROM active_parcels WHERE parcelNo = :parcelNo AND mauzaId = :mauzaId AND areaAssigned = :areaName AND isActivate = 0 LIMIT 1")
+    suspend fun getDeactivatedParcelByNumber(parcelNo: Long, mauzaId: Long, areaName: String): ActiveParcelEntity?
+
+    @Query("SELECT * FROM active_parcels WHERE parcelNo = :parcelNo AND mauzaId = :mauzaId AND areaAssigned = :areaName AND isActivate = 1")
+    suspend fun getActiveParcelsByNumber(parcelNo: Long, mauzaId: Long, areaName: String): List<ActiveParcelEntity>
+
+    // Also add this method to track the original parcel ID during split
+
     // Transaction method to handle parcel splitting
     @Transaction
     suspend fun splitParcel(originalParcelId: Long, newParcels: List<ActiveParcelEntity>): List<Long> {
         // Delete the original parcel
         deleteParcelById(originalParcelId)
+        insertParcels(newParcels)           // insert new
 
         // Insert new split parcels and return their IDs
         return insertParcels(newParcels)
@@ -93,8 +164,8 @@ interface ActiveParcelDao {
 //    @Update
 //    suspend fun updateParcel(activeParcelEntity: ActiveParcelEntity)
 //
-//    @Query("Update active_parcels set surveyStatusCode = :statusBit  where  centroid = :centroidGeom")
-//    suspend fun updateParcelSurveyStatus(statusBit: Int, centroidGeom: String): Int
+    @Query("Update active_parcels set surveyStatusCode = :statusBit  where  centroid = :centroidGeom")
+    suspend fun updateParcelSurveyStatus(statusBit: Int, centroidGeom: String): Int
 
 
 }

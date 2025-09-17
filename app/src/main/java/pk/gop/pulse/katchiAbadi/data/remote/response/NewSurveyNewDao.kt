@@ -9,6 +9,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyFormEntity
 
@@ -58,5 +59,8 @@ interface NewSurveyNewDao {
 
     @Query("SELECT * FROM new_surveys WHERE parcelId = :parcelId AND (statusBit = 0 OR statusBit IS NULL)")
     suspend fun getSurveysByParcelId(parcelId: Long): List<NewSurveyNewEntity>
+
+    @Query("SELECT * FROM active_parcels WHERE parcelNo = :parcelNo AND mauzaId = :mauzaId AND areaAssigned = :areaName AND isActivate = 1")
+    suspend fun getActiveParcelsByParcelNumber(parcelNo: Long, mauzaId: Long, areaName: String): List<ActiveParcelEntity>
 
 }

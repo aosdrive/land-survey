@@ -7,9 +7,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
-import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
-import okhttp3.OkHttp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.common.Constants
@@ -23,6 +21,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelCreationRequest
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonPost
@@ -31,6 +30,9 @@ import pk.gop.pulse.katchiAbadi.domain.repository.NewSurveyRepository
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
+
+
+private const val TAG = "SurveyRepository" // or whatever your class name is
 
 class NewSurveyRepositoryImpl @Inject constructor(
     private val dao: NewSurveyNewDao,
@@ -109,66 +111,354 @@ class NewSurveyRepositoryImpl @Inject constructor(
 //    }
 
 
+
     override suspend fun uploadSurvey(
         context: Context,
         survey: NewSurveyNewEntity
     ): Resource<Unit> {
         return try {
-            // Run DB queries on IO dispatcher
+            Log.d(TAG, "=== uploadSurvey START ===")
+            Log.d(TAG, "Survey object: parcelId=${survey.parcelId}, parcelOperation=${survey.parcelOperation}")
+
             val subparcels = withContext(Dispatchers.IO) {
-                dao.getCompleteRecord(survey.parcelId)
-            }
+                when (survey.parcelOperation) {
+                    "Split" -> {
+                        Log.d(TAG, "Processing split parcel upload for parcelId=${survey.parcelId}")
 
-            if (survey.parcelOperation == "Split") {
-                val expectedCount = survey.parcelOperationValue.toIntOrNull() ?: 0
-                if (subparcels.size != expectedCount) {
-                    return Resource.Error("Expected $expectedCount subparcels but found ${subparcels.size}")
+                        val originalParcel = activeParcelDao.getParcelById(survey.parcelId)
+                        if (originalParcel != null) {
+                            // Get all split parcels (excluding the original)
+                            val mauzaId = originalParcel.mauzaId
+                            val areaName = originalParcel.areaAssigned
+                            val allActiveParcels = activeParcelDao.getActiveParcelsByMauzaAndArea(mauzaId, areaName)
+                            val splitParcels = allActiveParcels.filter {
+                                it.parcelNo == originalParcel.parcelNo &&
+                                        it.isActivate == true &&
+                                        it.subParcelNo.isNotBlank() &&
+                                        it.subParcelNo != "0" // ✅ Only get actual split parcels, exclude original
+                            }
+
+                            Log.d(TAG, "Found ${splitParcels.size} split parcels to upload (excluding original)")
+
+                            // ✅ Create clean survey records with "New" operation
+                            val splitSurveys = mutableListOf<NewSurveyNewEntity>()
+
+                            splitParcels.forEach { splitParcel ->
+                                val splitSurvey = survey.copy(
+                                    pkId = 0, // Reset pkId for new record
+                                    parcelId = 0L,
+                                    parcelNo = splitParcel.parcelNo.toString(),
+                                    subParcelNo = splitParcel.subParcelNo,
+                                    parcelOperation = "New", // Always use "New" for clean creation
+                                    parcelOperationValue = "" // ✅ No reference to original parcel
+                                )
+                                splitSurveys.add(splitSurvey)
+                                Log.d(TAG, "Created clean survey record for split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, KhewatInfo=${originalParcel.khewatInfo}")
+                            }
+
+                            Log.d(TAG, "Created ${splitSurveys.size} clean survey records for split parcels")
+                            splitSurveys
+                        } else {
+                            Log.w(TAG, "Original parcel not found")
+                            emptyList()
+                        }
+                    }
+
+                    "Same" -> {
+                        Log.d(TAG, "Processing 'Same' operation for parcelId=${survey.parcelId}")
+                        val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+
+                        if (localParcel != null && localParcel.subParcelNo.isNotBlank() && localParcel.subParcelNo != "0") {
+                            Log.d(TAG, "Detected split parcel with 'Same' operation - treating as new parcel")
+                            Log.d(TAG, "Parcel details: ID=${localParcel.id}, ParcelNo=${localParcel.parcelNo}, SubParcel=${localParcel.subParcelNo}, KhewatInfo=${localParcel.khewatInfo}")
+
+                            // ✅ Treat split parcels as completely new entities
+                            val surveyRecords = dao.getCompleteRecord(survey.parcelId)
+                            val cleanSurveys = surveyRecords.map { surveyRecord ->
+                                surveyRecord.copy(
+                                    parcelOperation = "New", // Treat as new parcel creation
+                                    parcelOperationValue = "" // ✅ No reference to any existing parcel
+                                )
+                            }
+                            Log.d(TAG, "Converted ${cleanSurveys.size} survey records to clean 'New' operations")
+                            cleanSurveys
+                        } else {
+                            // Normal "Same" operation for non-split parcels
+                            Log.d(TAG, "Normal 'Same' operation - proceeding with existing parcel")
+                            if (localParcel != null) {
+                                Log.d(TAG, "KhewatInfo for parcel: ${localParcel.khewatInfo}")
+                            }
+                            dao.getCompleteRecord(survey.parcelId)
+                        }
+                    }
+
+                    else -> {
+                        Log.d(TAG, "Processing other operation: ${survey.parcelOperation}")
+                        val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+                        if (localParcel != null) {
+                            Log.d(TAG, "KhewatInfo for parcel: ${localParcel.khewatInfo}")
+                        }
+                        dao.getCompleteRecord(survey.parcelId)
+                    }
                 }
             }
 
-            // Build the posts list inside IO context too
+            if (subparcels.isEmpty()) {
+                Log.e(TAG, "No parcels found to upload")
+                return Resource.Error("No parcels found to upload")
+            }
+
+            Log.d(TAG, "Found ${subparcels.size} parcels to upload")
+
+            // ✅ Build posts with clean data including geometry AND person data AND khewatInfo from ActiveParcelEntity
             val posts = withContext(Dispatchers.IO) {
-                subparcels.map { subSurvey ->
-                    val images = imageDao.getImagesBySurvey(subSurvey.pkId)
+                subparcels.mapIndexed { index, subSurvey ->
+                    Log.d(TAG, "=== Processing Survey ${index + 1}/${subparcels.size} ===")
+                    Log.d(TAG, "Survey Details: pkId=${subSurvey.pkId}, parcelNo=${subSurvey.parcelNo}, subParcelNo=${subSurvey.subParcelNo}")
+
+                    val sourceSurveyPkId = subSurvey.pkId // Use the actual survey pkId
+
+                    // ✅ Get images for this specific survey
+                    val images = imageDao.getImagesBySurvey(sourceSurveyPkId)
                     val pictures = convertSurveyImagesToPictures(context, images)
-                    val personsEntities = personDao.getPersonsForSurvey(subSurvey.pkId)
-                    val persons = convertPersonsToPost(personsEntities)
-                    buildSurveyPost(subSurvey, pictures, persons)
+                    Log.d(TAG, "Found ${images.size} images for survey pkId=${sourceSurveyPkId}")
+
+                    // ✅ Get persons for this specific survey
+                    val personsEntities = personDao.getPersonsForSurvey(sourceSurveyPkId)
+                    val persons = convertPersonsToSurveyPersonPost(personsEntities)
+                    Log.d(TAG, "Found ${personsEntities.size} persons for survey pkId=${sourceSurveyPkId}")
+
+                    // ✅ Get khewatInfo and parcelAreaKMF from ActiveParcelEntity based on operation type
+                    val (khewatInfo, parcelAreaKMF) = when (survey.parcelOperation) {
+                        "Split" -> {
+                            Log.d(TAG, "Getting khewatInfo and parcelAreaKMF for split parcel at index $index")
+                            val originalParcel = activeParcelDao.getParcelById(survey.parcelId)
+                            Pair(
+                                originalParcel?.khewatInfo ?: "",
+                                originalParcel?.parcelAreaKMF ?: ""
+                            )
+                        }
+                        else -> {
+                            Log.d(TAG, "Getting khewatInfo and parcelAreaKMF for operation: ${survey.parcelOperation}")
+                            val localParcel = activeParcelDao.getParcelById(subSurvey.parcelId)
+                            Pair(
+                                localParcel?.khewatInfo ?: "",
+                                localParcel?.parcelAreaKMF ?: ""
+                            )
+                        }
+                    }
+                    Log.d(TAG, "KhewatInfo from ActiveParcelEntity: $khewatInfo")
+                    Log.d(TAG, "ParcelAreaKMF from ActiveParcelEntity: $parcelAreaKMF")
+
+                    // ✅ Get geometry data for ALL parcels (regardless of operation)
+                    val (geomWKT, centroid) = when (survey.parcelOperation) {
+                        "Split" -> {
+                            Log.d(TAG, "Getting geometry for split parcel at index $index")
+                            // For split parcels, get geometry from the corresponding split parcel
+                            val originalParcel = activeParcelDao.getParcelById(survey.parcelId)
+                            if (originalParcel != null) {
+                                val splitParcels = activeParcelDao.getActiveParcelsByMauzaAndArea(
+                                    originalParcel.mauzaId,
+                                    originalParcel.areaAssigned
+                                ).filter {
+                                    it.parcelNo == originalParcel.parcelNo &&
+                                            it.isActivate == true &&
+                                            it.subParcelNo.isNotBlank() &&
+                                            it.subParcelNo != "0"
+                                }
+
+                                // Get the geometry for this specific split parcel by index
+                                if (index < splitParcels.size) {
+                                    val splitParcel = splitParcels[index]
+                                    Log.d(TAG, "Split parcel geometry: ID=${splitParcel.id}, geomWKT length=${splitParcel.geomWKT?.length ?: 0}")
+                                    Log.d(TAG, "Split parcel centroid: ${splitParcel.centroid}")
+                                    Pair(splitParcel.geomWKT ?: "", splitParcel.centroid ?: "")
+                                } else {
+                                    Log.w(TAG, "No split parcel found at index $index")
+                                    Pair("", "")
+                                }
+                            } else {
+                                Log.w(TAG, "Original parcel not found for split operation")
+                                Pair("", "")
+                            }
+                        }
+                        else -> {
+                            // ✅ FOR ALL OTHER OPERATIONS: Always get geometry from the survey's parcel
+                            Log.d(TAG, "Getting geometry for operation: ${survey.parcelOperation}")
+                            val localParcel = activeParcelDao.getParcelById(subSurvey.parcelId)
+                            if (localParcel != null) {
+                                Log.d(TAG, "Parcel geometry: ID=${localParcel.id}, geomWKT length=${localParcel.geomWKT?.length ?: 0}")
+                                Log.d(TAG, "Parcel centroid: ${localParcel.centroid}")
+                                Pair(localParcel.geomWKT ?: "", localParcel.centroid ?: "")
+                            } else {
+                                Log.w(TAG, "Parcel not found for ID: ${subSurvey.parcelId}")
+                                Pair("", "")
+                            }
+                        }
+                    }
+
+                    Log.d(TAG, "Final geometry data: geomWKT=${if (geomWKT.isNotEmpty()) "Present (${geomWKT.length} chars)" else "Empty"}")
+                    Log.d(TAG, "Final centroid data: ${if (centroid.isNotEmpty()) centroid else "Empty"}")
+
+                    // ✅ Build SurveyPostNew with all data including khewatInfo, parcelAreaKMF and distance from ActiveParcelEntity
+                    val surveyPost = buildCleanSurveyPostNew(subSurvey, pictures, persons, geomWKT, centroid, khewatInfo, parcelAreaKMF, 100)
+
+                    // ✅ Log the complete survey post details
+                    Log.d(TAG, "=== Survey Post Details ===")
+                    Log.d(TAG, "Property Type: ${surveyPost.propertyType}")
+                    Log.d(TAG, "Ownership Status: ${surveyPost.ownershipStatus}")
+                    Log.d(TAG, "Variety: ${surveyPost.variety}")
+                    Log.d(TAG, "Crop Type: ${surveyPost.cropType}")
+                    Log.d(TAG, "Crop: ${surveyPost.crop}")
+                    Log.d(TAG, "Year: ${surveyPost.year}")
+                    Log.d(TAG, "Area: ${surveyPost.area}")
+                    Log.d(TAG, "Geometry Correct: ${surveyPost.isGeometryCorrect}")
+                    Log.d(TAG, "Remarks: ${surveyPost.remarks}")
+                    Log.d(TAG, "Mauza ID: ${surveyPost.mauzaId}")
+                    Log.d(TAG, "Area Name: ${surveyPost.areaName}")
+                    Log.d(TAG, "Parcel ID: ${surveyPost.parcelId}")
+                    Log.d(TAG, "Parcel No: ${surveyPost.parcelNo}")
+                    Log.d(TAG, "Sub Parcel No: ${surveyPost.subParcelNo}")
+                    Log.d(TAG, "KhewatInfo: ${surveyPost.khewatInfo}") // ✅ This should now show the actual value from ActiveParcelEntity
+                    Log.d(TAG, "ParcelAreaKMF: ${surveyPost.parcelAreaKMF}")
+                    Log.d(TAG, "Distance: ${surveyPost.distance}") // ✅ Should show 100
+                    Log.d(TAG, "Parcel Operation: ${surveyPost.parcelOperation}")
+                    Log.d(TAG, "Parcel Operation Value: ${surveyPost.parcelOperationValue}")
+                    Log.d(TAG, "GeomWKT: ${if (surveyPost.geomWKT?.isNotEmpty() == true) "Present (${surveyPost.geomWKT.length} chars)" else "Empty/Null"}")
+                    Log.d(TAG, "Centroid: ${surveyPost.centriod ?: "Empty/Null"}")
+                    Log.d(TAG, "Pictures Count: ${surveyPost.pictures.size}")
+                    Log.d(TAG, "Persons Count: ${surveyPost.persons.size}")
+
+                    // Log person details
+                    surveyPost.persons.forEachIndexed { personIndex, person ->
+                        Log.d(TAG, "Person ${personIndex + 1}: ${person.firstName} ${person.lastName}, Grower Code: ${person.growerCode}")
+                    }
+
+                    // Log picture details
+                    surveyPost.pictures.forEachIndexed { picIndex, picture ->
+                        Log.d(TAG, "Picture ${picIndex + 1}: Type=${picture.Type}, Data Length=${picture.PicData.length}")
+                    }
+
+                    Log.d(TAG, "=== End Survey Post Details ===")
+
+                    surveyPost
                 }
             }
-            if (posts.isEmpty()) {
-                return Resource.Error("No parcel data to upload - posts list is empty")
+
+            // Upload survey data
+            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+            Log.d(TAG, "=== UPLOAD SUMMARY ===")
+            Log.d(TAG, "Total surveys to upload: ${posts.size}")
+            Log.d(TAG, "Token present: ${token.isNotEmpty()}")
+
+            posts.forEachIndexed { index, post ->
+                Log.d(TAG, "Upload ${index + 1}: ParcelNo=${post.parcelNo}, SubParcel=${post.subParcelNo}, HasGeometry=${post.geomWKT?.isNotEmpty() == true}, KhewatInfo=${post.khewatInfo}, ParcelAreaKMF=${post.parcelAreaKMF}, Distance=${post.distance}")
             }
 
-
-            val gson = Gson()
-            val json = gson.toJson(posts)
-            Log.d("UploadPayload", Gson().toJson(posts))
-            // saveJsonToFile(context, json)
-            Log.d("UploadDebug", "Uploading ${posts.size} posts")
-            Log.d("UploadDebug", "JSON: ${json.take(500)}...")
-
-            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
             val response = api.postSurveyDataNew("Bearer $token", posts)
 
-            return if (response.isSuccessful && response.body() != null) {
-                // Mark all uploaded in IO thread
+            Log.d(TAG, "=== UPLOAD RESPONSE ===")
+            Log.d(TAG, "Response successful: ${response.isSuccessful}")
+            Log.d(TAG, "Response code: ${response.code()}")
+            Log.d(TAG, "Response body present: ${response.body() != null}")
+
+            if (response.isSuccessful && response.body() != null) {
+                Log.i(TAG, "Survey upload successful - marking surveys as uploaded")
                 withContext(Dispatchers.IO) {
-                    subparcels.forEach { dao.markAsUploaded(it.pkId) }
+                    // Mark all related surveys as uploaded
+                    subparcels.forEach { subSurvey ->
+                        dao.markAsUploaded(subSurvey.pkId)
+                        Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
+                    }
                 }
+                Log.i(TAG, "=== UPLOAD COMPLETED SUCCESSFULLY ===")
                 Resource.Success(Unit)
             } else {
-                Resource.Error(
-                    "Server error: ${
-                        response.errorBody()?.string() ?: "Unknown"
-                    } (code ${response.code()})"
-                )
+                val errorBody = response.errorBody()?.string() ?: "Unknown"
+                val errorMessage = "Server error: $errorBody (code ${response.code()})"
+                Log.e(TAG, "Upload failed: $errorMessage")
+                Resource.Error(errorMessage)
             }
 
         } catch (e: Exception) {
+            Log.e(TAG, "Exception during survey upload", e)
             Resource.Error(e.message ?: "Unexpected error")
         }
     }
+
+    // ✅ Build clean SurveyPostNew with geometry AND person data AND khewatInfo AND parcelAreaKMF AND distance from ActiveParcelEntity
+    private fun buildCleanSurveyPostNew(
+        survey: NewSurveyNewEntity,
+        pictures: List<Pictures>,
+        persons: List<SurveyPersonPost>,
+        geomWKT: String,
+        centroid: String,
+        khewatInfo: String, // ✅ Pass khewatInfo as parameter from ActiveParcelEntity
+        parcelAreaKMF: String, // ✅ Pass parcelAreaKMF as parameter from ActiveParcelEntity
+        distance: Int = 100 // ✅ Pass distance as parameter with default value 100
+    ): SurveyPostNew {
+
+        // ✅ For split parcels (or any "New" operation), don't send parcel ID
+        // Let the server generate new IDs
+        val parcelIdToSend = if (survey.parcelOperation == "New") {
+            0L // Don't send local ID - let server create new
+        } else {
+            survey.parcelId ?: 0L // Send existing ID for other operations
+        }
+
+        return SurveyPostNew(
+            propertyType = survey.propertyType,
+            ownershipStatus = survey.ownershipStatus,
+            variety = survey.variety,
+            cropType = survey.cropType,
+            crop = survey.crop,
+            year = survey.year,
+            area = survey.area,
+            isGeometryCorrect = survey.isGeometryCorrect,
+            remarks = survey.remarks,
+            mauzaId = survey.mauzaId,
+            areaName = survey.areaName,
+            parcelId = parcelIdToSend, // ✅ Use 0 for new parcels
+            parcelNo = survey.parcelNo,
+            subParcelNo = survey.subParcelNo,
+            parcelOperation = "New", // ✅ Always "New" for clean creation
+            parcelOperationValue = "", // ✅ Always empty - no references to old parcels
+            geomWKT = if (geomWKT.isNotEmpty()) geomWKT else null,
+            centriod = if (centroid.isNotEmpty()) centroid else null, // ✅ Changed to match DB field
+            khewatInfo = khewatInfo, // ✅ USE KHEWAT INFO FROM ACTIVEPARCELENTITY
+            parcelAreaKMF = parcelAreaKMF, // ✅ USE PARCEL AREA KMF FROM ACTIVEPARCELENTITY
+            distance = distance, // ✅ USE DISTANCE PARAMETER
+            pictures = pictures,
+            persons = persons
+        )
+    }
+
+    // ✅ Convert persons to SurveyPersonPost (your existing method is correct)
+    private fun convertPersonsToSurveyPersonPost(personsEntities: List<SurveyPersonEntity>): List<SurveyPersonPost> {
+        return personsEntities.map { person ->
+            SurveyPersonPost(
+                personId = person.id ?: 0L,
+                firstName = person.firstName ?: "",
+                lastName = person.lastName ?: "",
+                gender = person.gender ?: "",
+                relation = person.relation ?: "",
+                religion = person.religion ?: "",
+                mobile = person.mobile ?: "",
+                nic = person.nic ?: "",
+                growerCode = person.growerCode ?: "",
+                personArea = person.personArea?.toString() ?: "",
+                ownershipType = person.ownershipType ?: "",
+                extra1 = person.extra1 ?: "",
+                extra2 = person.extra2 ?: "",
+                mauzaId = person.mauzaId ?: 0L,
+                mauzaName = person.mauzaName ?: ""
+            )
+        }
+    }
+
+    // ✅ Build clean SurveyPostNew with geometry AND person data
+// ✅ Build clean SurveyPostNew with geometry AND person data
+
 
 
     fun saveJsonToFile(context: Context, json: String, filename: String = "survey_post.json") {
@@ -285,6 +575,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
             pictures = pictures,
             persons = persons
         )
+
+
     }
 
     override suspend fun getSurveyById(id: Long): NewSurveyNewEntity? {
@@ -299,7 +591,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
         return personDao.getPersonsForSurvey(surveyId)
     }
 
-     suspend fun getGrowerCodesForParcel(parcelId: Long): List<String> {
+    suspend fun getGrowerCodesForParcel(parcelId: Long): List<String> {
         return personDao.getGrowerCodesForParcel(parcelId)
     }
 
