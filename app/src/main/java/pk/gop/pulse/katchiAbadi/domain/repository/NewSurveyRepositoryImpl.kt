@@ -127,6 +127,9 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
                         val originalParcel = activeParcelDao.getParcelById(survey.parcelId)
                         if (originalParcel != null) {
+
+
+
                             // Get all split parcels (excluding the original)
                             val mauzaId = originalParcel.mauzaId
                             val areaName = originalParcel.areaAssigned
@@ -139,6 +142,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                             }
 
                             Log.d(TAG, "Found ${splitParcels.size} split parcels to upload (excluding original)")
+                            Log.d(TAG, "Original parcel deactivated: ID=${survey.parcelId}")
 
                             // ✅ Create clean survey records with "New" operation
                             val splitSurveys = mutableListOf<NewSurveyNewEntity>()
@@ -150,7 +154,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                                     parcelNo = splitParcel.parcelNo.toString(),
                                     subParcelNo = splitParcel.subParcelNo,
                                     parcelOperation = "New", // Always use "New" for clean creation
-                                    parcelOperationValue = "" // ✅ No reference to original parcel
+                                    parcelOperationValue = survey.parcelId.toString() // ✅ No reference to original parcel
                                 )
                                 splitSurveys.add(splitSurvey)
                                 Log.d(TAG, "Created clean survey record for split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, KhewatInfo=${originalParcel.khewatInfo}")
@@ -370,6 +374,11 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         dao.markAsUploaded(subSurvey.pkId)
                         Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
                     }
+                    // ✅ NOW deactivate original parcel locally AFTER successful upload
+                    if (survey.parcelOperation == "Split") {
+                        deactivateOriginalParcel(survey.parcelId)
+                        Log.d(TAG, "Deactivated original parcel locally after successful upload")
+                    }
                 }
                 Log.i(TAG, "=== UPLOAD COMPLETED SUCCESSFULLY ===")
                 Resource.Success(Unit)
@@ -383,6 +392,14 @@ class NewSurveyRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Exception during survey upload", e)
             Resource.Error(e.message ?: "Unexpected error")
+        }
+    }
+
+    private suspend fun deactivateOriginalParcel(originalParcelId: Long) {
+        withContext(Dispatchers.IO) {
+            // Mark the original parcel as deactivated in local database
+            activeParcelDao.deactivateParcel(originalParcelId)
+            Log.d(TAG, "Deactivated original parcel with ID: $originalParcelId")
         }
     }
 
@@ -421,8 +438,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
             parcelId = parcelIdToSend, // ✅ Use 0 for new parcels
             parcelNo = survey.parcelNo,
             subParcelNo = survey.subParcelNo,
-            parcelOperation = "New", // ✅ Always "New" for clean creation
-            parcelOperationValue = "", // ✅ Always empty - no references to old parcels
+            parcelOperation = survey.parcelOperation, // ✅ Always "New" for clean creation
+            parcelOperationValue = survey.parcelOperationValue, // ✅ Always empty - no references to old parcels
             geomWKT = if (geomWKT.isNotEmpty()) geomWKT else null,
             centriod = if (centroid.isNotEmpty()) centroid else null, // ✅ Changed to match DB field
             khewatInfo = khewatInfo, // ✅ USE KHEWAT INFO FROM ACTIVEPARCELENTITY

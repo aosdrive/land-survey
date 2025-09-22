@@ -1029,19 +1029,6 @@ class FragmentMap : Fragment() {
         }
     }
 
-    private fun showDeleteConfirmation(graphic: Graphic) {
-        val parcelNo = graphic.attributes["parcel_no"]?.toString() ?: "Unknown"
-
-        AlertDialog.Builder(requireContext())
-            .setTitle("Delete Parcel")
-            .setMessage("Are you sure you want to delete parcel $parcelNo?")
-            .setPositiveButton("Delete") { _, _ ->
-                deleteParcel(graphic)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
     private fun deleteParcel(graphic: Graphic) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
