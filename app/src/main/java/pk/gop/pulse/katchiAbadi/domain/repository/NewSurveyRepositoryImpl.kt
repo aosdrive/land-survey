@@ -168,6 +168,56 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         }
                     }
 
+                    "Merge" -> {
+                        Log.d(TAG, "Processing merge parcel upload for parcelId=${survey.parcelId}")
+
+                        // Get the main parcel being surveyed
+                        val mainParcel = activeParcelDao.getParcelById(survey.parcelId)
+                        if (mainParcel == null) {
+                            Log.e(TAG, "Main parcel not found for merge operation")
+                            return@withContext emptyList()
+                        }
+
+                        val mergeSurveys = mutableListOf<NewSurveyNewEntity>()
+
+                        // ✅ MAIN PARCEL: Keep ParcelOperationValue to trigger merge logic
+                        val mainSurvey = survey.copy(
+                            parcelOperation = "Merge",
+                            // Keep parcelOperationValue - this will trigger ProcessMergeOperation
+                            parcelOperationValue = survey.parcelOperationValue
+                        )
+                        mergeSurveys.add(mainSurvey)
+                        Log.d(TAG, "Added main parcel to merge with ParcelOperationValue: ${survey.parcelOperationValue}")
+
+                        // Parse merged parcel IDs from parcelOperationValue
+                        val mergedParcelIds = survey.parcelOperationValue
+                            .split(",")
+                            .mapNotNull { it.trim().toLongOrNull() }
+                            .filter { it != survey.parcelId } // Exclude main parcel
+
+                        Log.d(TAG, "Found ${mergedParcelIds.size} additional parcels to merge: $mergedParcelIds")
+
+                        // ✅ MERGED PARCELS: Clear ParcelOperationValue to avoid duplicate processing
+                        mergedParcelIds.forEach { mergedParcelId ->
+                            val mergedParcel = activeParcelDao.getParcelById(mergedParcelId)
+                            if (mergedParcel != null) {
+                                val mergedSurvey = survey.copy(
+                                    pkId = survey.pkId, // New record for each merged parcel
+                                    parcelId = mergedParcelId,
+                                    parcelNo = mergedParcel.parcelNo.toString(),
+                                    subParcelNo = mergedParcel.subParcelNo,
+                                    parcelOperation = "Merge",
+                                    parcelOperationValue = "" // ✅ EMPTY - Don't trigger ProcessMergeOperation again
+                                )
+                                mergeSurveys.add(mergedSurvey)
+                                Log.d(TAG, "Added merged parcel with EMPTY ParcelOperationValue: ID=$mergedParcelId")
+                            }
+                        }
+
+                        Log.d(TAG, "Created ${mergeSurveys.size} survey records for merge operation")
+                        mergeSurveys
+                    }
+
                     "Same" -> {
                         Log.d(TAG, "Processing 'Same' operation for parcelId=${survey.parcelId}")
                         val localParcel = activeParcelDao.getParcelById(survey.parcelId)

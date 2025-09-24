@@ -606,15 +606,30 @@ class MenuActivity : AppCompatActivity() {
                                             this@MenuActivity,
                                             "Fetching areas..."
                                         )
+                                        Log.d("API_CALL", "Calling getAreasByMauzaId with mauzaId: ${selectedMauza.mauzaId}")
 
                                         val areaResponse = serverApi.getAreasByMauzaId(
                                             selectedMauza.mauzaId,
                                             "Bearer $token"
                                         )
 
+                                        Log.d("API_RESPONSE", "Raw response: $areaResponse")
+                                        Log.d("API_RESPONSE", "Response areas field: ${areaResponse.areas}")
+                                        Log.d("API_RESPONSE", "Areas type: ${areaResponse.areas::class.java}")
+
+
                                         Utility.dismissProgressAlertDialog()
 
                                         val areaList = areaResponse.areas
+
+                                        val validAreas = areaList.filter { area ->
+                                            area.isNotBlank() && !area.matches(Regex("^\\d+$")) // Remove empty and numeric-only strings
+                                        }
+
+                                        Log.d("AREA_FILTER", "Original areas: $areaList")
+                                        Log.d("AREA_FILTER", "Filtered valid areas: $validAreas")
+
+
                                         if (areaList.isEmpty()) {
                                             ToastUtil.showShort(
                                                 this@MenuActivity,
@@ -628,6 +643,7 @@ class MenuActivity : AppCompatActivity() {
 
                                     } catch (e: Exception) {
                                         Utility.dismissProgressAlertDialog()
+
                                         ToastUtil.showShort(
                                             this@MenuActivity,
                                             "Error fetching areas: ${e.message}"
@@ -667,6 +683,9 @@ class MenuActivity : AppCompatActivity() {
     }
 
     private fun showAreaSelectionDialog(mauza: MauzaDetail, areaList: List<String>) {
+
+        Log.d("AREA_DIALOG", "Showing areas for mauza ${mauza.mauzaId}: $areaList")
+
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_area_list, null)
         val spinner = view.findViewById<Spinner>(R.id.spn_areas)
 
@@ -1042,12 +1061,12 @@ class MenuActivity : AppCompatActivity() {
             Constants.SHARED_PREF_DEFAULT_MIN_SCALE
         )
 
-        val maxZoomLevel = sharedPreferences.getInt(
-            Constants.SHARED_PREF_MAP_MAX_SCALE,
-            Constants.SHARED_PREF_DEFAULT_MAX_SCALE
-        )
+//        val maxZoomLevel = sharedPreferences.getInt(
+//            Constants.SHARED_PREF_MAP_MAX_SCALE,
+//            Constants.SHARED_PREF_DEFAULT_MAX_SCALE
+//        )
 
-//        val maxZoomLevel = 16
+        val maxZoomLevel = 16
 
         var currentTile = 0
         var relevantMaxZoom = 0
@@ -1210,7 +1229,6 @@ class MenuActivity : AppCompatActivity() {
         }
     }
 
-
     private fun downloadMapTiles() {
 
         downloadComplete = false
@@ -1308,6 +1326,14 @@ class MenuActivity : AppCompatActivity() {
                 relevantMaxZoom = result.first
                 tilesToDownload = result.second
 
+
+                // Add these logs
+                Log.d("TileDownload", "=== TILE DOWNLOAD STARTED ===")
+                Log.d("TileDownload", "Min Zoom Level: $minZoomLevel")
+                Log.d("TileDownload", "Max Zoom Level: $maxZoomLevel")
+                Log.d("TileDownload", "Relevant Max Zoom: $relevantMaxZoom")
+                Log.d("TileDownload", "Total Tiles to Download: $tilesToDownload")
+                Log.d("TileDownload", "Buffered Extent: ${bufferedExtent.xMin}, ${bufferedExtent.yMin}, ${bufferedExtent.xMax}, ${bufferedExtent.yMax}")
                 // Now use relevantMaxZoom and tilesToDownload in your download logic
                 println("Max Zoom Level: $relevantMaxZoom")
                 println("Total Tiles to Download: $tilesToDownload")
@@ -1341,10 +1367,16 @@ class MenuActivity : AppCompatActivity() {
                         maxY = temp
                     }
 
+                    val tilesForThisZoom = (maxX - minX + 1) * (maxY - minY + 1)
+                    Log.d("TileDownload", "--- Zoom Level $zoomLevel ---")
+                    Log.d("TileDownload", "Tile range: X($minX-$maxX), Y($minY-$maxY)")
+                    Log.d("TileDownload", "Tiles for zoom $zoomLevel: $tilesForThisZoom")
+
                     for (tileX in minX..maxX) {
                         for (tileY in minY..maxY) {
                             if (Utility.checkInternetConnection(this@MenuActivity)) {
                                 currentTile++
+                                Log.v("TileDownload", "Downloading tile $currentTile/$tilesToDownload - Zoom:$zoomLevel, X:$tileX, Y:$tileY")
                                 tileManager.downloadAndCacheTile(
                                     zoomLevel,
                                     tileY,
@@ -1612,7 +1644,6 @@ class MenuActivity : AppCompatActivity() {
         return Pair(currentMaxZoom, tilesToDownload) // Return max zoom level and tile count
     }
 
-
     private fun copyFolder(sourceFolder: File, destinationFolder: File) {
         // Create the destination folder if it doesn't exist
         if (!destinationFolder.exists()) {
@@ -1658,93 +1689,6 @@ class MenuActivity : AppCompatActivity() {
 
         return ytile
     }
-
-//    private fun deleteUnSyncedData() {
-//        downloadComplete?.let {
-//            if (!it) {
-//
-//                downloadFileTask?.cancel()
-//
-//                val mauzaId = sharedPreferences.getLong(
-//                    Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-//                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-//                )
-//
-//                val areaId = sharedPreferences.getLong(
-//                    Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
-//                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-//                )
-//
-//                lifecycleScope.launch {
-//
-//                    val sdCardRoot = context.filesDir
-//
-//                    val destinationFile = when (Constants.MAP_DOWNLOAD_TYPE) {
-//                        DownloadType.TPK -> {
-//                            val filesDir = File(sdCardRoot, "MapTpk/${areaId}")
-//                            File(filesDir, "${mauzaId}_${areaId}.tpk")
-//                        }
-//
-//                        DownloadType.TILES -> {
-//                            File(context.filesDir, "MapTiles/${areaId}")
-//                        }
-//                    }
-//
-//
-//                    if (!destinationFile.exists()) {
-//                        database.parcelDao().deleteAllParcelsWrtArea(areaId)
-//                        database.surveyDao().deleteAllSurveysWrtArea(areaId)
-//
-//                        val lastDownloadedArea = database.parcelDao().lastDownloadedArea()
-//
-//                        if (lastDownloadedArea != null) {
-//                            sharedPreferences.edit()
-//                                .putLong(
-//                                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-//                                    lastDownloadedArea.mauzaId
-//                                )
-//                                .putString(
-//                                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
-//                                    lastDownloadedArea.mauzaName
-//                                )
-//                                .putLong(
-//                                    Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-//                                    lastDownloadedArea.kachiAbadiId
-//                                )
-//                                .putString(
-//                                    Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-//                                    lastDownloadedArea.abadiName
-//                                )
-//                                .apply()
-//                        } else {
-//                            sharedPreferences.edit()
-//                                .putLong(
-//                                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-//                                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-//                                )
-//                                .putString(
-//                                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
-//                                    Constants.SHARED_PREF_DEFAULT_STRING
-//                                )
-//                                .putLong(
-//                                    Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-//                                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-//                                )
-//                                .putString(
-//                                    Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-//                                    Constants.SHARED_PREF_DEFAULT_STRING
-//                                )
-//                                .apply()
-//                        }
-//
-//                        checkParcelsAndUpdateUI()
-//                    }
-//                }
-//            }
-//
-//            downloadComplete = null
-//        }
-//    }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -2005,7 +1949,6 @@ class MenuActivity : AppCompatActivity() {
         }, 100)
     }
 
-
     private fun applySavedTheme() {
         val savedTheme =
             sharedPreferences.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
@@ -2051,28 +1994,6 @@ class MenuActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             Log.e("MenuActivity", "Error setting up status bar: ${e.message}")
-        }
-    }
-
-    private fun updateStatusBarColor() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val isDarkMode = isDarkModeActive()
-
-            if (isDarkMode) {
-                window.statusBarColor = ContextCompat.getColor(this, R.color.dark_primary)
-                // For dark mode, keep status bar icons light
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    window.decorView.systemUiVisibility =
-                        window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            } else {
-                window.statusBarColor = ContextCompat.getColor(this, R.color.forest_green)
-                // For light mode with dark status bar, keep icons light
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    window.decorView.systemUiVisibility =
-                        window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-                }
-            }
         }
     }
 

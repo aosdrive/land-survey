@@ -459,21 +459,6 @@ class SurveyActivity : AppCompatActivity() {
         return file.absolutePath
     }
 
-
-    //    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-//        if (success) {
-//            val image = SurveyImage(uri = tempImageUri.toString(), type = currentImageType)
-//            viewModel.addImage(image)
-//            imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
-//        }
-//    }
-//
-//    private fun captureImage() {
-//        val photoFile = File.createTempFile("survey_img_", ".jpg", cacheDir)
-//        tempImageUri = FileProvider.getUriForFile(context, "${packageName}.fileProvider", photoFile)
-//        cameraLauncher.launch(tempImageUri)
-//    }
-
     private fun captureImage() {
         try {
             val timestamp = System.currentTimeMillis()
@@ -502,13 +487,6 @@ class SurveyActivity : AppCompatActivity() {
         }
     }
 
-    //    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-//        if (success) {
-//            val image = SurveyImage(uri = tempImageUri.toString(), type = currentImageType)  // use tempImageUri here!
-//            viewModel.addImage(image)
-//            imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
-//        }
-//    }
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             Log.d(

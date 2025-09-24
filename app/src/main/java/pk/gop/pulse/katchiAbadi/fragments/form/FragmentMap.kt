@@ -1476,10 +1476,11 @@ class FragmentMap : Fragment() {
                         Constants.SHARED_PREF_DEFAULT_MIN_SCALE
                     )
 
-                    val maxZoomLevel = sharedPreferences.getInt(
-                        Constants.SHARED_PREF_MAP_MAX_SCALE,
-                        Constants.SHARED_PREF_DEFAULT_MAX_SCALE
-                    )
+//                    val maxZoomLevel = sharedPreferences.getInt(
+//                        Constants.SHARED_PREF_MAP_MAX_SCALE,
+//                        Constants.SHARED_PREF_DEFAULT_MAX_SCALE
+//                    )
+                    val maxZoomLevel = 16
 
                     // Create CustomTileLayer
                     val customTileLayer = CustomTileLayer(
