@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.room.Room
 import com.google.gson.Gson
 import dagger.Module
@@ -104,12 +105,18 @@ object AppModule {
 
     @Provides
     @Singleton
-
     fun provideOkHttpClient(sharedPreferences: SharedPreferences): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .protocols(listOf(Protocol.HTTP_1_1))
             .addInterceptor { chain ->
                 val requestBuilder = chain.request().newBuilder()
+                val original = chain.request()
+
+                Log.d("API_REQUEST", "==========================================")
+                Log.d("API_REQUEST", "Full URL: ${original.url}")
+                Log.d("API_REQUEST", "Method: ${original.method}")
+                Log.d("API_REQUEST", "Headers: ${original.headers}")
+
                 val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, null)
                 if (!token.isNullOrEmpty()) {
                     requestBuilder.addHeader("Authorization", "Bearer $token")
