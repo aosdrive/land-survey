@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <!--    Normal Permissions  -->
+    <!-- Normal Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
-    <!--    Dangerous Permissions  -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" /> <!-- Dangerous Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -36,18 +33,19 @@
         android:theme="@style/Theme.Survey"
         android:usesCleartextTraffic="true"
         tools:replace="android:allowBackup">
-
+        <activity
+            android:name=".activities.TaskAssignActivity"
+            android:exported="false" />
         <activity
             android:name=".activities.AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.AppSplash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-
         <activity
             android:name=".activities.SurveyListActivity"
             android:exported="false"
@@ -58,12 +56,10 @@
             android:exported="false"
             android:label="Saved Records"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.MenuActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.SurveyActivity"
             android:exported="false"
@@ -74,50 +70,42 @@
             android:exported="false"
             android:label="Saved Records"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.SentRecordsActivity"
             android:exported="false"
             android:label="Surveyed Records"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.SurveyFormActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".activities.NotAtHomeActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".activities.ViewRecordActivity"
             android:exported="false"
             android:label="View Record"
             android:theme="@style/Theme.Survey"
             android:windowSoftInputMode="adjustResize" />
-
         <activity
             android:name=".activities.SettingsActivity"
             android:exported="false"
             android:label="Settings"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.DownloadedAreasActivity"
             android:exported="false"
             android:label="Synced Areas"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.PrivacyPolicyActivity"
             android:exported="false"
             android:label="Privacy Policy"
             android:theme="@style/Theme.Survey" />
-
         <activity
             android:name=".activities.OfflineViewpagerActivity"
             android:exported="false"
@@ -132,7 +120,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
     </application>
 
 </manifest>

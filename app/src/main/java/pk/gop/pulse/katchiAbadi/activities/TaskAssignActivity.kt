@@ -1,4 +1,3 @@
-// SurveyActivity.kt
 package pk.gop.pulse.katchiAbadi.activities
 
 import OwnerSelectionDialog
@@ -21,11 +20,14 @@ import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -41,6 +43,7 @@ import pk.gop.pulse.katchiAbadi.data.local.SurveyFormViewModel
 import pk.gop.pulse.katchiAbadi.data.local.SurveyImageAdapter
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyNewBinding
+import pk.gop.pulse.katchiAbadi.databinding.ActivityTaskAssignBinding
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
@@ -48,16 +51,15 @@ import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
-
 @AndroidEntryPoint
-class SurveyActivity : AppCompatActivity() {
+class TaskAssignActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySurveyNewBinding
+    private lateinit var binding: ActivityTaskAssignBinding
     private lateinit var context: Context
     private lateinit var personEntryHelper: PersonEntryHelper
     private lateinit var imageAdapter: SurveyImageAdapter
     private var tempImageUri: Uri? = null
-    private var tempImagePath: String? = null  // ADD this line
+    private var tempImagePath: String? = null
     private var currentImageType: String = ""
 
     private val viewModel: SurveyFormViewModel by viewModels()
@@ -82,26 +84,19 @@ class SurveyActivity : AppCompatActivity() {
         tempImagePath = savedInstanceState.getString("tempImagePath")
         tempImageUri = savedInstanceState.getString("tempImageUri")?.let { Uri.parse(it) }
     }
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivitySurveyNewBinding.inflate(layoutInflater)
+        binding = ActivityTaskAssignBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        context = this@SurveyActivity
+        context = this@TaskAssignActivity
 
-        // Set default year
-        binding.etYear.setText("2025")
         if (!sharedPreferences.getBoolean("sample_persons_inserted", false)) {
             //  insertSamplePersonsOnce()
         }
 
-
         binding.btnTakePhoto.setOnClickListener {
-            currentImageType = binding.spinnerImageType.selectedItem.toString()
             requestCameraPermissionAndCapture()
         }
-
 
         val parcelId = intent.getLongExtra("parcelId", 0L)
         val parcelNo = intent.getStringExtra("parcelNo") ?: ""
@@ -111,10 +106,8 @@ class SurveyActivity : AppCompatActivity() {
         val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
         val parcelOperationValue = intent.getStringExtra("parcelOperationValue") ?: ""
 
-//        val parcelInfoText = "Parcel #$parcelNo-$subParcelNo\nArea: $parcelArea\nID: $parcelId"
         val parcelInfoText = SpannableStringBuilder()
 
-// Bold "Parcel:"
         val parcelLabel = SpannableString("P/N:")
         parcelLabel.setSpan(
             StyleSpan(Typeface.BOLD),
@@ -124,10 +117,8 @@ class SurveyActivity : AppCompatActivity() {
         )
         parcelInfoText.append(parcelLabel)
 
-// Add the rest with tabs (inline)
         parcelInfoText.append("$parcelNo/$subParcelNo\t\t GC= $khewatInfo \t\tArea: $parcelArea\t\tID: $parcelId\t\tOperation: $parcelOperation\t\tparcelOperationValue: $parcelOperationValue")
 
-// Set to TextView
         binding.tvParcelInfo.text = parcelInfoText
 
         findViewById<TextView>(R.id.tvParcelInfo).text = parcelInfoText
@@ -161,200 +152,12 @@ class SurveyActivity : AppCompatActivity() {
             }
         }
 
-    private var selectedCropType: String? = null
-    private var selectedVariety: String? = null
-
-    // Add these as class-level variables
-    private var isSettingSpinnerProgrammatically = false
-
     private fun setupSpinners() {
-        val ownershipStatusList = listOf("Self", "On Lease")
-        val propertyTypeList = listOf("Farm Survey", "Other")
-        val imageTypeList = listOf("CNIC", "Property", "Other Document", "Discrepancy Pic")
-        val cropList = listOf(
-            "Sugarcane",
-            "Wheat",
-            "Rice",
-            "Cotton",
-            "Maize",
-            "Plot",
-            "Sesame Seeds",
-            "Uncultivated Area",
-            "Vegetables",
-            "Fodder",
-            "Orchard",
-            "Other"
-        )
-        val cropTypeList = listOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "Other")
-        val varietyList = listOf(
-            "CP-77400",
-            "CPF-253",
-            "CPF-246",
-            "NSG-59",
-            "J-16-639",
-            "J-16-487",
-            "YTFG-236",
-            "HSF-240",
-            "CPF-247",
-            "CPF-249",
-            "CPF-250",
-            "CPF-251",
-            "CPF-252",
-            "CPF-237",
-            "CPF-236",
-            "CSSG-676",
-            "Other"
-        )
-
-        binding.spinnerOwnershipStatus.adapter =
-            ArrayAdapter(
-                context,
-                android.R.layout.simple_spinner_dropdown_item,
-                ownershipStatusList
-            )
-
+        val propertyTypeList = listOf("Pest Attack","Excess Water","Water Shortage", "Other")
         binding.spinnerPropertyStatus.adapter =
             ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, propertyTypeList)
 
-        binding.spinnerImageType.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, imageTypeList)
-
-        binding.etCrop.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, cropList)
-
-        binding.etCropType.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, cropTypeList)
-
-        // Setup etVariety
-        val varietyAdapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_item, varietyList)
-        varietyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.etVariety.adapter = varietyAdapter
-
-        // Listener for etVariety
-        binding.etVariety.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                if (isSettingSpinnerProgrammatically) return
-
-                val selected = parent.getItemAtPosition(position).toString()
-
-                if (selected == "Other") {
-                    showCustomVarietyInputDialog()
-                } else {
-                    selectedVariety = selected
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
-
-        // Listener for etCropType
-        binding.etCropType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                if (isSettingSpinnerProgrammatically) return
-
-                val selected = parent.getItemAtPosition(position).toString()
-
-                if (selected == "Other") {
-                    showCustomCropInputDialog()
-                } else {
-                    selectedCropType = selected
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
     }
-
-
-    private fun showCustomVarietyInputDialog() {
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-
-        AlertDialog.Builder(this)
-            .setTitle("Enter Variety")
-            .setView(input)
-            .setPositiveButton("OK") { dialog, _ ->
-                val customVariety = input.text.toString()
-                if (customVariety.isNotBlank()) {
-                    selectedVariety = customVariety
-                    ToastUtil.showShort(this, "Selected Variety: $customVariety")
-                } else {
-                    // If empty, set to "Other" and keep spinner on "Other"
-                    selectedVariety = "Other"
-                    // Keep the spinner on "Other" position
-                    isSettingSpinnerProgrammatically = true
-                    val varietyAdapter = binding.etVariety.adapter as ArrayAdapter<String>
-                    val otherPosition = varietyAdapter.getPosition("Other")
-                    binding.etVariety.setSelection(otherPosition)
-                    isSettingSpinnerProgrammatically = false
-                    ToastUtil.showShort(this, "Selected Variety: Other")
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                // On cancel, set to "Other" and keep spinner on "Other"
-                selectedVariety = "Other"
-                isSettingSpinnerProgrammatically = true
-                val varietyAdapter = binding.etVariety.adapter as ArrayAdapter<String>
-                val otherPosition = varietyAdapter.getPosition("Other")
-                binding.etVariety.setSelection(otherPosition)
-                isSettingSpinnerProgrammatically = false
-                ToastUtil.showShort(this, "Selected Variety: Other")
-                dialog.dismiss()
-            }
-            .show()
-    }
-
-    private fun showCustomCropInputDialog() {
-        val input = EditText(this)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-
-        AlertDialog.Builder(this)
-            .setTitle("Enter Crop Type")
-            .setView(input)
-            .setPositiveButton("OK") { dialog, _ ->
-                val customCrop = input.text.toString().trim()
-                if (customCrop.isNotBlank()) {
-                    selectedCropType = customCrop
-                    Toast.makeText(this, "Custom crop selected: $customCrop", Toast.LENGTH_SHORT)
-                        .show()
-                } else {
-                    // If empty, set to "Other" and keep spinner on "Other"
-                    selectedCropType = "Other"
-                    // Keep the spinner on "Other" position
-                    isSettingSpinnerProgrammatically = true
-                    val cropAdapter = binding.etCropType.adapter as ArrayAdapter<String>
-                    val otherPosition = cropAdapter.getPosition("Other")
-                    binding.etCropType.setSelection(otherPosition)
-                    isSettingSpinnerProgrammatically = false
-                    ToastUtil.showShort(this, "Selected Crop Type: Other")
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                // On cancel, set to "Other" and keep spinner on "Other"
-                selectedCropType = "Other"
-                isSettingSpinnerProgrammatically = true
-                val cropAdapter = binding.etCropType.adapter as ArrayAdapter<String>
-                val otherPosition = cropAdapter.getPosition("Other")
-                binding.etCropType.setSelection(otherPosition)
-                isSettingSpinnerProgrammatically = false
-                dialog.dismiss()
-            }
-            .show()
-    }
-
     private fun setupPersonSection() {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
 
@@ -377,12 +180,7 @@ class SurveyActivity : AppCompatActivity() {
                 }
             }
         }
-
-        binding.btnAddNewPerson.setOnClickListener {
-            personEntryHelper.addPersonView(null, editable = true)
-        }
     }
-
     private fun setupImageSection() {
         imageAdapter = SurveyImageAdapter { imageToRemove ->
             viewModel.removeImage(imageToRemove)
@@ -395,41 +193,13 @@ class SurveyActivity : AppCompatActivity() {
         }
 
         binding.btnAddImage.setOnClickListener {
-            currentImageType = binding.spinnerImageType.selectedItem.toString()
             imagePickerLauncher.launch("image/*")
         }
 
         binding.btnTakePhoto.setOnClickListener {
-            currentImageType = binding.spinnerImageType.selectedItem.toString()
             captureImage()
         }
     }
-
-//    private fun setupImageSection() {
-//        imageAdapter = SurveyImageAdapter()
-//        binding.recyclerPictures.apply {
-//            layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
-//            adapter = imageAdapter
-//        }
-//
-//        binding.btnAddImage.setOnClickListener {
-//            currentImageType = binding.spinnerImageType.selectedItem.toString()
-//            imagePickerLauncher.launch("image/*")
-//        }
-//
-//        binding.btnTakePhoto.setOnClickListener {
-//            currentImageType = binding.spinnerImageType.selectedItem.toString()
-//            captureImage()
-//        }
-//    }
-
-//    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-//        uri?.let {
-//            val image = SurveyImage(uri = it.toString(), type = currentImageType)
-//            viewModel.addImage(image)
-//            imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
-//        }
-//    }
 
     private val imagePickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -556,8 +326,6 @@ class SurveyActivity : AppCompatActivity() {
             }
         }
 
-
-    // Compress file function compressing bitmap until <= targetKB size
     private fun compressImageFile(inputFile: File, targetKB: Int = 300): File? {
         try {
             val bitmap = BitmapFactory.decodeFile(inputFile.absolutePath) ?: return null
@@ -605,14 +373,7 @@ class SurveyActivity : AppCompatActivity() {
                 parcelNo = parcelNo,
                 subParcelNo = subParcelNo,
                 propertyType = binding.spinnerPropertyStatus.selectedItem.toString(),
-                ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString(),
-                variety = selectedVariety ?: binding.etVariety.selectedItem.toString(),
-                crop = binding.etCrop.selectedItem.toString(),
-                cropType = selectedCropType ?: binding.etCropType.selectedItem.toString(),
-                year = binding.etYear.text.toString(),
-                area = binding.etArea.text.toString(),
-                isGeometryCorrect = binding.cbGeometryCorrect.isChecked,
-                remarks = binding.etRemarks.text.toString(),
+                year = binding.etDate.text.toString(),
                 parcelOperation = parcelOperation,
                 parcelOperationValue = parcelOperationValue,
                 mauzaId = sharedPreferences.getLong(
@@ -626,7 +387,6 @@ class SurveyActivity : AppCompatActivity() {
             )
             val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
 
-//need to update this for
             val rawPersons = personEntryHelper.getAllPersons()
             val images = viewModel.surveyImages.value!!
 
@@ -634,10 +394,6 @@ class SurveyActivity : AppCompatActivity() {
                 withContext(Dispatchers.IO) {
                     val surveyId = database.newSurveyNewDao().insertSurvey(survey)
 
-//                    persons.forEach {
-//                        it.surveyId = surveyId
-//                        database.personDao().insertPerson(it)
-//                    }
                     val persons = rawPersons.map {
                         it.copy(surveyId = surveyId, mauzaId = mauzaId)
                     }
@@ -645,21 +401,15 @@ class SurveyActivity : AppCompatActivity() {
                     database.personDao()
                         .insertAll(persons) // Or use insertPerson in loop if insertAll not available
 
-
                     images.forEach {
                         it.surveyId = surveyId
                         database.imageDao().insertImage(it)
                     }
 
-
-                    //   database.activeParcelDao().updateParcelSurveyStatus(2, surveyId,parcelId, )
-
-
                     val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
                     val commaseparatedparcelids =
                         intent.getStringExtra("parcelOperationValueHi") ?: ""
 
-// mark the main parcel as surveyed
                     database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, parcelId)
 
                     val log = TempSurveyLogEntity(
@@ -669,7 +419,6 @@ class SurveyActivity : AppCompatActivity() {
                     )
                     database.tempSurveyLogDao().insertLog(log)
 
-// If operation is "Merge", mark the merged parcels as surveyed too
                     if (parcelOperation.equals(
                             "Merge",
                             ignoreCase = true
@@ -692,8 +441,6 @@ class SurveyActivity : AppCompatActivity() {
                             database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
                         }
                     }
-
-
                 }
                 ToastUtil.showShort(context, "Survey saved locally")
                 finish()
@@ -707,6 +454,5 @@ class SurveyActivity : AppCompatActivity() {
             sharedPreferences.getString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, "")
         ToastUtil.showShort(context, "MauzaID: $mauzaName ($areaName)")
     }
-
 
 }

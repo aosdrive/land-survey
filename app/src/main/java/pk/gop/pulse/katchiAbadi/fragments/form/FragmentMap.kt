@@ -100,6 +100,7 @@ import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.activities.NotAtHomeActivity
 import pk.gop.pulse.katchiAbadi.activities.SurveyActivity
+import pk.gop.pulse.katchiAbadi.activities.TaskAssignActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.CustomTileLayer
 import pk.gop.pulse.katchiAbadi.common.DownloadType
@@ -247,7 +248,6 @@ class FragmentMap : Fragment() {
             isMergeMode = false
             binding.mergeControlBar.visibility = View.GONE
 
-            // ✅ Safely restore dialogView/card
             dialogView.findViewById<View?>(R.id.card_root)?.visibility = View.VISIBLE
 
             Toast.makeText(
@@ -256,9 +256,6 @@ class FragmentMap : Fragment() {
                 Toast.LENGTH_SHORT
             ).show()
 
-
-            // ✅ KEEP the parcel info visible after merge
-            // Do NOT clear tvMergeParcel, tvMergeParcelHi, or viewModel here
 
             binding.parcelMapview.setOnTouchListener(
                 DefaultMapViewOnTouchListener(requireContext(), binding.parcelMapview)
@@ -271,11 +268,7 @@ class FragmentMap : Fragment() {
             restoreOriginalGraphics()
 
             binding.mergeControlBar.visibility = View.GONE
-
-            // ✅ Safely restore dialogView/card
             dialogView.findViewById<View?>(R.id.card_root)?.visibility = View.VISIBLE
-
-            // ✅ Clear state
             viewModel.parcelOperationValue = ""
             tvMergeParcel.text = ""
             tvMergeParcelHi.text = ""
@@ -746,7 +739,8 @@ class FragmentMap : Fragment() {
                 withContext(Dispatchers.IO) {
                     try {
                         // ✅ FIXED: Get the correct original parcel ID from graphic attributes
-                        val originalParcelId = originalAttributes["parcel_id"] as? Long ?: return@withContext
+                        val originalParcelId =
+                            originalAttributes["parcel_id"] as? Long ?: return@withContext
                         if (originalParcelId != null) {
                             cleanupOriginalGraphicsAfterSplit(originalParcelId)
                         }
@@ -754,20 +748,32 @@ class FragmentMap : Fragment() {
                         Log.d("SPLIT_DEBUG", "Original parcel ID from graphic: $originalParcelId")
 
                         // Get the original parcel from database using the ID
-                        val originalParcel = database.activeParcelDao().getParcelById(originalParcelId)
+                        val originalParcel =
+                            database.activeParcelDao().getParcelById(originalParcelId)
 
                         if (originalParcel == null) {
-                            Log.e("SPLIT_DEBUG", "Original parcel not found in database with ID: $originalParcelId")
+                            Log.e(
+                                "SPLIT_DEBUG",
+                                "Original parcel not found in database with ID: $originalParcelId"
+                            )
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Original parcel not found", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "Original parcel not found",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                             return@withContext
                         }
 
-                        Log.d("SPLIT_DEBUG", "Found original parcel: ID=${originalParcel.id}, PKID=${originalParcel.pkid}, ParcelNo=${originalParcel.parcelNo}")
+                        Log.d(
+                            "SPLIT_DEBUG",
+                            "Found original parcel: ID=${originalParcel.id}, PKID=${originalParcel.pkid}, ParcelNo=${originalParcel.parcelNo}"
+                        )
 
                         // ✅ FIXED: Deactivate using the correct ID (not pkid)
-                        database.activeParcelDao().updateParcelActivationStatus(originalParcel.id, false)
+                        database.activeParcelDao()
+                            .updateParcelActivationStatus(originalParcel.id, false)
                         Log.d("ParcelSplit", "Deactivated original parcel ID: ${originalParcel.id}")
 
                         // Generate the maximum ID for new unique IDs
@@ -778,23 +784,29 @@ class FragmentMap : Fragment() {
 
                         for (i in splitPolygons.indices) {
                             // Generate sub-parcel numbering
-                            val newSubParcelNo = if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
-                                (i + 1).toString()
-                            } else {
-                                "${originalSubParcelNo}_${i + 1}"
-                            }
+                            val newSubParcelNo =
+                                if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
+                                    (i + 1).toString()
+                                } else {
+                                    "${originalSubParcelNo}_${i + 1}"
+                                }
 
                             // Create geometry and centroid
                             val newGeomWKT = convertPolygonToWkt(splitPolygons[i])
                             if (!validateWkt(newGeomWKT)) {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Invalid geometry for split parcel ${i + 1}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Invalid geometry for split parcel ${i + 1}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                 }
                                 return@withContext
                             }
 
                             val newCentroid = splitPolygons[i].extent.center
-                            val centroidWKT = String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
+                            val centroidWKT =
+                                String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
 
                             // ✅ Generate unique IDs for split parcels
                             val newUniqueId = maxId + i + 1
@@ -813,26 +825,40 @@ class FragmentMap : Fragment() {
                             )
 
                             newParcels.add(newParcel)
-                            Log.d("SPLIT_DEBUG", "Created split parcel: ID=${newUniqueId}, ParcelNo=$originalParcelNo, SubParcel=$newSubParcelNo")
+                            Log.d(
+                                "SPLIT_DEBUG",
+                                "Created split parcel: ID=${newUniqueId}, ParcelNo=$originalParcelNo, SubParcel=$newSubParcelNo"
+                            )
                         }
 
                         // Insert the new parcels
                         database.activeParcelDao().insertActiveParcels(newParcels)
 
                         // ✅ VERIFICATION: Check that split was successful
-                        val verificationCount = database.activeParcelDao().countActiveParcelsByNumber(
-                            originalParcelNo,
-                            originalParcel.mauzaId,
-                            originalParcel.areaAssigned
+                        val verificationCount =
+                            database.activeParcelDao().countActiveParcelsByNumber(
+                                originalParcelNo,
+                                originalParcel.mauzaId,
+                                originalParcel.areaAssigned
+                            )
+                        Log.d(
+                            "ParcelSplit",
+                            "After split - Active parcels with number $originalParcelNo: $verificationCount"
                         )
-                        Log.d("ParcelSplit", "After split - Active parcels with number $originalParcelNo: $verificationCount")
 
-                        Log.d("ParcelSplit", "Successfully split parcel $originalParcelNo into ${splitPolygons.size} parts with unique IDs")
+                        Log.d(
+                            "ParcelSplit",
+                            "Successfully split parcel $originalParcelNo into ${splitPolygons.size} parts with unique IDs"
+                        )
 
                     } catch (e: Exception) {
                         Log.e("ParcelSplit", "Database error: ${e.message}", e)
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Database error: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Database error: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                         return@withContext
                     }
@@ -861,6 +887,7 @@ class FragmentMap : Fragment() {
             Log.e("ParcelSplit", "Error in createSplitParcels: ${e.message}", e)
         }
     }
+
     private fun validateWkt(wkt: String?): Boolean {
         if (wkt.isNullOrBlank()) return false
 
@@ -882,7 +909,7 @@ class FragmentMap : Fragment() {
     }
 
 
-        // Helper function to convert Polygon to WKT for older SDK versions
+    // Helper function to convert Polygon to WKT for older SDK versions
     private fun convertPolygonToWkt(polygon: Polygon): String {
         val stringBuilder = StringBuilder("POLYGON(")
 
@@ -1645,7 +1672,8 @@ class FragmentMap : Fragment() {
                 }
                 withContext(Dispatchers.Main) {
                     // Update with proper parcel numbering
-                    val updatedLabelText = "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
+                    val updatedLabelText =
+                        "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
                     (labelGraphic.symbol as? TextSymbol)?.text = updatedLabelText
 
                     // Force refresh the label
@@ -1656,7 +1684,7 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // ✅ FIXED: Updated restoreOriginalGraphics to handle split parcels correctly
+    // Updated restoreOriginalGraphics to handle split parcels correctly
     private fun restoreOriginalGraphics() {
         Log.d("RESTORE_DEBUG", "Starting graphics restoration...")
 
@@ -1672,7 +1700,7 @@ class FragmentMap : Fragment() {
                 graphic.symbol = originalSymbol
                 Log.d("RESTORE_DEBUG", "Restored symbol for parcel_id: $parcelId")
             } else {
-                // ✅ CRITICAL FIX: If no original symbol, determine symbol based on survey status
+                // If no original symbol, determine symbol based on survey status
                 val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
                 val correctSymbol = getSymbolForSurveyStatus(surveyStatus)
                 graphic.symbol = correctSymbol
@@ -1680,11 +1708,14 @@ class FragmentMap : Fragment() {
                 // Update the original symbols map for future use
                 originalGraphicSymbols[parcelId] = correctSymbol
 
-                Log.d("RESTORE_DEBUG", "Generated new symbol for parcel_id: $parcelId, status: $surveyStatus")
+                Log.d(
+                    "RESTORE_DEBUG",
+                    "Generated new symbol for parcel_id: $parcelId, status: $surveyStatus"
+                )
             }
         }
 
-        // ✅ FIXED: Restore labels properly
+        // Restore labels properly
         surveyLabelGraphics.graphics.clear()
 
         // Add back original labels that still exist in the map
@@ -1696,7 +1727,7 @@ class FragmentMap : Fragment() {
                 surveyLabelGraphics.graphics.add(originalLabel)
                 Log.d("RESTORE_DEBUG", "Restored label for parcel_id: $parcelId")
             } else {
-                // ✅ Create a new label if original doesn't exist (for split parcels)
+                // Create a new label if original doesn't exist (for split parcels)
                 val parcelNo = graphic.attributes["parcel_no"]?.toString() ?: ""
                 val subParcelNo = graphic.attributes["sub_parcel_no"]?.toString() ?: ""
                 val khewatInfo = graphic.attributes["khewatInfo"]?.toString() ?: ""
@@ -2282,6 +2313,7 @@ class FragmentMap : Fragment() {
             dialogView.findViewById<LinearLayout>(R.id.layout_action_buttons)
         val lParcel = dialogView.findViewById<LinearLayout>(R.id.layout_parcel)
         val btnStartSurvey = dialogView.findViewById<Button>(R.id.btn_start_survey)
+        val btnStartTaskAssign = dialogView.findViewById<Button>(R.id.btn_start_task)
         val btnRevisitSurvey = dialogView.findViewById<Button>(R.id.btn_revisit_survey)
         val btnRetakePicturesSurvey =
             dialogView.findViewById<Button>(R.id.btn_retake_pictures_survey)
@@ -2534,94 +2566,196 @@ class FragmentMap : Fragment() {
             binding.parcelMapview.onTouchListener = touchListener
         }
 
-//
-//
-//        btnStartSurvey.setOnClickListener { view: View? ->
-//            val radioButton: RadioButton =
-//                dialogView.findViewById(rgParcel.checkedRadioButtonId)
-//
-//            viewModel.parcelOperation = radioButton.text.toString()
-//
-//            var action = R.id.action_fragmentMap_to_fragmentParcelDetails
-//
-////            var action = R.id.action_fragmentMap_to_fragmentSurveyList
-//            when (rgParcel.checkedRadioButtonId) {
-//                R.id.rb_same -> {
-//                    viewModel.parcelOperationValue = ""
-//                    viewModel.imageTaken = 0
-//                    viewModel.discrepancyPicturePath = ""
-//                }
-//
-//
-//                R.id.rb_split -> {
-//                    if (etSplitParcel.text.toString().trim().isEmpty()) {
-//                        etSplitParcel.apply {
-//                            setText("")
-//                            error = "Field cannot be empty"
-//                            requestFocus()
-//                        }
-//                        return@setOnClickListener
-//                    }
-//
-//                    if (etSplitParcel.text.toString().trim().toInt() < 2) {
-//                        etSplitParcel.apply {
-//                            setText("")
-//                            error = "Enter valid number of parcels"
-//                            requestFocus()
-//                        }
-//                        return@setOnClickListener
-//                    }
-//
-//                    viewModel.parcelOperationValue = etSplitParcel.text.toString().trim()
-//                    viewModel.subParcelList.clear()
-//
-//                    if (viewModel.subParcelList.isEmpty()) {
-//                        val totalParts: Int = viewModel.parcelOperationValue.toInt()
-//                        val subParcels = ArrayList<SubParcel>()
-//                        for (i in 1..totalParts) {
-//                            subParcels.add(SubParcel(id = i))
-//                        }
-//                        viewModel.subParcelList = subParcels
-//                    }
-//
-//                    // ✅ Navigate to intermediate SubParcelList screen
-//                    findNavController().navigate(R.id.action_fragmentMap_to_fragmentSubParcelList)
-//                    return@setOnClickListener
-//                }
-//
-//
-//                R.id.rb_merge -> {
-//                    if (tvMergeParcel.text.toString().trim().isEmpty()) {
-//                        Toast.makeText(
-//                            requireContext(),
-//                            "Merge parcel field is empty",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                        return@setOnClickListener
-//                    }
-//
-//                   // viewModel.parcelOperationValue = tvMergeParcel.text.toString().trim()
-//                   // viewModel.parcelOperationValue = tvMergeParcelHi.text.toString().trim()
-//
-//                }
-//            }
-//
-//            val context = requireContext()
-//            val intent = Intent(context, SurveyActivity::class.java).apply {
-//                putExtra("parcelId", attr["parcel_id"].toString().toLong())
-//                putExtra("parcelNo", attr["parcel_no"].toString())
-//                putExtra("subParcelNo", attr["sub_parcel_no"].toString())
-//                putExtra("parcelArea",attr["area"].toString())
-//                putExtra("khewatInfo",attr["khewatInfo"].toString())
-//                putExtra("parcelOperation", viewModel.parcelOperation)
-//                putExtra("parcelOperationValue", viewModel.parcelOperationValue)
-//                putExtra("parcelOperationValueHi", tvMergeParcelHi.text.toString().trim())
-//                // Add other extras if needed (areaName, parcelId, etc.)
-//            }
-//            startActivity(intent)
-//        }
-//
+        btnStartTaskAssign.setOnClickListener { view: View? ->
+            try {
+                Log.d("TaskAssign", "=== Button Clicked ===")
 
+                // Check if radio button is selected
+                val checkedId = rgParcel.checkedRadioButtonId
+                Log.d("TaskAssign", "Checked Radio Button ID: $checkedId")
+
+                if (checkedId == -1) {
+                    Log.e("TaskAssign", "No radio button selected")
+                    Toast.makeText(requireContext(), "Please select an operation", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                // Try to find the radio button
+                val radioButton: RadioButton? = dialogView.findViewById(checkedId)
+                Log.d("TaskAssign", "RadioButton found: ${radioButton != null}")
+
+                if (radioButton == null) {
+                    Log.e("TaskAssign", "RadioButton is null for ID: $checkedId")
+                    Toast.makeText(requireContext(), "Error: Radio button not found", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                val operationText = radioButton.text.toString()
+                Log.d("TaskAssign", "Operation: $operationText")
+
+                // Log attribute values
+                Log.d("TaskAssign", "Attribute keys: ${attr.keys}")
+                Log.d("TaskAssign", "parcel_id: ${attr["parcel_id"]}")
+                Log.d("TaskAssign", "parcel_no: ${attr["parcel_no"]}")
+                Log.d("TaskAssign", "sub_parcel_no: ${attr["sub_parcel_no"]}")
+                Log.d("TaskAssign", "area: ${attr["area"]}")
+                Log.d("TaskAssign", "khewatInfo: ${attr["khewatInfo"]}")
+
+                viewModel.parcelOperation = operationText
+                viewModel.parcelId = attr["parcel_id"].toString().toLong()
+                viewModel.parcelNo = attr["parcel_no"].toString().toLong()
+                viewModel.subParcelNo = attr["sub_parcel_no"].toString()
+
+                Log.d("TaskAssign", "ViewModel values set successfully")
+
+                when (checkedId) {
+                    // ---------------- SAME ----------------
+                    R.id.rb_same -> {
+                        Log.d("TaskAssign", "Processing SAME operation")
+
+                        viewModel.parcelOperationValue = ""
+                        viewModel.imageTaken = 0
+                        viewModel.discrepancyPicturePath = ""
+
+                        val context = requireContext()
+                        val intent = Intent(context, TaskAssignActivity::class.java).apply {
+                            putExtra("parcelId", attr["parcel_id"].toString().toLong())
+                            putExtra("parcelNo", attr["parcel_no"].toString())
+                            putExtra("subParcelNo", attr["sub_parcel_no"].toString())
+                            putExtra("parcelArea", attr["area"].toString())
+                            putExtra("khewatInfo", attr["khewatInfo"].toString())
+                            putExtra("parcelOperation", viewModel.parcelOperation)
+                            putExtra("parcelOperationValue", viewModel.parcelOperationValue)
+                            putExtra(
+                                "parcelOperationValueHi",
+                                tvMergeParcelHi.text.toString().trim()
+                            )
+                        }
+
+                        Log.d("TaskAssign", "Starting TaskAssignActivity")
+                        startActivity(intent)
+                    }
+
+                    // ---------------- SPLIT ----------------
+                    R.id.rb_split -> {
+                        Log.d("TaskAssign", "Processing SPLIT operation")
+
+                        if (etSplitParcel.text.toString().trim().isEmpty()) {
+                            Log.w("TaskAssign", "Split parcel field is empty")
+                            etSplitParcel.apply {
+                                setText("")
+                                error = "Field cannot be empty"
+                                requestFocus()
+                            }
+                            return@setOnClickListener
+                        }
+
+                        val splitValue = etSplitParcel.text.toString().trim().toInt()
+                        Log.d("TaskAssign", "Split value: $splitValue")
+
+                        if (splitValue < 2) {
+                            Log.w("TaskAssign", "Split value less than 2")
+                            etSplitParcel.apply {
+                                setText("")
+                                error = "Enter valid number of parcels"
+                                requestFocus()
+                            }
+                            return@setOnClickListener
+                        }
+
+                        viewModel.parcelOperationValue = etSplitParcel.text.toString().trim()
+                        viewModel.subParcelList.clear()
+
+                        if (viewModel.subParcelList.isEmpty()) {
+                            val totalParts: Int = viewModel.parcelOperationValue.toInt()
+                            val subParcels = ArrayList<SubParcel>()
+                            for (i in 1..totalParts) {
+                                subParcels.add(SubParcel(id = i))
+                            }
+                            viewModel.subParcelList = subParcels
+                            Log.d("TaskAssign", "Created ${subParcels.size} sub-parcels")
+                        }
+
+                        val bundle = Bundle().apply {
+                            putLong("parcelId", attr["parcel_id"].toString().toLong())
+                            putString("parcelNo", attr["parcel_no"].toString())
+                            putString("subParcelNo", attr["sub_parcel_no"].toString())
+                            putString("parcelArea", attr["area"].toString())
+                            putString("khewatInfo", attr["khewatInfo"].toString())
+                            putString("parcelOperation", viewModel.parcelOperation)
+                            putString("parcelOperationValue", viewModel.parcelOperationValue)
+                            putString(
+                                "parcelOperationValueHi",
+                                tvMergeParcelHi.text.toString().trim()
+                            )
+                        }
+
+                        Log.d("TaskAssign", "Navigating to SubParcelList")
+                        findNavController().navigate(
+                            R.id.action_fragmentMap_to_fragmentSubParcelList,
+                            bundle
+                        )
+                    }
+
+                    // ---------------- MERGE ----------------
+                    R.id.rb_merge -> {
+                        Log.d("TaskAssign", "Processing MERGE operation")
+
+                        if (tvMergeParcel.text.toString().trim().isEmpty()) {
+                            Log.w("TaskAssign", "Merge parcel field is empty")
+                            Toast.makeText(
+                                requireContext(),
+                                "Merge parcel field is empty",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@setOnClickListener
+                        }
+
+                        val context = requireContext()
+                        val intent = Intent(context, TaskAssignActivity::class.java).apply {
+                            putExtra("parcelId", attr["parcel_id"].toString().toLong())
+                            putExtra("parcelNo", attr["parcel_no"].toString())
+                            putExtra("subParcelNo", attr["sub_parcel_no"].toString())
+                            putExtra("parcelArea", attr["area"].toString())
+                            putExtra("khewatInfo", attr["khewatInfo"].toString())
+                            putExtra("parcelOperation", viewModel.parcelOperation)
+                            putExtra("parcelOperationValue", viewModel.parcelOperationValue)
+                            putExtra(
+                                "parcelOperationValueHi",
+                                tvMergeParcelHi.text.toString().trim()
+                            )
+                        }
+
+                        Log.d("TaskAssign", "Starting TaskAssignActivity for MERGE")
+                        startActivity(intent)
+                    }
+
+                    else -> {
+                        Log.e("TaskAssign", "Unknown radio button ID: $checkedId")
+                        Toast.makeText(requireContext(), "Invalid operation selected", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                Log.d("TaskAssign", "=== Processing Complete ===")
+
+            } catch (e: NullPointerException) {
+                Log.e("TaskAssign", "NullPointerException: ${e.message}", e)
+                e.printStackTrace()
+                Toast.makeText(requireContext(), "Error: Null value encountered - ${e.message}", Toast.LENGTH_LONG).show()
+            } catch (e: NumberFormatException) {
+                Log.e("TaskAssign", "NumberFormatException: ${e.message}", e)
+                e.printStackTrace()
+                Toast.makeText(requireContext(), "Error: Invalid number format - ${e.message}", Toast.LENGTH_LONG).show()
+            } catch (e: IllegalStateException) {
+                Log.e("TaskAssign", "IllegalStateException: ${e.message}", e)
+                e.printStackTrace()
+                Toast.makeText(requireContext(), "Error: Invalid state - ${e.message}", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Log.e("TaskAssign", "General Exception: ${e.message}", e)
+                e.printStackTrace()
+                Toast.makeText(requireContext(), "Error: ${e.javaClass.simpleName} - ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
 
         btnStartSurvey.setOnClickListener { view: View? ->
             val radioButton: RadioButton =
