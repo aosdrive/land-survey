@@ -1576,6 +1576,11 @@ class FragmentMap : Fragment() {
         val highlightColor: Int
         val textColor: Int
 
+        // ✅ ADD THIS: Check if parcel is harvested from SharedPreferences
+        val isHarvested = isParcelHarvested(parcel.id)
+        Log.d("AddGraphics", "Parcel ${parcel.id}: surveyStatus=${parcel.surveyStatusCode}, isHarvested=$isHarvested")
+
+
         when (parcel.surveyStatusCode) {
             1 -> {
                 symbol = unSurveyedBlocks
@@ -1586,10 +1591,23 @@ class FragmentMap : Fragment() {
 
             2 -> {
 
-                symbol = surveyedBlocks
-                highlightColor = Color.BLACK
-                textColor = ContextCompat.getColor(context, R.color.parcel_green)
-
+                // Check if harvested
+                if (isHarvested) {
+                    // White color for harvested parcels
+                    symbol = SimpleFillSymbol(
+                        SimpleFillSymbol.Style.SOLID,
+                        Color.WHITE,
+                        SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
+                    )
+                    highlightColor = Color.WHITE
+                    textColor = Color.BLACK
+                    Log.d("AddGraphics", "✅ Parcel ${parcel.id} - HARVESTED (WHITE)")
+                } else {
+                    symbol = surveyedBlocks
+                    highlightColor = Color.BLACK
+                    textColor = ContextCompat.getColor(context, R.color.parcel_green)
+                    Log.d("AddGraphics", "✅ Parcel ${parcel.id} - SURVEYED (GREEN)")
+                }
 
             }
 
@@ -2319,6 +2337,9 @@ class FragmentMap : Fragment() {
             dialogView.findViewById<Button>(R.id.btn_retake_pictures_survey)
         val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
 
+        val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
+
+
         val delete = dialogView.findViewById<ImageView>(R.id.delete)
         val mapLocation = dialogView.findViewById<ImageView>(R.id.mapLocaton)
         val directions = dialogView.findViewById<ImageView>(R.id.directions)
@@ -2433,6 +2454,106 @@ class FragmentMap : Fragment() {
 //                    delete.visibility = View.GONE
 //                }
             }
+        }
+        val parcelId = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L
+
+
+        fun handleHarvestedClick(parcelId: Long, attributes: Map<String, Any>) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val parcelNo = attributes["parcel_no"]?.toString() ?: ""
+                    val subParcelNo = attributes["sub_parcel_no"]?.toString() ?: ""
+
+                    // Verify parcel is surveyed
+                    val parcel = withContext(Dispatchers.IO) {
+                        database.activeParcelDao().getParcelById(parcelId)
+                    }
+
+                    if (parcel == null) {
+                        Toast.makeText(context, "Parcel not found in database", Toast.LENGTH_SHORT).show()
+                        return@launch
+                    }
+
+                    if (parcel.surveyStatusCode != 2) {
+                        Toast.makeText(
+                            context,
+                            "Only surveyed parcels can be harvested",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@launch
+                    }
+
+                    // Update graphics to white
+                    withContext(Dispatchers.Main) {
+                        for (graphic in surveyParcelsGraphics.graphics) {
+                            val graphicParcelId = graphic.attributes["parcel_id"] as? Long
+
+                            if (graphicParcelId == parcelId) {
+                                // Create white fill symbol for harvested parcel
+                                val harvestedSymbol = SimpleFillSymbol(
+                                    SimpleFillSymbol.Style.SOLID,
+                                    Color.WHITE,
+                                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
+                                )
+
+                                // Update the graphic symbol
+                                graphic.symbol = harvestedSymbol
+                                graphic.attributes["isHarvested"] = true
+
+                                // Update label color to black
+                                for (labelGraphic in surveyLabelGraphics.graphics) {
+                                    val labelParcelId = labelGraphic.attributes["parcel_id"] as? Long
+
+                                    if (labelParcelId == parcelId) {
+                                        val textSymbol = labelGraphic.symbol as? TextSymbol
+                                        textSymbol?.let {
+                                            val updatedTextSymbol = TextSymbol().apply {
+                                                text = it.text
+                                                size = 10f
+                                                color = Color.BLACK
+                                                horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
+                                                verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                                                haloColor = Color.WHITE
+                                                haloWidth = 1f
+                                                fontWeight = TextSymbol.FontWeight.BOLD
+                                            }
+                                            labelGraphic.symbol = updatedTextSymbol
+                                            labelGraphic.attributes["isHarvested"] = true
+                                        }
+                                        break
+                                    }
+                                }
+                                break
+                            }
+                        }
+
+                        // Save to SharedPreferences
+                        saveHarvestedStatusToPreferences(parcelId, true)
+
+                        closeCallOut()
+
+                        Toast.makeText(
+                            context,
+                            "Parcel $parcelNo marked as harvested",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    Log.d("Harvested", "Parcel $parcelNo (ID: $parcelId) marked as harvested and saved")
+
+                } catch (e: Exception) {
+                    Log.e("Harvested", "Error in harvested action: ${e.message}", e)
+                    Toast.makeText(
+                        context,
+                        "Error processing harvested action: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+        // Add click listener for Harvested button
+        btnHarvested.setOnClickListener {
+            handleHarvestedClick(parcelId, attr)
         }
 
         tvMergeParcel.setOnClickListener {
@@ -3216,6 +3337,64 @@ class FragmentMap : Fragment() {
         mCallOut.show()
     }
 
+
+    // Save harvested status to SharedPreferences
+    private fun saveHarvestedStatusToPreferences(parcelId: Long, isHarvested: Boolean) {
+        try {
+            // Get current set
+            val currentSet = sharedPreferences.getStringSet("harvested_parcels", emptySet()) ?: emptySet()
+            Log.d("Harvested", "Current harvested parcels before save: $currentSet")
+
+            // Create a mutable copy (IMPORTANT: StringSet from SharedPreferences is immutable)
+            val harvestedParcels = currentSet.toMutableSet()
+
+            if (isHarvested) {
+                harvestedParcels.add(parcelId.toString())
+                Log.d("Harvested", "Adding parcel ID: $parcelId")
+            } else {
+                harvestedParcels.remove(parcelId.toString())
+                Log.d("Harvested", "Removing parcel ID: $parcelId")
+            }
+
+            Log.d("Harvested", "New harvested parcels set: $harvestedParcels")
+
+            // Use commit() instead of apply() for immediate saving
+            val success = sharedPreferences.edit()
+                .putStringSet("harvested_parcels", harvestedParcels)
+                .commit() // Use commit() instead of apply()
+
+            if (success) {
+                Log.d("Harvested", "Successfully saved harvested status for parcel ID: $parcelId")
+            } else {
+                Log.e("Harvested", "Failed to save harvested status for parcel ID: $parcelId")
+            }
+
+            // Verify it was saved
+            val verifySet = sharedPreferences.getStringSet("harvested_parcels", emptySet())
+            Log.d("Harvested", "Verification - Harvested parcels after save: $verifySet")
+
+        } catch (e: Exception) {
+            Log.e("Harvested", "Error saving harvested status: ${e.message}", e)
+        }
+    }
+    // Get harvested parcels from SharedPreferences
+    private fun getHarvestedParcelsFromPreferences(): Set<String> {
+        try {
+            val harvestedParcels = sharedPreferences.getStringSet("harvested_parcels", emptySet()) ?: emptySet()
+            Log.d("Harvested", "Retrieved ${harvestedParcels.size} harvested parcels: $harvestedParcels")
+            return harvestedParcels
+        } catch (e: Exception) {
+            Log.e("Harvested", "Error getting harvested parcels: ${e.message}", e)
+            return emptySet()
+        }
+    }
+    // Check if parcel is harvested
+    private fun isParcelHarvested(parcelId: Long): Boolean {
+        val harvestedParcels = getHarvestedParcelsFromPreferences()
+        val isHarvested = harvestedParcels.contains(parcelId.toString())
+        Log.d("Harvested", "Checking parcel ID $parcelId: isHarvested = $isHarvested")
+        return isHarvested
+    }
     private fun closeCallOut() {
         if (::mCallOut.isInitialized && mCallOut.isShowing) {
             mCallOut.dismiss()

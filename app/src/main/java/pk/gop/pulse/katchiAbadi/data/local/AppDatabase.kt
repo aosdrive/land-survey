@@ -22,12 +22,13 @@ import pk.gop.pulse.katchiAbadi.domain.model.SurveyEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
+import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
-    entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class],
-    version = 5,
+    entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class],
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -43,6 +44,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun newSurveyNewDao(): NewSurveyNewDao
     abstract fun personDao(): SurveyPersonDao
     abstract fun imageDao(): SurveyImageDao
+    abstract fun taskDao(): TaskDao
+
 
     companion object {
 
@@ -59,7 +62,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration1to2)
                     .addMigrations(migration2to3)
                     .addMigrations(migration3to4)
-                    .addMigrations(migration4to5) // Add this line
+                    .addMigrations(migration4to5)
+                    .addMigrations(migration5to6)  // ✅ Add migration
                     .build()
                 INSTANCE = instance
                 instance
@@ -112,5 +116,27 @@ val migration3to4 = object : Migration(3, 4) {
 val migration4to5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE active_parcels ADD COLUMN isActivate INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
+// ✅ NEW MIGRATION: Add tasks table
+val migration5to6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                taskId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                assignDate TEXT NOT NULL DEFAULT '',
+                issueType TEXT NOT NULL DEFAULT '',
+                details TEXT NOT NULL DEFAULT '',
+                picData TEXT NOT NULL DEFAULT '',
+                parcelId INTEGER NOT NULL DEFAULT 0,
+                parcelNo TEXT NOT NULL DEFAULT '',
+                mauzaId INTEGER NOT NULL DEFAULT 0,
+                assignedByUserId INTEGER NOT NULL DEFAULT 0,
+                assignedToUserId INTEGER NOT NULL DEFAULT 0,
+                createdOn INTEGER NOT NULL DEFAULT 0,
+                isSynced INTEGER NOT NULL DEFAULT 0
+            )
+        """)
     }
 }

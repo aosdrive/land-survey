@@ -34,6 +34,12 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:allowBackup">
         <activity
+            android:name=".activities.TaskListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".data.local.UserSelectionDialog"
+            android:exported="false" />
+        <activity
             android:name=".activities.TaskAssignActivity"
             android:exported="false" />
         <activity

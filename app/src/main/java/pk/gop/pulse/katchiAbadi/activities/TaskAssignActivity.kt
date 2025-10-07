@@ -1,6 +1,7 @@
 package pk.gop.pulse.katchiAbadi.activities
 
 import OwnerSelectionDialog
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
@@ -41,15 +42,20 @@ import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.local.PersonEntryHelper
 import pk.gop.pulse.katchiAbadi.data.local.SurveyFormViewModel
 import pk.gop.pulse.katchiAbadi.data.local.SurveyImageAdapter
+import pk.gop.pulse.katchiAbadi.data.local.TaskSubmitDto
+import pk.gop.pulse.katchiAbadi.data.local.UserSelectionDialog
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyNewBinding
 import pk.gop.pulse.katchiAbadi.databinding.ActivityTaskAssignBinding
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
+import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
+import pk.gop.pulse.katchiAbadi.domain.model.UserResponse
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.Calendar
 import javax.inject.Inject
 @AndroidEntryPoint
 class TaskAssignActivity : AppCompatActivity() {
@@ -63,6 +69,8 @@ class TaskAssignActivity : AppCompatActivity() {
     private var currentImageType: String = ""
 
     private val viewModel: SurveyFormViewModel by viewModels()
+
+    private var selectedUser: UserResponse? = null
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -125,9 +133,9 @@ class TaskAssignActivity : AppCompatActivity() {
 
 
         setupSpinners()
-        setupPersonSection()
+        setupUserListSection()
         setupImageSection()
-        setupSubmit(parcelId, parcelNo, subParcelNo)
+        setupSubmit(parcelId, parcelNo.toString(), subParcelNo)
         loadSharedMouzaData()
     }
 
@@ -142,7 +150,6 @@ class TaskAssignActivity : AppCompatActivity() {
         }
     }
 
-
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -153,32 +160,88 @@ class TaskAssignActivity : AppCompatActivity() {
         }
 
     private fun setupSpinners() {
-        val propertyTypeList = listOf("Pest Attack","Excess Water","Water Shortage", "Other")
+        val propertyTypeList = listOf("Pest Attack","Drone Spray","Excess Water","Water Shortage", "Other")
         binding.spinnerPropertyStatus.adapter =
             ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, propertyTypeList)
 
     }
-    private fun setupPersonSection() {
+    private fun setupUserListSection() {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
 
         binding.btnSelectOwner.setOnClickListener {
             lifecycleScope.launch {
-                val mauzaId =
-                    sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
-                Toast.makeText(context, "MauzaID: $mauzaId", Toast.LENGTH_SHORT).show()
-                val owners = withContext(Dispatchers.IO) {
-//                    database.personDao().getPersonsForCurrentMouza(mauzaId) ////to show owner only in a desired mouza
-                    database.personDao().getallPersons()
-                }
+                try {
+                    val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
 
-                if (owners.isEmpty()) {
-                    ToastUtil.showShort(context, "No owner data found.")
-                } else {
-                    OwnerSelectionDialog(context, owners) { selectedPerson ->
-                        personEntryHelper.addPersonView(selectedPerson, editable = true)
-                    }.show()
+                    if (token.isEmpty()) {
+                        ToastUtil.showShort(context, "Please login again.")
+                        return@launch
+                    }
+
+                    binding.btnSelectOwner.isEnabled = false
+
+                    Log.d("API_CALL", "Token: Bearer ${token.take(20)}...")
+
+                    val response = withContext(Dispatchers.IO) {
+                        serverApi.getAllUsers(
+                            token = "Bearer $token",
+                            roleId = 8
+                        )
+                    }
+
+                    binding.btnSelectOwner.isEnabled = true
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val users = response.body()!!
+
+                        if (users.isEmpty()) {
+                            ToastUtil.showShort(context, "No users found.")
+                        } else {
+                            UserSelectionDialog(context, users) { selectedUserFromDialog ->
+                                // Store the selected user
+                                selectedUser = selectedUserFromDialog
+
+                                // Display the selected user
+                                displaySelectedUserInCard(selectedUserFromDialog)
+
+                                Toast.makeText(
+                                    context,
+                                    "Selected: ${selectedUserFromDialog.fullName}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }.show()
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e("API_ERROR", "Code: ${response.code()}, Body: $errorBody")
+                        ToastUtil.showShort(context, "Error: ${response.code()}")
+                    }
+
+                } catch (e: Exception) {
+                    binding.btnSelectOwner.isEnabled = true
+                    Log.e("API_EXCEPTION", "Error: ${e.message}", e)
+                    ToastUtil.showShort(context, "Error: ${e.localizedMessage}")
                 }
             }
+        }
+    }
+    private fun displaySelectedUserInCard(user: UserResponse) {
+        // Show the selected user card
+        binding.cardSelectedUser.visibility = View.VISIBLE
+
+        // Update the card content
+        binding.tvSelectedUserName.text = user.fullName ?: "N/A"
+        binding.tvSelectedUserCnic.text = "CNIC: ${user.cnic ?: "N/A"}"
+        binding.tvSelectedUserRole.text = "Role: ${user.roleName ?: "Officer"}"
+
+        // Update button text
+        binding.btnSelectOwner.text = "Change Officer"
+
+        // Add remove button functionality
+        binding.btnRemoveSelectedUser.setOnClickListener {
+            selectedUser = null
+            binding.cardSelectedUser.visibility = View.GONE
+            binding.btnSelectOwner.text = "Select from List"
         }
     }
     private fun setupImageSection() {
@@ -211,7 +274,6 @@ class TaskAssignActivity : AppCompatActivity() {
                 imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
             }
         }
-
     private fun savePickedImageToInternalStorage(uri: Uri): String {
         val inputStream =
             contentResolver.openInputStream(uri) ?: throw Exception("Can't open image stream")
@@ -226,7 +288,6 @@ class TaskAssignActivity : AppCompatActivity() {
 
         return file.absolutePath
     }
-
     private fun captureImage() {
         try {
             val timestamp = System.currentTimeMillis()
@@ -254,7 +315,6 @@ class TaskAssignActivity : AppCompatActivity() {
             ToastUtil.showShort(context, "Error setting up camera: ${e.message}")
         }
     }
-
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
             Log.d(
@@ -357,97 +417,168 @@ class TaskAssignActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupSubmit(parcelId: Long, parcelNo: String, subParcelNo: String) {
-        binding.btnSubmitSurvey.setOnClickListener {
-            val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
 
-            val parcelOperationValue = if (parcelOperation == "Split") {
-                intent.getStringExtra("parcelOperationValue") ?: ""
-            } else {
-                intent.getStringExtra("parcelOperationValueHi") ?: ""
+        // Setup date picker for etDate
+        binding.etDate.setOnClickListener {
+            showDatePicker()
+        }
+
+        // Make EditText non-editable but clickable
+        binding.etDate.isFocusable = false
+        binding.etDate.isClickable = true
+        binding.etDate.inputType = InputType.TYPE_NULL
+
+
+        binding.btnSubmitSurvey.setOnClickListener {
+            val assignDate = binding.etDate.text.toString()
+            val issueType = binding.spinnerPropertyStatus.selectedItem.toString()
+            val details = binding.etDetail.text.toString()
+
+
+
+            if (selectedUser == null) {
+                ToastUtil.showShort(context, "Please select a user to assign the task")
+                return@setOnClickListener
             }
 
-            val survey = NewSurveyNewEntity(
-                parcelId = parcelId,
-                parcelNo = parcelNo,
-                subParcelNo = subParcelNo,
-                propertyType = binding.spinnerPropertyStatus.selectedItem.toString(),
-                year = binding.etDate.text.toString(),
-                parcelOperation = parcelOperation,
-                parcelOperationValue = parcelOperationValue,
-                mauzaId = sharedPreferences.getLong(
-                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                ),
-                areaName = sharedPreferences.getString(
-                    Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-                    Constants.SHARED_PREF_DEFAULT_STRING
-                ).orEmpty()
-            )
-            val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
+            val assignedByUserId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_ID, 0L)
+            val mauzaID = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L)
 
-            val rawPersons = personEntryHelper.getAllPersons()
-            val images = viewModel.surveyImages.value!!
+            binding.btnSubmitSurvey.isEnabled = false
 
             lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    val surveyId = database.newSurveyNewDao().insertSurvey(survey)
-
-                    val persons = rawPersons.map {
-                        it.copy(surveyId = surveyId, mauzaId = mauzaId)
-                    }
-
-                    database.personDao()
-                        .insertAll(persons) // Or use insertPerson in loop if insertAll not available
-
-                    images.forEach {
-                        it.surveyId = surveyId
-                        database.imageDao().insertImage(it)
-                    }
-
-                    val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
-                    val commaseparatedparcelids =
-                        intent.getStringExtra("parcelOperationValueHi") ?: ""
-
-                    database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, parcelId)
-
-                    val log = TempSurveyLogEntity(
-                        parcelId = parcelId,
-                        parcelNo = parcelNo,
-                        subParcelNo = subParcelNo
-                    )
-                    database.tempSurveyLogDao().insertLog(log)
-
-                    if (parcelOperation.equals(
-                            "Merge",
-                            ignoreCase = true
-                        ) && commaseparatedparcelids.isNotBlank()
-                    ) {
-                        Log.d("SurveyActivity", "Merge operation detected.")
-                        Log.d("SurveyActivity", "Raw merge parcel IDs: $commaseparatedparcelids")
-
-                        val parcelIdList = commaseparatedparcelids
-                            .split(",")
-                            .mapNotNull { it.trim().toLongOrNull() }
-
-                        Log.d("SurveyActivity", "Parsed merge parcel IDs: $parcelIdList")
-
-                        parcelIdList.forEach { id ->
-                            Log.d(
-                                "SurveyActivity",
-                                "Marking parcelId=$id as surveyed with surveyId=$surveyId"
-                            )
-                            database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
+                try {
+                    // Convert images to base64
+                    val images = viewModel.surveyImages.value ?: emptyList()
+                    val base64Images = withContext(Dispatchers.IO) {
+                        images.mapNotNull { image ->
+                            convertImageToBase64(image.uri)
                         }
                     }
+
+                    // Create DTO for API
+                    val taskDto = TaskSubmitDto(
+                        assignDate = assignDate,
+                        issueType = issueType,
+                        detail = details,
+                        images = base64Images,
+                        parcelId = parcelId,
+                        parcelNo = parcelNo,
+                        mauzaId = mauzaID,
+                        assignedByUserId = assignedByUserId,
+                        assignedToUserId = selectedUser!!.id ?: 0L
+                    )
+
+                    Log.d("TaskAssign", "========== TASK DTO INFO ==========")
+                    Log.d("TaskAssign", "Assign Date: $assignDate")
+                    Log.d("TaskAssign", "Issue Type: $issueType")
+                    Log.d("TaskAssign", "Details: $details")
+                    Log.d("TaskAssign", "Parcel ID: $parcelId")
+                    Log.d("TaskAssign", "Parcel No: $parcelNo")
+                    Log.d("TaskAssign", "Mauza ID: $mauzaID")
+                    Log.d("TaskAssign", "Assigned By User ID: $assignedByUserId")
+                    Log.d("TaskAssign", "Assigned To User ID: ${selectedUser!!.id}")
+                    Log.d("TaskAssign", "Number of Images: ${base64Images.size}")
+                    Log.d("TaskAssign", "Full DTO: $taskDto")
+                    Log.d("TaskAssign", "===================================")
+
+                    // Submit to server
+                    val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+                    if (token.isEmpty()) {
+                        ToastUtil.showShort(context, "Please login again")
+                        binding.btnSubmitSurvey.isEnabled = true
+                        return@launch
+                    }
+
+                    val response = withContext(Dispatchers.IO) {
+                        serverApi.submitTask("Bearer $token", taskDto)
+                    }
+
+//                    Log.d("TaskAssign", "Response code: ${response.code()}")
+//                    Log.d("TaskAssign", "Response success: ${response.isSuccessful}")
+//                    Log.d("TaskAssign", "Response body: ${response.body()}")
+//                    Log.d("TaskAssign", "Error body: ${response.errorBody()?.string()}")
+
+                    if (response.isSuccessful && response.body()?.success == true) {
+                        // Save to Room DB for offline reference
+                        val picData = images.joinToString(",") { it.uri }
+                        val taskEntity = TaskEntity(
+                            assignDate = assignDate,
+                            issueType = issueType,
+                            details = details,
+                            picData = picData,
+                            parcelId = parcelId,
+                            parcelNo = parcelNo,
+                            mauzaId = mauzaID,
+                            assignedByUserId = assignedByUserId,
+                            assignedToUserId = selectedUser!!.id ?: 0L,
+                            createdOn = System.currentTimeMillis(),
+                            isSynced = true
+                        )
+
+                        withContext(Dispatchers.IO) {
+                            database.taskDao().insertTask(taskEntity)
+                        }
+
+                        ToastUtil.showShort(context, "Task assigned successfully!")
+                        finish()
+                    } else {
+                        val errorMsg = response.body()?.message ?: "Failed to assign task"
+                        Log.e("TaskAssign", "Full error: $errorMsg")
+                        ToastUtil.showShort(context, errorMsg)
+                    }
+
+                } catch (e: Exception) {
+                    Log.e("TaskAssign", "Error: ${e.message}", e)
+                    ToastUtil.showShort(context, "Error: ${e.localizedMessage}")
+                } finally {
+                    binding.btnSubmitSurvey.isEnabled = true
                 }
-                ToastUtil.showShort(context, "Survey saved locally")
-                finish()
             }
         }
     }
 
+    // Add this function to show the date picker
+    private fun showDatePicker() {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        val datePickerDialog = DatePickerDialog(
+            context,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                // Format date as yyyy-MM-dd
+                val formattedDate = String.format(
+                    "%04d-%02d-%02d",
+                    selectedYear,
+                    selectedMonth + 1, // Month is 0-indexed
+                    selectedDay
+                )
+                binding.etDate.setText(formattedDate)
+            },
+            year,
+            month,
+            day
+        )
+
+        datePickerDialog.show()
+    }
+
+    // 4. Add helper function to convert image to base64
+    private fun convertImageToBase64(imagePath: String): String? {
+        return try {
+            val file = File(imagePath)
+            if (!file.exists()) return null
+
+            val bytes = file.readBytes()
+            android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+        } catch (e: Exception) {
+            Log.e("ImageConversion", "Error converting image: ${e.message}", e)
+            null
+        }
+    }
     private fun loadSharedMouzaData() {
         val mauzaName = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
         val areaName =

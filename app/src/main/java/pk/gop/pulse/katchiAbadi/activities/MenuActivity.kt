@@ -199,6 +199,12 @@ class MenuActivity : AppCompatActivity() {
             }
         }
 
+        binding.cvMyTasks.setOnClickListener {
+            Intent(this@MenuActivity, TaskListActivity::class.java).apply {
+                startActivity(this)
+            }
+        }
+
         binding.apply {
 
             tvFooter.text =

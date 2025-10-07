@@ -3,6 +3,7 @@ package pk.gop.pulse.katchiAbadi.data.remote
 import ActiveParcelResponse
 import AreaResponse
 import OwnerResponse
+import pk.gop.pulse.katchiAbadi.data.local.TaskSubmitDto
 import pk.gop.pulse.katchiAbadi.data.remote.post.RetakePicturesPost
 import pk.gop.pulse.katchiAbadi.data.remote.post.SurveyPost
 import pk.gop.pulse.katchiAbadi.data.remote.request.LoginRequest
@@ -17,8 +18,12 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelCreationRequest
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
+import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
+import pk.gop.pulse.katchiAbadi.domain.model.TaskResponse
+import pk.gop.pulse.katchiAbadi.domain.model.UserResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -107,16 +112,6 @@ interface ServerApi {
         @Body json: List<SurveyPostNew>
     ): Response<PostApiDto>
 
-    @POST("api/MobileData/AddParcel")
-    @Headers("Content-Type: application/json")
-    suspend fun createParcel(
-        @Header("Authorization") token: String,
-        @Body parcels: List<ParcelCreationRequest>
-    ): Response<PostApiDto>
-
-
-
-
     @POST
     @Headers("Content-Type: application/json")
     suspend fun postSurveyRevisitData(
@@ -151,5 +146,25 @@ interface ServerApi {
         @Body khewatIds: List<Long>
     ): List<OwnerResponse>
 
+    @GET("api/Account/GetAllUsersList")
+    suspend fun getAllUsers(
+        @Header("Authorization") token: String,
+        @Query("roleId") roleId: Int? = null,
+        @Query("vendorId") vendorId: Int? = null
+    ): Response<List<UserResponse>>
+
+
+    @POST("api/Tasks/create")
+    suspend fun submitTask(
+        @Header("Authorization") token: String,
+        @Body task: TaskSubmitDto
+    ): Response<TaskResponse>
+
+
+    @GET("api/Tasks/user/{userId}")
+    suspend fun getTasksForUser(
+        @Path("userId") userId: Long,
+        @Header("Authorization") token: String
+    ): Response<TaskListResponse>
 
 }

@@ -504,6 +504,66 @@
 
                 </LinearLayout>
 
+                <!-- Add this in activity_menu.xml inside your ScrollView's LinearLayout -->
+                <LinearLayout
+                    android:id="@+id/cv_my_tasks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/margin_5dp"
+                    android:background="@android:drawable/dialog_holo_light_frame">
+
+                    <LinearLayout
+                        android:id="@+id/ll_my_tasks"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/white"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/margin_15dp">
+
+                        <ImageView
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_margin="10dp"
+                            android:layout_weight="1"
+                            android:contentDescription="My Tasks"
+                            android:gravity="center"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/baseline_add_24" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:layout_margin="@dimen/margin_min"
+                            android:layout_weight="9"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/margin_2dp"
+                                android:gravity="center"
+                                android:text="MY TASKS"
+                                android:textAllCaps="true"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/text_size_xxlarge"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/margin_2dp"
+                                android:gravity="center"
+                                android:text="View assigned tasks"
+                                android:textColor="@color/Black"
+                                android:textSize="@dimen/text_size_normal" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
 <!--                <LinearLayout-->
 <!--                    android:id="@+id/cv_logout"-->
 <!--                    android:layout_width="match_parent"-->
