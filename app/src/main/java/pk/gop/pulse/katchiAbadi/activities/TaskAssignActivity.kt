@@ -386,37 +386,89 @@ class TaskAssignActivity : AppCompatActivity() {
             }
         }
 
-    private fun compressImageFile(inputFile: File, targetKB: Int = 300): File? {
+    private fun compressImageFile(inputFile: File, maxSizeKB: Int = 60): File? {
         try {
-            val bitmap = BitmapFactory.decodeFile(inputFile.absolutePath) ?: return null
+            Log.d("ImageCompression", "📷 Original file size: ${inputFile.length() / 1024} KB")
 
-            var compressQuality = 100
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(inputFile.absolutePath, options)
+
+            val originalWidth = options.outWidth
+            val originalHeight = options.outHeight
+            Log.d("ImageCompression", "📐 Original dimensions: ${originalWidth}x${originalHeight}")
+
+            // More aggressive: max 600x600 pixels
+            options.inSampleSize = calculateInSampleSize(options, 600, 600)
+            options.inJustDecodeBounds = false
+            options.inPreferredConfig = Bitmap.Config.RGB_565 // Use less memory
+
+            val bitmap = BitmapFactory.decodeFile(inputFile.absolutePath, options) ?: return null
+
+            Log.d("ImageCompression", "🖼️ Decoded bitmap: ${bitmap.width}x${bitmap.height}")
+
+            var compressQuality = 75 // Start lower
             val stream = ByteArrayOutputStream()
 
-            bitmap.compress(Bitmap.CompressFormat.JPEG, compressQuality, stream)
-
-            while (stream.size() / 1024 > targetKB && compressQuality > 10) {
+            do {
                 stream.reset()
-                compressQuality -= 5
                 bitmap.compress(Bitmap.CompressFormat.JPEG, compressQuality, stream)
-            }
+                val currentSizeKB = stream.size() / 1024
 
-            // Write compressed bytes to a new file
-            val compressedFile = File(filesDir, "compressed_${inputFile.name}")
+                Log.d("ImageCompression", "🔧 Quality: $compressQuality%, Size: $currentSizeKB KB")
+
+                if (currentSizeKB <= maxSizeKB) break
+
+                compressQuality -= 5
+            } while (compressQuality > 20)
+
+            val compressedFile = File(filesDir, "compressed_${System.currentTimeMillis()}.jpg")
             compressedFile.writeBytes(stream.toByteArray())
 
-            // Delete the original file only after successful compression
-            if (compressedFile.exists()) {
+            bitmap.recycle()
+
+            val finalSizeKB = compressedFile.length() / 1024
+            val compressionRatio = ((inputFile.length() - compressedFile.length()) * 100.0 / inputFile.length())
+
+            Log.d("ImageCompression", "✅ Final: $finalSizeKB KB (${String.format("%.1f", compressionRatio)}% reduction)")
+
+            if (compressedFile.exists() && compressedFile.length() > 0) {
                 inputFile.delete()
+                return compressedFile
             }
 
-            return compressedFile
+            return null
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("ImageCompression", "❌ Error: ${e.message}", e)
             return null
         }
     }
 
+    // Helper function to calculate sample size
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Int {
+        val height = options.outHeight
+        val width = options.outWidth
+        var inSampleSize = 1
+
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width
+            while ((halfHeight / inSampleSize) >= reqHeight &&
+                (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+
+        return inSampleSize
+    }
     private fun setupSubmit(parcelId: Long, parcelNo: String, subParcelNo: String) {
 
         // Setup date picker for etDate
@@ -446,6 +498,7 @@ class TaskAssignActivity : AppCompatActivity() {
             val mauzaID = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L)
 
             binding.btnSubmitSurvey.isEnabled = false
+
 
             lifecycleScope.launch {
                 try {
@@ -567,15 +620,57 @@ class TaskAssignActivity : AppCompatActivity() {
     }
 
     // 4. Add helper function to convert image to base64
-    private fun convertImageToBase64(imagePath: String): String? {
+    private fun convertImageToBase64(imagePath: String, maxSizeKB: Int = 60): String? {
         return try {
             val file = File(imagePath)
-            if (!file.exists()) return null
+            if (!file.exists()) {
+                Log.e("ImageConversion", "❌ File not found: $imagePath")
+                return null
+            }
 
-            val bytes = file.readBytes()
-            android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+            val fileSizeKB = file.length() / 1024
+            Log.d("ImageConversion", "📁 Input file: $fileSizeKB KB")
+
+            // If file is already small enough, just encode it
+            if (fileSizeKB < maxSizeKB) {
+                val bytes = file.readBytes()
+                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                Log.d("ImageConversion", "✅ Base64 size: ${base64.length / 1024} KB")
+                return base64
+            }
+
+            // Further compress for Base64
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = 2
+                inPreferredConfig = Bitmap.Config.RGB_565
+            }
+
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath, options) ?: return null
+
+            Log.d("ImageConversion", "🖼️ Bitmap for Base64: ${bitmap.width}x${bitmap.height}")
+
+            val stream = ByteArrayOutputStream()
+            var quality = 70
+
+            do {
+                stream.reset()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+                val currentSizeKB = stream.size() / 1024
+                Log.d("ImageConversion", "🔧 Quality: $quality%, Size: $currentSizeKB KB")
+                quality -= 5
+            } while (stream.size() / 1024 > maxSizeKB && quality > 20)
+
+            bitmap.recycle()
+
+            val base64 = android.util.Base64.encodeToString(stream.toByteArray(), android.util.Base64.NO_WRAP)
+            val base64SizeKB = base64.length / 1024
+
+            Log.d("ImageConversion", "✅ Final Base64: $base64SizeKB KB")
+
+            return base64
+
         } catch (e: Exception) {
-            Log.e("ImageConversion", "Error converting image: ${e.message}", e)
+            Log.e("ImageConversion", "❌ Error: ${e.message}", e)
             null
         }
     }

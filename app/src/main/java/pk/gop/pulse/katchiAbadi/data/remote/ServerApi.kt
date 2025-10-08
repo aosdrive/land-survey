@@ -4,6 +4,8 @@ import ActiveParcelResponse
 import AreaResponse
 import OwnerResponse
 import pk.gop.pulse.katchiAbadi.data.local.TaskSubmitDto
+import pk.gop.pulse.katchiAbadi.data.local.TaskUpdateDto
+import pk.gop.pulse.katchiAbadi.data.local.TaskUpdateResponse
 import pk.gop.pulse.katchiAbadi.data.remote.post.RetakePicturesPost
 import pk.gop.pulse.katchiAbadi.data.remote.post.SurveyPost
 import pk.gop.pulse.katchiAbadi.data.remote.request.LoginRequest
@@ -167,4 +169,10 @@ interface ServerApi {
         @Header("Authorization") token: String
     ): Response<TaskListResponse>
 
+
+    @PUT("api/tasks/update-status")
+    suspend fun updateTaskStatus(
+        @Header("Authorization") token: String,
+        @Body updateDto: TaskUpdateDto
+    ): Response<TaskUpdateResponse>
 }

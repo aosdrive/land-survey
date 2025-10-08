@@ -29,7 +29,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="Parcel: 123"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:textColor="#1C1B1B" />
 
         <TextView
             android:id="@+id/tvStatus"
@@ -46,7 +47,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="2025-10-07"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textColor="#1C1B1B"/>
 
         <TextView
             android:id="@+id/tvDetail"
@@ -54,7 +56,8 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Task details here"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:textColor="#1C1B1B"/>
 
         <TextView
             android:id="@+id/tvAssignedBy"
@@ -62,7 +65,27 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="Assigned by: John Doe"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:textColor="#1C1B1B"/>
+
+        <!-- Image Container -->
+        <ImageView
+            android:id="@+id/ivTaskImage"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:contentDescription="Task Image" />
+
+        <TextView
+            android:id="@+id/tvImageCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="#666"
+            android:visibility="gone" />
 
     </LinearLayout>
 
