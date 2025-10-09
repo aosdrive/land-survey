@@ -161,6 +161,7 @@
                         android:layout_height="@dimen/margin_24dp"
                         android:checked="true"
                         android:text="Same"
+                        android:textColor="@color/black"
                         android:textSize="@dimen/margin_12sp" />
 
                     <RadioButton

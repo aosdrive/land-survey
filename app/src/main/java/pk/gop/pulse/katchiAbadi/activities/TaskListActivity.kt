@@ -16,6 +16,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -88,12 +89,51 @@ class TaskListActivity : AppCompatActivity() {
         val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
         val btnSubmit = dialogView.findViewById<Button>(R.id.btnSubmit)
 
+        // Check if dark mode is enabled
+        val isDarkMode = (context.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+
+        // Set colors based on theme
+        val textColor = if (isDarkMode) {
+            android.graphics.Color.WHITE
+        } else {
+            android.graphics.Color.BLACK
+        }
+
+        val hintColor = if (isDarkMode) {
+            android.graphics.Color.parseColor("#AAAAAA")
+        } else {
+            android.graphics.Color.parseColor("#757575")
+        }
+
+        tvTaskInfo.setTextColor(textColor)
+        etFeedback.setHintTextColor(hintColor)
+
         // Set task info
         tvTaskInfo.text = "${task.issue_Type} - Parcel: ${task.parcelNo}"
 
-        // Setup status spinner
+        // Setup status spinner with adaptive colors
         val statusList = listOf("Pending", "In Progress", "Completed")
-        val statusAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, statusList)
+        val statusAdapter = object : ArrayAdapter<String>(
+            context,
+            android.R.layout.simple_spinner_item,
+            statusList
+        ) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                (view as? TextView)?.setTextColor(textColor)
+                return view
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                (view as? TextView)?.setTextColor(textColor)
+                return view
+            }
+        }
+
+        statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerStatus.adapter = statusAdapter
 
         // Set current status as selected
@@ -147,7 +187,6 @@ class TaskListActivity : AppCompatActivity() {
 
         dialog.show()
     }
-
     private fun updateTaskStatus(taskId: Int, status: String, feedback: String, callback: (Boolean) -> Unit) {
         val userId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_ID, 0L)
         val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
@@ -268,14 +307,36 @@ class TaskAdapter(
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
         val task = tasks[position]
 
-        holder.tvIssueType.text = task.issue_Type
-        holder.tvParcelNo.text = "Parcel No: ${task.parcelNo}"
-        holder.tvStatus.text = "Status: ${task.status}"
-        holder.tvAssignDate.text = "Date: ${task.assign_Date}"
-        holder.tvDetail.text = "Detail: ${task.detail ?: "No details"}"
-        holder.tvAssignedBy.text = "Assigned by: ${task.assignedByUser ?: "Unknown"}"
+        // Check if dark mode is enabled
+        val isDarkMode = (holder.itemView.context.resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
 
-        // Set status color
+        // Set colors based on theme
+        val textColor = if (isDarkMode) {
+            android.graphics.Color.WHITE
+        } else {
+            android.graphics.Color.BLACK
+        }
+
+        holder.tvIssueType.text = task.issue_Type
+        holder.tvIssueType.setTextColor(textColor)
+
+        holder.tvParcelNo.text = "Parcel No: ${task.parcelNo}"
+        holder.tvParcelNo.setTextColor(textColor)
+
+        holder.tvStatus.text = "Status: ${task.status}"
+
+        holder.tvAssignDate.text = "Date: ${task.assign_Date}"
+        holder.tvAssignDate.setTextColor(textColor)
+
+        holder.tvDetail.text = "Detail: ${task.detail ?: "No details"}"
+        holder.tvDetail.setTextColor(textColor)
+
+        holder.tvAssignedBy.text = "Assigned by: ${task.assignedByUser ?: "Unknown"}"
+        holder.tvAssignedBy.setTextColor(textColor)
+
+        // Set status color (keeps custom colors)
         val statusColor = when (task.status.lowercase()) {
             "pending" -> android.graphics.Color.parseColor("#FFA500")
             "completed" -> android.graphics.Color.parseColor("#4CAF50")
@@ -343,6 +404,7 @@ class TaskAdapter(
                     if (base64Images.size > 1) {
                         holder.tvImageCount?.visibility = View.VISIBLE
                         holder.tvImageCount?.text = "+${base64Images.size - 1}"
+                        holder.tvImageCount?.setTextColor(textColor)
                     } else {
                         holder.tvImageCount?.visibility = View.GONE
                     }
@@ -371,7 +433,6 @@ class TaskAdapter(
             onTaskClick(task)
         }
     }
-
 
     override fun getItemCount() = tasks.size
 
