@@ -69,6 +69,7 @@ class TaskAssignActivity : AppCompatActivity() {
     private var currentImageType: String = ""
 
     private val viewModel: SurveyFormViewModel by viewModels()
+    private var khewatInfo: String = ""
 
     private var selectedUser: UserResponse? = null
 
@@ -110,7 +111,7 @@ class TaskAssignActivity : AppCompatActivity() {
         val parcelNo = intent.getStringExtra("parcelNo") ?: ""
         val subParcelNo = intent.getStringExtra("subParcelNo") ?: ""
         val parcelArea = intent.getStringExtra("parcelArea") ?: ""
-        val khewatInfo = intent.getStringExtra("khewatInfo") ?: ""
+        khewatInfo = intent.getStringExtra("khewatInfo") ?: ""
         val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
         val parcelOperationValue = intent.getStringExtra("parcelOperationValue") ?: ""
 
@@ -135,7 +136,7 @@ class TaskAssignActivity : AppCompatActivity() {
         setupSpinners()
         setupUserListSection()
         setupImageSection()
-        setupSubmit(parcelId, parcelNo.toString(), subParcelNo)
+        setupSubmit(parcelId, parcelNo, subParcelNo)
         loadSharedMouzaData()
     }
 
@@ -520,7 +521,8 @@ class TaskAssignActivity : AppCompatActivity() {
                         parcelNo = parcelNo,
                         mauzaId = mauzaID,
                         assignedByUserId = assignedByUserId,
-                        assignedToUserId = selectedUser!!.id ?: 0L
+                        assignedToUserId = selectedUser!!.id ?: 0L,
+                        khewatInfo = khewatInfo
                     )
 
                     Log.d("TaskAssign", "========== TASK DTO INFO ==========")
@@ -530,6 +532,7 @@ class TaskAssignActivity : AppCompatActivity() {
                     Log.d("TaskAssign", "Parcel ID: $parcelId")
                     Log.d("TaskAssign", "Parcel No: $parcelNo")
                     Log.d("TaskAssign", "Mauza ID: $mauzaID")
+                    Log.d("TaskAssign", "Khewat Info: $khewatInfo")  // ✅ ADD THIS LOG
                     Log.d("TaskAssign", "Assigned By User ID: $assignedByUserId")
                     Log.d("TaskAssign", "Assigned To User ID: ${selectedUser!!.id}")
                     Log.d("TaskAssign", "Number of Images: ${base64Images.size}")
@@ -566,6 +569,7 @@ class TaskAssignActivity : AppCompatActivity() {
                             mauzaId = mauzaID,
                             assignedByUserId = assignedByUserId,
                             assignedToUserId = selectedUser!!.id ?: 0L,
+                            khewatInfo = khewatInfo,
                             createdOn = System.currentTimeMillis(),
                             isSynced = true
                         )

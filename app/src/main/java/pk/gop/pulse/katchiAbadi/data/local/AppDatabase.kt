@@ -28,7 +28,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -63,7 +63,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration2to3)
                     .addMigrations(migration3to4)
                     .addMigrations(migration4to5)
-                    .addMigrations(migration5to6)  // ✅ Add migration
+                    .addMigrations(migration5to6)
+                    .addMigrations(migration6to7)
                     .build()
                 INSTANCE = instance
                 instance
@@ -138,5 +139,11 @@ val migration5to6 = object : Migration(5, 6) {
                 isSynced INTEGER NOT NULL DEFAULT 0
             )
         """)
+    }
+}
+
+val migration6to7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN khewatInfo TEXT NOT NULL DEFAULT ''")
     }
 }

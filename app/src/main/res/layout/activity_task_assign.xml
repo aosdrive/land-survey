@@ -61,6 +61,7 @@
             android:inputType="text"
             android:layout_marginBottom="20dp"
             android:textColor="@color/black"
+            android:textColorHint="@color/black"
             android:backgroundTint="@color/forest_green" />
 
         <TextView
@@ -97,6 +98,7 @@
             android:hint="Task detail"
             android:inputType="text"
             android:textColor="@color/black"
+            android:textColorHint="@color/black"
             android:backgroundTint="@color/forest_green" />
 
 

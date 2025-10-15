@@ -15,6 +15,7 @@ data class TaskEntity(
     val mauzaId: Long = 0,
     val assignedByUserId: Long = 0,
     val assignedToUserId: Long = 0,
+    val khewatInfo: String="",
     val createdOn: Long = System.currentTimeMillis(),
-    val isSynced: Boolean = false // Track if uploaded to server
+    val isSynced: Boolean = false
 )
