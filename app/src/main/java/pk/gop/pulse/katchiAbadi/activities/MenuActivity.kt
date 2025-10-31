@@ -689,8 +689,8 @@ class MenuActivity : AppCompatActivity() {
     }
 
     private fun showAreaSelectionDialog(mauza: MauzaDetail, areaList: List<String>) {
-
         Log.d("AREA_DIALOG", "Showing areas for mauza ${mauza.mauzaId}: $areaList")
+        Log.d("AREA_DIALOG", "Mauza unit: ${mauza.unit}")
 
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_area_list, null)
         val spinner = view.findViewById<Spinner>(R.id.spn_areas)
@@ -705,6 +705,11 @@ class MenuActivity : AppCompatActivity() {
             .setPositiveButton("Download") { _, _ ->
                 val selectedArea = spinner.selectedItem as String
 
+                // ✅ Convert area to groupId (if area is numeric)
+                val groupId = selectedArea.toLongOrNull() ?: 0L
+
+                Log.d("AREA_DIALOG", "Selected area: $selectedArea, groupId: $groupId, unitId: ${mauza.unit}")
+
                 lifecycleScope.launch {
                     Utility.showProgressAlertDialog(this@MenuActivity, "Downloading data...")
                     val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
@@ -713,9 +718,10 @@ class MenuActivity : AppCompatActivity() {
                         mauzaId = mauza.mauzaId,
                         mauzaName = mauza.mauzaName,
                         areaName = selectedArea,
-                        token = "Bearer ${token}"
+                        unitId = mauza.unit.toLong(),
+                        groupId = groupId,  // ✅ Pass groupId
+                        token = "Bearer $token"
                     )
-
 
                     Utility.dismissProgressAlertDialog()
 
@@ -726,16 +732,13 @@ class MenuActivity : AppCompatActivity() {
                                 this@MenuActivity,
                                 "Download successful!"
                             )
-                            // Optionally navigate or refresh UI
                         }
-
                         is Resource.Error -> {
                             ToastUtil.showShort(
                                 this@MenuActivity,
                                 result.message ?: "Download failed."
                             )
                         }
-
                         is Resource.Loading -> TODO()
                         is Resource.Unspecified -> TODO()
                     }
@@ -743,220 +746,134 @@ class MenuActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
-
     }
 
-    //
-//    private suspend fun fetchAndStoreActiveParcels(
-//        mauzaId: Long,
-//        mauzaName: String,
-//        areaName: String,
-//        token: String
-//    ): SimpleResource {
-//        return try {
-////            val api = retrofit.create(ServerApi::class.java)
-//            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
-////
-//
-//            val response = serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $token")
-//
-//            database.withTransaction {
-//                database.activeParcelDao().deleteParcelsByMauzaAndArea(mauzaId, areaName)
-//
-//                val entities = response.parcelsData.map {
-//                    ActiveParcelEntity(
-//                        id = it.id,
-//                        parcelNo = it.parcelNo,
-//                        subParcelNo = it.subParcelNo,
-//                        mauzaId = it.mauzaId,
-//                        mauzaName = mauzaName,
-//                        khewatInfo = it.khewatInfo,
-//                        areaAssigned = it.areaAssigned,
-//                        geomWKT = it.geomWKT,
-//                        centroid = it.centriod,
-//                        distance = it.distance,
-//                        parcelType = it.parcelType,
-//                        parcelAreaKMF = it.parcelAreaKMF,
-//                        parcelAreaAbadiDeh = it.parcelAreaAbadiDeh,
-//                        surveyStatusCode = it.surveyStatusCode
-//                    )
-//                }
-//
-//                database.activeParcelDao().insertActiveParcels(entities)
-//
-//
-//            }
-//
-//
-//
-//
-//            sharedPreferences.edit()
-//                .putLong(
-//                    Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-//                    mauzaId
-//                )
-//                .apply()
-//
-//            sharedPreferences.edit()
-//                .putString(
-//                    Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
-//                    mauzaName
-//                )
-//                .apply()
-//
-////            sharedPreferences.edit()
-////                .putString(
-////                    Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
-////                    areaName
-////                )
-////                .apply()
-//
-//            sharedPreferences.edit()
-//                .putString(
-//                    Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-//                    areaName
-//                )
-//                .apply()
-//
-//
-//            Resource.Success(Unit)
-//
-//        } catch (e: Exception) {
-//            Resource.Error("Failed to sync active parcels: ${e.localizedMessage}")
-//        }
-//    }
     private suspend fun fetchAndStoreActiveParcels(
         mauzaId: Long,
         mauzaName: String,
         areaName: String,
+        unitId: Long,
+        groupId: Long,  // ✅ Add groupId parameter
         token: String
     ): SimpleResource {
         return try {
-//            // Step 1: Fetch active parcels
-//            val parcelResponse = serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $token")
-//
-//
-//
-//
-//            // Step 2: Store parcels in DB
-//            database.withTransaction {
-//                database.activeParcelDao().deleteParcelsByMauzaAndArea(mauzaId, areaName)
-//
-//                val parcels = parcelResponse.parcelsData.map {
-//                    ActiveParcelEntity(
-//                        id = it.id,
-//                        parcelNo = it.parcelNo,
-//                        subParcelNo = it.subParcelNo,
-//                        mauzaId = it.mauzaId,
-//                        mauzaName = mauzaName,
-//                        khewatInfo = it.khewatInfo,
-//                        areaAssigned = it.areaAssigned,
-//                        geomWKT = it.geomWKT,
-//                        centroid = it.centriod,
-//                        distance = it.distance,
-//                        parcelType = it.parcelType,
-//                        parcelAreaKMF = it.parcelAreaKMF,
-//                        parcelAreaAbadiDeh = it.parcelAreaAbadiDeh,
-//                        surveyStatusCode = it.surveyStatusCode
-//                    )
-//                }
-//
-//                database.activeParcelDao().insertActiveParcels(parcels)
-//            }
+            Log.d("FETCH_PARCELS", "=== Starting fetchAndStoreActiveParcels ===")
+            Log.d("FETCH_PARCELS", "mauzaId: $mauzaId, mauzaName: $mauzaName, areaName: $areaName")
+            Log.d("FETCH_PARCELS", "unitId: $unitId, groupId: $groupId")
 
-            //           val api = retrofit.create(ServerApi::class.java)
-            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
-//
+            val authToken = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
 
-            val response =
-                serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $token")
+            val response = serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $authToken")
+
+            Log.d("FETCH_PARCELS", "API Response received: ${response.parcelsData.size} parcels")
 
             database.withTransaction {
                 database.activeParcelDao().deleteParcelsByMauzaAndArea(mauzaId, areaName)
+                Log.d("FETCH_PARCELS", "Deleted old parcels for mauzaId: $mauzaId, area: $areaName")
 
-                val entities = response.parcelsData.map {
+                val entities = response.parcelsData.mapIndexed { index, parcelDto ->
+                    Log.d("FETCH_PARCELS", """
+                    Parcel $index:
+                    - id: ${parcelDto.id}
+                    - parcelNo: ${parcelDto.parcelNo}
+                    - unitId: $unitId (from mauza.unit)
+                    - groupId: $groupId (from area)
+                """.trimIndent())
+
                     ActiveParcelEntity(
-                        id = it.id,
-                        parcelNo = it.parcelNo,
-                        subParcelNo = it.subParcelNo,
-                        mauzaId = it.mauzaId,
+                        pkid = 0,
+                        id = parcelDto.id,
+                        parcelNo = parcelDto.parcelNo,
+                        subParcelNo = parcelDto.subParcelNo,
+                        mauzaId = parcelDto.mauzaId,
                         mauzaName = mauzaName,
-                        khewatInfo = it.khewatInfo,
-                        areaAssigned = it.areaAssigned,
-                        geomWKT = it.geomWKT,
-                        centroid = it.centriod,
-                        distance = it.distance,
-                        parcelType = it.parcelType,
-                        parcelAreaKMF = it.parcelAreaKMF,
-                        parcelAreaAbadiDeh = it.parcelAreaAbadiDeh,
-                        surveyStatusCode = it.surveyStatusCode,
-                        surveyId = it.surveyId
+                        khewatInfo = parcelDto.khewatInfo,
+                        areaAssigned = parcelDto.areaAssigned,
+                        geomWKT = parcelDto.geomWKT,
+                        centroid = parcelDto.centriod,
+                        distance = parcelDto.distance,
+                        parcelType = parcelDto.parcelType,
+                        parcelAreaKMF = parcelDto.parcelAreaKMF,
+                        parcelAreaAbadiDeh = parcelDto.parcelAreaAbadiDeh,
+                        surveyStatusCode = parcelDto.surveyStatusCode,
+                        surveyId = parcelDto.surveyId,
+                        isActivate = true,
+                        unitId = unitId,      // ✅ From mauza.unit
+                        groupId = groupId     // ✅ From area selection
                     )
+                }
+
+                Log.d("FETCH_PARCELS", "Inserting ${entities.size} parcels into database")
+
+                entities.take(3).forEachIndexed { index, entity ->
+                    Log.d("FETCH_PARCELS", "Entity $index: unitId=${entity.unitId}, groupId=${entity.groupId}")
                 }
 
                 database.activeParcelDao().insertActiveParcels(entities)
 
+                val insertedParcels = database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
+                Log.d("FETCH_PARCELS", "✅ Verification: ${insertedParcels.size} parcels inserted")
 
+                insertedParcels.take(3).forEachIndexed { index, parcel ->
+                    Log.d("FETCH_PARCELS", """
+                    ✅ Inserted Parcel $index:
+                    - id: ${parcel.id}
+                    - parcelNo: ${parcel.parcelNo}
+                    - unitId: ${parcel.unitId}
+                    - groupId: ${parcel.groupId}
+                """.trimIndent())
+                }
             }
 
-
-            // Step 3: Extract Khewat IDs
             val khewatIds = response.parcelsData.mapNotNull { it.mauzaId }.distinct()
+            Log.d("FETCH_PARCELS", "Extracted ${khewatIds.size} unique khewat IDs")
 
-            // Step 4: Fetch owners
-            val ownerResponses = serverApi.getOwnersFromDbOffline("Bearer $token", khewatIds)
+            val ownerResponses = serverApi.getOwnersFromDbOffline("Bearer $authToken", khewatIds)
+            Log.d("FETCH_PARCELS", "Fetched ${ownerResponses.size} owners")
 
-
-            Log.d("OWNER_API_RESPONSE", ownerResponses.joinToString("\n") { it.toString() })
-
-            // Step 5: Map to SurveyPersonEntity
             val persons = ownerResponses.map { detail ->
                 SurveyPersonEntity(
-                    surveyId = 0, // Set appropriately
+                    surveyId = 0,
                     ownershipType = "Owner",
-
                     personId = detail.person_ID,
                     firstName = detail.first_Name.orEmpty(),
                     lastName = detail.last_Name.orEmpty(),
-                    gender = "", // Not provided
-
+                    gender = "",
                     relation = detail.relation.orEmpty(),
                     religion = detail.caste.orEmpty(),
                     mobile = detail.mobile.orEmpty(),
                     nic = detail.nic.orEmpty(),
-
                     growerCode = detail.grower_Code.orEmpty(),
                     personArea = detail.area_KMF.orEmpty(),
-
                     extra1 = detail.extra1.orEmpty(),
                     extra2 = detail.extra2.orEmpty(),
-
                     mauzaId = detail.mauza_Id,
                     mauzaName = detail.mauza_Name.orEmpty()
                 )
             }
 
-
-            // Step 6: Insert persons
             database.withTransaction {
                 database.personDao().deleteByMauzaId(mauzaId)
-
                 database.personDao().insertAll(persons)
+                Log.d("FETCH_PARCELS", "Inserted ${persons.size} persons")
             }
 
-            // Step 7: Save sync info in SharedPreferences
             sharedPreferences.edit()
                 .putLong(Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID, mauzaId)
                 .putString(Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME, mauzaName)
                 .putString(Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name, areaName)
                 .apply()
 
+            Log.d("FETCH_PARCELS", "=== COMPLETED SUCCESSFULLY ===")
+
             Resource.Success(Unit)
 
         } catch (e: Exception) {
+            Log.e("FETCH_PARCELS", "❌ Error: ${e.message}", e)
             Resource.Error("Failed to sync data: ${e.localizedMessage}")
         }
     }
+
 
     private fun startLogout() {
         val grayColor = Color.GRAY

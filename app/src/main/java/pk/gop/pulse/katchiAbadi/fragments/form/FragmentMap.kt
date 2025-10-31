@@ -1,5 +1,4 @@
 package pk.gop.pulse.katchiAbadi.fragments.form
-
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -16,7 +15,6 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
@@ -28,7 +26,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.PopupMenu
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -56,9 +53,7 @@ import com.esri.arcgisruntime.geometry.Envelope
 import com.esri.arcgisruntime.geometry.GeodeticCurveType
 import com.esri.arcgisruntime.geometry.GeometryEngine
 import com.esri.arcgisruntime.geometry.Point
-import com.esri.arcgisruntime.geometry.PointCollection
 import com.esri.arcgisruntime.geometry.Polygon
-import com.esri.arcgisruntime.geometry.PolygonBuilder
 import com.esri.arcgisruntime.geometry.Polyline
 import com.esri.arcgisruntime.geometry.PolylineBuilder
 import com.esri.arcgisruntime.geometry.SpatialReferences
@@ -79,7 +74,6 @@ import com.esri.arcgisruntime.symbology.Symbol
 import com.esri.arcgisruntime.symbology.TextSymbol
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
-
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
@@ -113,28 +107,19 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.SubParcelStatus
 import pk.gop.pulse.katchiAbadi.data.repository.NewSurveyRepositoryImpl
 import pk.gop.pulse.katchiAbadi.databinding.FragmentMapBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
-import pk.gop.pulse.katchiAbadi.domain.model.ParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelStatus
-import pk.gop.pulse.katchiAbadi.domain.model.SurveyStatusCodes
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.concurrent.ExecutionException
 import javax.inject.Inject
 import kotlin.math.roundToInt
-
-
 @AndroidEntryPoint
 class FragmentMap : Fragment() {
     @Inject
     lateinit var newSurveyRepository: NewSurveyRepositoryImpl
     private lateinit var refreshReceiver: BroadcastReceiver
-
     private val viewModel: SharedFormViewModel by activityViewModels()
 
     @Inject
@@ -189,16 +174,31 @@ class FragmentMap : Fragment() {
         2f
     )
 
-
+    // Merge mode properties
     private var isMergeMode = false
     private val selectedMergeParcels = LinkedHashMap<String, String>()
     private val defaultParcelSymbol = SimpleFillSymbol(
         SimpleFillSymbol.Style.SOLID,
-        Color.argb(50, 255, 255, 255),  // transparent white
-        SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GRAY, 1f)
+        Color.argb(50, 255, 255, 255),
+        SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 1f)
     )
 
     private val greenLine = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3f)
+
+    // Task Assign Mode properties
+    private var isTaskAssignMode = false
+    private val selectedTaskParcels = LinkedHashMap<Long, ParcelInfo>()
+
+    // Helper data class for task parcels
+    data class ParcelInfo(
+        val parcelId: Long,
+        val parcelNo: String,
+        val subParcelNo: String,
+        val area: String,
+        val khewatInfo: String,
+        val unitId: Long,
+        val groupId: Long
+    )
 
     private fun stopLoadingParcels() {
         job?.cancel()
@@ -224,17 +224,20 @@ class FragmentMap : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        // 👇 Back button click listener
+
+        // Back button click listener
         binding.ivBack.setOnClickListener {
             val intent = Intent(requireContext(), MenuActivity::class.java)
             startActivity(intent)
-            requireActivity().finish() // Optional: if you want to close the current activity
+            requireActivity().finish()
         }
+
         // Set header text
         setHeaderText()
         context = requireContext()
         lm = context.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
 
+        // Merge mode buttons
         binding.btnDoneMerge.setOnClickListener {
             if (selectedMergeParcels.size < 1) {
                 Toast.makeText(
@@ -247,7 +250,6 @@ class FragmentMap : Fragment() {
 
             isMergeMode = false
             binding.mergeControlBar.visibility = View.GONE
-
             dialogView.findViewById<View?>(R.id.card_root)?.visibility = View.VISIBLE
 
             Toast.makeText(
@@ -255,7 +257,6 @@ class FragmentMap : Fragment() {
                 "Merged parcels: ${selectedMergeParcels.values.joinToString(", ")}",
                 Toast.LENGTH_SHORT
             ).show()
-
 
             binding.parcelMapview.setOnTouchListener(
                 DefaultMapViewOnTouchListener(requireContext(), binding.parcelMapview)
@@ -277,10 +278,75 @@ class FragmentMap : Fragment() {
                 DefaultMapViewOnTouchListener(requireContext(), binding.parcelMapview)
             )
         }
+
+        // Task Assign Mode buttons
+        binding.btnDoneTaskAssign.setOnClickListener {
+            if (selectedTaskParcels.isEmpty()) {
+                Toast.makeText(requireContext(), "No parcels selected", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Pass selected parcels to TaskAssignActivity
+            val intent = Intent(requireContext(), TaskAssignActivity::class.java).apply {
+                putExtra("isMultipleParcel", true)
+                putExtra("parcelCount", selectedTaskParcels.size)
+
+                val parcelIds = selectedTaskParcels.values.map { it.parcelId }.toLongArray()
+                val parcelNos = selectedTaskParcels.values.map { it.parcelNo }.toTypedArray()
+                val subParcelNos = selectedTaskParcels.values.map { it.subParcelNo }.toTypedArray()
+                val areas = selectedTaskParcels.values.map { it.area }.toTypedArray()
+                val khewatInfos = selectedTaskParcels.values.map { it.khewatInfo }.toTypedArray()
+                val unitIds = selectedTaskParcels.values.map { it.unitId }.toLongArray()
+                val groupIds = selectedTaskParcels.values.map { it.groupId }.toLongArray()
+
+                putExtra("parcelIds", parcelIds)
+                putExtra("parcelNos", parcelNos)
+                putExtra("subParcelNos", subParcelNos)
+                putExtra("areas", areas)
+                putExtra("khewatInfos", khewatInfos)
+                putExtra("unitIds", unitIds)
+                putExtra("groupIds", groupIds)
+            }
+
+            startActivity(intent)
+            exitTaskAssignMode()
+        }
+
+        binding.btnCancelTaskAssign.setOnClickListener {
+            exitTaskAssignMode()
+        }
+
         // Add split mode setup
         setupSplitOverlay()
         setupSplitModeListeners()
+    }
 
+    private fun exitTaskAssignMode() {
+        isTaskAssignMode = false
+        selectedTaskParcels.clear()
+
+        // Restore original graphics
+        restoreOriginalGraphics()
+
+        // Hide control bar
+        binding.taskAssignControlBar.visibility = View.GONE
+
+        // Restore default touch listener
+        try {
+            IdentifyFeatureLayerTouchListener(
+                context,
+                binding.parcelMapview,
+                this@FragmentMap.surveyParcelsGraphics
+            ).also { binding.parcelMapview.onTouchListener = it }
+        } catch (e: Exception) {
+            Log.e("TaskAssign", "Error restoring touch listener: ${e.message}")
+        }
+
+        Toast.makeText(requireContext(), "Task assign mode cancelled", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateTaskAssignSelectionCount() {
+        binding.tvTaskAssignCount.text = "${selectedTaskParcels.size} parcel(s) selected"
     }
 
     private fun setupSplitOverlay() {
@@ -288,7 +354,6 @@ class FragmentMap : Fragment() {
         binding.parcelMapview.graphicsOverlays.add(splitOverlay)
     }
 
-    // Add split mode button listener in your setupEditModeListeners method
     private fun setupSplitModeListeners() {
         binding.fabSplitMode.setOnClickListener {
             toggleSplitMode()
@@ -303,7 +368,6 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Toggle split mode
     private fun toggleSplitMode() {
         if (isSplitMode) {
             exitSplitMode()
@@ -317,8 +381,6 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Enter split mode
-    // Updated enterSplitMode method to ensure proper highlighting
     private fun enterSplitMode(graphic: Graphic) {
         if (isSplitMode) {
             exitSplitMode()
@@ -328,20 +390,17 @@ class FragmentMap : Fragment() {
         splitTargetGraphic = graphic
         splitPoints.clear()
 
-        // Add the graphic to selectedParcelGraphics if not already there
         if (!selectedParcelGraphics.contains(graphic)) {
             selectedParcelGraphics.add(graphic)
         }
 
-        // Highlight the target parcel with green color to show selection
         val splitHighlightSymbol = SimpleFillSymbol(
             SimpleFillSymbol.Style.SOLID,
-            Color.argb(150, 0, 255, 0), // Green highlight with transparency
-            SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 4f) // Green border
+            Color.argb(150, 0, 255, 0),
+            SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 4f)
         )
         graphic.symbol = splitHighlightSymbol
 
-        // Show split mode UI
         showSplitModeUI()
 
         Toast.makeText(
@@ -351,7 +410,6 @@ class FragmentMap : Fragment() {
         ).show()
     }
 
-    // Exit split mode
     private fun exitSplitMode() {
         if (!isSplitMode) return
 
@@ -359,46 +417,29 @@ class FragmentMap : Fragment() {
         splitPoints.clear()
         splitLine = null
 
-        // Restore original symbol for target parcel
         splitTargetGraphic?.let { graphic ->
             val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
             graphic.symbol = getSymbolForSurveyStatus(surveyStatus)
         }
 
-        // Clear split graphics
         splitOverlay.graphics.clear()
-
-        // Hide split mode UI
         hideSplitModeUI()
-
         splitTargetGraphic = null
     }
 
-    // Show split mode UI
     private fun showSplitModeUI() {
         binding.layoutSplitControls.visibility = View.VISIBLE
         binding.btnApplySplit.visibility = View.VISIBLE
         binding.btnCancelSplit.visibility = View.VISIBLE
-
-        // Hide other UI elements that might interfere
         binding.mergeControlBar.visibility = View.GONE
-
-        // Optionally change FAB icon to indicate split mode is active
-        // binding.fabSplitMode.setImageResource(R.drawable.ic_close)
     }
 
-    // Hide split mode UI
     private fun hideSplitModeUI() {
         binding.layoutSplitControls.visibility = View.GONE
         binding.btnApplySplit.visibility = View.GONE
         binding.btnCancelSplit.visibility = View.GONE
-
-        // Restore FAB icon
-        // binding.fabSplitMode.setImageResource(R.drawable.ic_split)
     }
 
-    // Apply the split operation
-    // Updated applySplit method with better error handling
     private fun applySplit() {
         if (splitPoints.size < 2) {
             Toast.makeText(
@@ -423,11 +464,9 @@ class FragmentMap : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Show progress
                 Toast.makeText(context, "Processing split...", Toast.LENGTH_SHORT).show()
 
                 withContext(Dispatchers.IO) {
-                    // Create the split line geometry
                     val splitLineGeometry = createSplitLineGeometry()
                     if (splitLineGeometry == null) {
                         withContext(Dispatchers.Main) {
@@ -440,7 +479,6 @@ class FragmentMap : Fragment() {
                         return@withContext
                     }
 
-                    // Perform the split operation
                     val splitPolygons = performPolygonSplit(originalPolygon, splitLineGeometry)
 
                     withContext(Dispatchers.Main) {
@@ -462,7 +500,6 @@ class FragmentMap : Fragment() {
                             }
 
                             splitPolygons.size == 2 -> {
-                                // Success case
                                 createSplitParcels(targetGraphic, splitPolygons)
                                 Toast.makeText(
                                     context,
@@ -497,7 +534,6 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Improved createSplitLineGeometry method
     private fun createSplitLineGeometry(): Polyline? {
         try {
             if (splitPoints.size < 2) {
@@ -505,7 +541,6 @@ class FragmentMap : Fragment() {
                 return null
             }
 
-            // Use the spatial reference from the selected graphic
             val selectedGraphic = selectedParcelGraphics.firstOrNull()
             if (selectedGraphic == null) {
                 Log.e("ParcelSplit", "No selected graphic found")
@@ -521,9 +556,7 @@ class FragmentMap : Fragment() {
             val spatialRef = originalPolygon.spatialReference
             val builder = PolylineBuilder(spatialRef)
 
-            // Add all split points
             for (point in splitPoints) {
-                // Ensure point has correct spatial reference
                 val projectedPoint = if (point.spatialReference != spatialRef) {
                     GeometryEngine.project(point, spatialRef) as Point
                 } else {
@@ -534,7 +567,6 @@ class FragmentMap : Fragment() {
 
             val line = builder.toGeometry()
 
-            // Validate the created line
             if (line.isEmpty || line.parts.isEmpty()) {
                 Log.e("ParcelSplit", "Created line is empty or invalid")
                 return null
@@ -549,19 +581,16 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Perform polygon split using the line
     private fun performPolygonSplit(
         polygon: Polygon,
         splitLine: Polyline
     ): List<Polygon> {
         try {
-            // Validate inputs
             if (polygon.isEmpty || splitLine.isEmpty) {
                 Log.e("ParcelSplit", "Empty geometry provided")
                 return emptyList()
             }
 
-            // Ensure both geometries have the same spatial reference
             val targetSR = polygon.spatialReference
             val projectedLine = if (splitLine.spatialReference != targetSR) {
                 GeometryEngine.project(splitLine, targetSR) as? Polyline
@@ -574,31 +603,25 @@ class FragmentMap : Fragment() {
                 return emptyList()
             }
 
-            // Validate that the line actually intersects the polygon
             if (!GeometryEngine.intersects(polygon, projectedLine)) {
                 Log.e("ParcelSplit", "Split line does not intersect the polygon")
                 return emptyList()
             }
 
-            // Extend the line to ensure it completely crosses the polygon
             val extendedLine = extendLineToPolygonBounds(projectedLine, polygon)
 
-            // Validate extended line
             if (extendedLine.isEmpty) {
                 Log.e("ParcelSplit", "Failed to create extended line")
                 return emptyList()
             }
 
-            // Perform the cut operation with additional validation
             val cutResult = try {
                 GeometryEngine.cut(polygon, extendedLine)
             } catch (e: Exception) {
                 Log.e("ParcelSplit", "GeometryEngine.cut failed: ${e.message}")
-                // Try alternative approach with buffer
                 return performPolygonSplitWithBuffer(polygon, extendedLine)
             }
 
-            // Filter and validate results
             val polygonResults = cutResult.mapNotNull { geometry ->
                 when {
                     geometry is Polygon && !geometry.isEmpty -> geometry
@@ -621,18 +644,15 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Alternative split method using buffer approach
     private fun performPolygonSplitWithBuffer(
         polygon: Polygon,
         splitLine: Polyline
     ): List<Polygon> {
         try {
-            // Create a small buffer around the line to create a cutting polygon
-            val bufferDistance = 0.00001 // Very small buffer in coordinate units
+            val bufferDistance = 0.00001
             val bufferPolygon = GeometryEngine.buffer(splitLine, bufferDistance) as? Polygon
                 ?: return emptyList()
 
-            // Use difference operation to split
             val difference = GeometryEngine.difference(polygon, bufferPolygon)
 
             return when (difference) {
@@ -648,8 +668,6 @@ class FragmentMap : Fragment() {
         }
     }
 
-
-    // Improved extendLineToPolygonBounds method
     private fun extendLineToPolygonBounds(
         line: Polyline,
         polygon: Polygon
@@ -664,7 +682,6 @@ class FragmentMap : Fragment() {
             val startPoint = part.getPoint(0)
             val endPoint = part.getPoint(part.pointCount - 1)
 
-            // Calculate direction vector and normalize it
             val dx = endPoint.x - startPoint.x
             val dy = endPoint.y - startPoint.y
             val length = kotlin.math.sqrt(dx * dx + dy * dy)
@@ -677,12 +694,10 @@ class FragmentMap : Fragment() {
             val normalizedDx = dx / length
             val normalizedDy = dy / length
 
-            // Get polygon bounds with sufficient extension
             val envelope = polygon.extent
             val maxDimension = maxOf(envelope.width, envelope.height)
-            val extensionDistance = maxDimension * 2.0 // Extend by 2x the polygon size
+            val extensionDistance = maxDimension * 2.0
 
-            // Create extended points
             val extendedStart = Point(
                 startPoint.x - normalizedDx * extensionDistance,
                 startPoint.y - normalizedDy * extensionDistance,
@@ -695,11 +710,9 @@ class FragmentMap : Fragment() {
                 line.spatialReference
             )
 
-            // Build the extended line
             val builder = PolylineBuilder(line.spatialReference)
             builder.addPoint(extendedStart)
 
-            // Add all original points
             for (i in 0 until part.pointCount) {
                 builder.addPoint(part.getPoint(i))
             }
@@ -708,7 +721,6 @@ class FragmentMap : Fragment() {
 
             val extendedLine = builder.toGeometry()
 
-            // Validate the extended line
             if (extendedLine.isEmpty) {
                 Log.e("ParcelSplit", "Failed to create valid extended line")
                 return line
@@ -726,19 +738,18 @@ class FragmentMap : Fragment() {
         }
     }
 
-
-    // Updated createSplitParcels method with better debugging and refresh
-// OPTION 1: Keep it simple - let Room handle everything
     private fun createSplitParcels(originalGraphic: Graphic, splitPolygons: List<Polygon>) {
         val originalAttributes = originalGraphic.attributes
         val originalParcelNo = originalAttributes["parcel_no"]?.toString()?.toLongOrNull() ?: return
         val originalSubParcelNo = originalAttributes["sub_parcel_no"]?.toString() ?: ""
 
+        val originalUnitId = originalAttributes["unit_id"]?.toString()?.toLongOrNull() ?: 0L
+        val originalGroupId = originalAttributes["group_id"]?.toString()?.toLongOrNull() ?: 0L
+
         try {
             viewLifecycleOwner.lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     try {
-                        // ✅ FIXED: Get the correct original parcel ID from graphic attributes
                         val originalParcelId =
                             originalAttributes["parcel_id"] as? Long ?: return@withContext
                         if (originalParcelId != null) {
@@ -747,7 +758,6 @@ class FragmentMap : Fragment() {
 
                         Log.d("SPLIT_DEBUG", "Original parcel ID from graphic: $originalParcelId")
 
-                        // Get the original parcel from database using the ID
                         val originalParcel =
                             database.activeParcelDao().getParcelById(originalParcelId)
 
@@ -771,19 +781,15 @@ class FragmentMap : Fragment() {
                             "Found original parcel: ID=${originalParcel.id}, PKID=${originalParcel.pkid}, ParcelNo=${originalParcel.parcelNo}"
                         )
 
-                        // ✅ FIXED: Deactivate using the correct ID (not pkid)
                         database.activeParcelDao()
                             .updateParcelActivationStatus(originalParcel.id, false)
                         Log.d("ParcelSplit", "Deactivated original parcel ID: ${originalParcel.id}")
 
-                        // Generate the maximum ID for new unique IDs
                         val maxId = database.activeParcelDao().getMaxParcelId() ?: 0L
 
-                        // Create new split parcels with UNIQUE IDs
                         val newParcels = mutableListOf<ActiveParcelEntity>()
 
                         for (i in splitPolygons.indices) {
-                            // Generate sub-parcel numbering
                             val newSubParcelNo =
                                 if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
                                     (i + 1).toString()
@@ -791,7 +797,6 @@ class FragmentMap : Fragment() {
                                     "${originalSubParcelNo}_${i + 1}"
                                 }
 
-                            // Create geometry and centroid
                             val newGeomWKT = convertPolygonToWkt(splitPolygons[i])
                             if (!validateWkt(newGeomWKT)) {
                                 withContext(Dispatchers.Main) {
@@ -808,20 +813,20 @@ class FragmentMap : Fragment() {
                             val centroidWKT =
                                 String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
 
-                            // ✅ Generate unique IDs for split parcels
                             val newUniqueId = maxId + i + 1
 
-                            // Create new parcel with UNIQUE id
                             val newParcel = originalParcel.copy(
-                                pkid = 0, // Let Room auto-generate
-                                id = newUniqueId, // ✅ Each split parcel gets unique ID
+                                pkid = 0,
+                                id = newUniqueId,
                                 parcelNo = originalParcelNo,
                                 subParcelNo = newSubParcelNo,
                                 geomWKT = newGeomWKT,
                                 centroid = centroidWKT,
-                                surveyStatusCode = 1, // Reset to unsurveyed
-                                surveyId = null, // ✅ Clear survey data - each split parcel needs separate survey
+                                surveyStatusCode = 1,
+                                surveyId = null,
                                 isActivate = true,
+                                unitId = originalUnitId,
+                                groupId = originalGroupId
                             )
 
                             newParcels.add(newParcel)
@@ -831,10 +836,8 @@ class FragmentMap : Fragment() {
                             )
                         }
 
-                        // Insert the new parcels
                         database.activeParcelDao().insertActiveParcels(newParcels)
 
-                        // ✅ VERIFICATION: Check that split was successful
                         val verificationCount =
                             database.activeParcelDao().countActiveParcelsByNumber(
                                 originalParcelNo,
@@ -864,7 +867,6 @@ class FragmentMap : Fragment() {
                     }
                 }
 
-                // Update UI
                 withContext(Dispatchers.Main) {
                     try {
                         surveyParcelsGraphics.graphics.remove(originalGraphic)
@@ -891,7 +893,6 @@ class FragmentMap : Fragment() {
     private fun validateWkt(wkt: String?): Boolean {
         if (wkt.isNullOrBlank()) return false
 
-        // Basic checks
         return when {
             wkt.startsWith("POLYGON", ignoreCase = true) && wkt.contains("((") -> true
             wkt.startsWith("POINT", ignoreCase = true) && wkt.contains("(") -> true
@@ -901,19 +902,15 @@ class FragmentMap : Fragment() {
     }
 
     private fun cleanupOriginalGraphicsAfterSplit(originalParcelId: Long) {
-        // Remove the old parcel's symbols from the maps
         originalGraphicSymbols.remove(originalParcelId)
         originalLabelGraphics.remove(originalParcelId)
 
         Log.d("CLEANUP_DEBUG", "Removed original symbols for parcel ID: $originalParcelId")
     }
 
-
-    // Helper function to convert Polygon to WKT for older SDK versions
     private fun convertPolygonToWkt(polygon: Polygon): String {
         val stringBuilder = StringBuilder("POLYGON(")
 
-        // Get exterior ring
         val exteriorRing = polygon.parts[0]
         stringBuilder.append("(")
 
@@ -923,7 +920,6 @@ class FragmentMap : Fragment() {
             stringBuilder.append("${point.x} ${point.y}")
         }
 
-        // Close the ring if not already closed
         val firstPoint = exteriorRing.getPoint(0)
         val lastPoint = exteriorRing.getPoint(exteriorRing.pointCount - 1)
         if (firstPoint.x != lastPoint.x || firstPoint.y != lastPoint.y) {
@@ -932,7 +928,6 @@ class FragmentMap : Fragment() {
 
         stringBuilder.append(")")
 
-        // Add interior rings (holes) if any
         for (i in 1 until polygon.parts.size) {
             stringBuilder.append(",(")
             val interiorRing = polygon.parts[i]
@@ -943,7 +938,6 @@ class FragmentMap : Fragment() {
                 stringBuilder.append("${point.x} ${point.y}")
             }
 
-            // Close the ring if not already closed
             val firstInteriorPoint = interiorRing.getPoint(0)
             val lastInteriorPoint = interiorRing.getPoint(interiorRing.pointCount - 1)
             if (firstInteriorPoint.x != lastInteriorPoint.x || firstInteriorPoint.y != lastInteriorPoint.y) {
@@ -957,14 +951,11 @@ class FragmentMap : Fragment() {
         return stringBuilder.toString()
     }
 
-    // Update split line visual
     private fun updateSplitLineVisual() {
         if (!::splitOverlay.isInitialized) return
 
-        // Clear all graphics first to avoid duplicates
         splitOverlay.graphics.clear()
 
-        // Draw the line if we have at least 2 points
         if (splitPoints.size >= 2) {
             val builder = PolylineBuilder(binding.parcelMapview.spatialReference)
             splitPoints.forEach { builder.addPoint(it) }
@@ -980,7 +971,6 @@ class FragmentMap : Fragment() {
             splitOverlay.graphics.add(splitLine!!)
         }
 
-        // Draw point markers for all split points
         val pointSymbol = SimpleMarkerSymbol(
             SimpleMarkerSymbol.Style.CIRCLE,
             Color.RED,
@@ -994,50 +984,39 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Fixed refreshMapDisplay method to properly show split parcels
     private fun refreshMapDisplay() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 Log.d("MapRefresh", "Starting map refresh...")
 
                 withContext(Dispatchers.Main) {
-                    // Clear current graphics first
                     surveyParcelsGraphics.graphics.clear()
                     surveyLabelGraphics.graphics.clear()
                     selectedParcelGraphics.clear()
 
-                    // Also clear any split graphics if they exist
                     if (::splitOverlay.isInitialized) {
                         splitOverlay.graphics.clear()
                     }
                 }
 
-                // Small delay to ensure graphics are cleared
                 kotlinx.coroutines.delay(200)
 
-                // Stop any existing loading job
                 stopLoadingParcels()
 
                 withContext(Dispatchers.Main) {
-                    // Force reload from database - don't preserve IDs to show all split parcels
                     val currentShowLabels =
                         binding.parcelMapview.graphicsOverlays.contains(surveyLabelGraphics)
 
                     Log.d("MapRefresh", "Reloading map with current filter")
                     Log.d("MapRefresh", "Current IDs: ${ids.size}, ShowLabels: $currentShowLabels")
 
-                    // Clear the current filter temporarily to reload all parcels in the area
-                    val originalIds = ArrayList(ids) // Save original filter
+                    val originalIds = ArrayList(ids)
 
-                    // Load all parcels to show the split results
                     ids.clear()
                     loadMap(ids, currentShowLabels)
 
-                    // Optionally restore the original filter after a delay
                     viewLifecycleOwner.lifecycleScope.launch {
-                        kotlinx.coroutines.delay(1000) // Wait for map to load
-                        // You can choose to restore the filter or keep it cleared
-                        // ids.addAll(originalIds)
+                        kotlinx.coroutines.delay(1000)
                     }
                 }
 
@@ -1056,38 +1035,9 @@ class FragmentMap : Fragment() {
         }
     }
 
-    private fun deleteParcel(graphic: Graphic) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val parcelId = graphic.attributes["parcel_id"] as? Long ?: return@launch
-
-                // Remove from database
-//                database.activeParcelDao().deleteParcel(parcelId)
-
-                // Remove from graphics overlay
-                surveyParcelsGraphics.graphics.remove(graphic)
-
-                // Remove from selected list if present
-                selectedParcelGraphics.remove(graphic)
-
-                Toast.makeText(context, "Parcel deleted successfully", Toast.LENGTH_SHORT).show()
-
-                // Refresh map display
-                refreshMapDisplay()
-
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error deleting parcel: ${e.message}", Toast.LENGTH_LONG)
-                    .show()
-            }
-        }
-    }
-
-    // Additional validation method to check split line quality
-
     override fun onResume() {
         super.onResume()
 
-        // Register broadcast receiver
         refreshReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "REFRESH_MAP") {
@@ -1139,12 +1089,9 @@ class FragmentMap : Fragment() {
     private fun setupMap() {
         with(binding) {
 
-            // Add split overlay setup
             setupSplitOverlay()
-            // Add split mode listeners
             setupSplitModeListeners()
 
-            // Update touch listener to support split mode
             try {
                 IdentifyFeatureLayerTouchListener(
                     context,
@@ -1158,23 +1105,17 @@ class FragmentMap : Fragment() {
             fab.setOnClickListener {
                 handleFabClick()
             }
+
             ivSearch.setOnClickListener {
                 closeCallOut()
                 val items: MutableList<SearchableItem> = ArrayList()
 
                 viewLifecycleOwner.lifecycleScope.launch {
                     ids.clear()
-                    //Update this to mauza id and area name
                     val areaId = sharedPreferences.getLong(
                         Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
                         Constants.SHARED_PREF_DEFAULT_INT.toLong()
                     )
-                    //Update this to mauza id and area name
-//                    val areaName = sharedPreferences.getLong(
-//                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-//                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
-//                    )
-
 
                     val mauzaId = sharedPreferences.getLong(
                         Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
@@ -1185,8 +1126,7 @@ class FragmentMap : Fragment() {
                         Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
                         Constants.SHARED_PREF_DEFAULT_STRING
                     ).orEmpty()
-// update the Active parcels instead of parceldao
-//                    val parcels = database.parcelDao().getAllParcelsWithAreaId(areaId)
+
                     val parcels =
                         database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
 
@@ -1240,16 +1180,14 @@ class FragmentMap : Fragment() {
     private fun loadMap(ids: ArrayList<Long>, showLabels: Boolean) {
         when (Constants.MAP_DOWNLOAD_TYPE) {
             DownloadType.TPK -> {
-//                loadMapTPK(ids, showLabels)
+                // loadMapTPK(ids, showLabels)
             }
 
             DownloadType.TILES -> {
                 loadMapTiles(ids, showLabels)
             }
         }
-
     }
-
 
     @SuppressLint("ClickableViewAccessibility")
     private fun loadMapTiles(ids: ArrayList<Long>, showLabels: Boolean) {
@@ -1306,11 +1244,9 @@ class FragmentMap : Fragment() {
                 val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
                 val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
 
-                // Replace this section in your loadMapTiles method:
-
                 val parcels = if (ids.isNotEmpty()) {
                     val searchResults = database.activeParcelDao().searchParcels(ids)
-                    searchResults.filter { it.isActivate } // Only show active parcels
+                    searchResults.filter { it.isActivate }
                 } else {
                     database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
                 }
@@ -1326,7 +1262,6 @@ class FragmentMap : Fragment() {
                     try {
                         val parcelGeom = parcel.geomWKT
 
-                        // Skip empty or null geometries
                         if (parcelGeom.isNullOrBlank()) {
                             Log.w(
                                 "LoadMap",
@@ -1336,7 +1271,6 @@ class FragmentMap : Fragment() {
                             continue
                         }
 
-                        // Use improved safe parsing method
                         val polygons = when {
                             parcelGeom.contains("MULTIPOLYGON") -> {
                                 Log.d(
@@ -1423,10 +1357,6 @@ class FragmentMap : Fragment() {
                     return@launch
                 }
 
-                // Continue with the rest of your existing code for map setup...
-                // [Rest of the existing method remains the same]
-
-                // Union all polygons into a single geometry
                 val combinedGeometry = GeometryEngine.union(polygonsList)
                 val combinedExtent = combinedGeometry.extent
                 val bufferDistance = 0.0001
@@ -1438,7 +1368,6 @@ class FragmentMap : Fragment() {
                     SpatialReferences.getWebMercator()
                 ) as Envelope
 
-                // Calculate counts
                 var parcelsCount = parcels.size
                 var surveyedCount = 0
                 var unSurveyedCount = 0
@@ -1462,10 +1391,8 @@ class FragmentMap : Fragment() {
                     binding.tvLcckedParcelCount.text = "($lockedCount)"
                     binding.tvRevisitParcelCount.text = "($rejectedCount)"
 
-                    // Initialize TileManager and continue with map setup
                     val tileManager = TileManager(requireContext())
 
-                    // Define Levels of Detail (LODs)
                     val levelsOfDetail = listOf(
                         LevelOfDetail(7, 1222.992452561855, 591657527.591555),
                         LevelOfDetail(8, 611.4962262809275, 295828763.7957775),
@@ -1483,7 +1410,6 @@ class FragmentMap : Fragment() {
                         LevelOfDetail(20, 0.1492910708693671, 72223.81928607848)
                     )
 
-                    // Create TileInfo
                     val tileInfo = TileInfo(
                         96,
                         TileInfo.ImageFormat.PNG24,
@@ -1503,13 +1429,8 @@ class FragmentMap : Fragment() {
                         Constants.SHARED_PREF_DEFAULT_MIN_SCALE
                     )
 
-//                    val maxZoomLevel = sharedPreferences.getInt(
-//                        Constants.SHARED_PREF_MAP_MAX_SCALE,
-//                        Constants.SHARED_PREF_DEFAULT_MAX_SCALE
-//                    )
                     val maxZoomLevel = 16
 
-                    // Create CustomTileLayer
                     val customTileLayer = CustomTileLayer(
                         tileInfo,
                         webMercatorEnvelope,
@@ -1519,7 +1440,6 @@ class FragmentMap : Fragment() {
                         maxZoomLevel
                     )
 
-                    // Create map with the custom tile layer
                     val map = ArcGISMap(Basemap(customTileLayer))
                     map.initialViewpoint = Viewpoint(webMercatorEnvelope)
 
@@ -1576,24 +1496,20 @@ class FragmentMap : Fragment() {
         val highlightColor: Int
         val textColor: Int
 
-        // ✅ ADD THIS: Check if parcel is harvested from SharedPreferences
         val isHarvested = isParcelHarvested(parcel.id)
-        Log.d("AddGraphics", "Parcel ${parcel.id}: surveyStatus=${parcel.surveyStatusCode}, isHarvested=$isHarvested")
-
+        Log.d(
+            "AddGraphics",
+            "Parcel ${parcel.id}: surveyStatus=${parcel.surveyStatusCode}, isHarvested=$isHarvested"
+        )
 
         when (parcel.surveyStatusCode) {
             1 -> {
                 symbol = unSurveyedBlocks
-                highlightColor = Color.YELLOW
                 textColor = ContextCompat.getColor(context, R.color.parcel_red)
             }
 
-
             2 -> {
-
-                // Check if harvested
                 if (isHarvested) {
-                    // White color for harvested parcels
                     symbol = SimpleFillSymbol(
                         SimpleFillSymbol.Style.SOLID,
                         Color.WHITE,
@@ -1608,25 +1524,20 @@ class FragmentMap : Fragment() {
                     textColor = ContextCompat.getColor(context, R.color.parcel_green)
                     Log.d("AddGraphics", "✅ Parcel ${parcel.id} - SURVEYED (GREEN)")
                 }
-
             }
 
             else -> {
                 symbol = unSurveyedBlocks
                 highlightColor = Color.YELLOW
                 textColor = ContextCompat.getColor(context, R.color.parcel_red)
-
             }
         }
 
-        val parcelGraphic = Graphic(
-            polygon, symbol
-        )
-
+        val parcelGraphic = Graphic(polygon, symbol)
 
         val attr = parcelGraphic.attributes
         attr["parcel_id"] = parcel.id
-        attr["pkid"] = parcel.pkid  // Critical: Add pkid for proper identification
+        attr["pkid"] = parcel.pkid
         attr["parcel_no"] = parcel.parcelNo
         attr["sub_parcel_no"] = parcel.subParcelNo
         attr["surveyStatusCode"] = parcel.surveyStatusCode
@@ -1634,32 +1545,25 @@ class FragmentMap : Fragment() {
         attr["geomWKT"] = parcel.geomWKT
         attr["centroid"] = parcel.centroid
         attr["isRejected"] = isRejected
+        attr["unit_id"] = parcel.unitId ?: 0L
+        attr["group_id"] = parcel.groupId ?: 0L
 
-        // Create label text that shows parcel number with sub-parcel info
-//        val labelText = if (parcel.subParcelNo.isNullOrBlank() || parcel.subParcelNo == "0") {
-//            "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}"
-//        } else {
-//            "${parcel.parcelNo}${parcel.subParcelNo}\n${parcel.khewatInfo ?: ""}"
-//        }
         val labelText = "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}"
 
         val polyLabelSymbol = TextSymbol().apply {
             text = labelText
-            size = 10f
+            size = 16f
             color = textColor
             horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
             verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
-            haloColor = highlightColor
             haloWidth = 1f
             fontWeight = TextSymbol.FontWeight.BOLD
         }
 
         val labelGraphic = Graphic(myPolygonCenterLatLon, polyLabelSymbol)
 
-
         val parcelId = parcel.pkid
 
-// Save original symbols
         originalGraphicSymbols[parcelId] = symbol
         originalLabelGraphics[parcelId] = labelGraphic
 
@@ -1674,12 +1578,12 @@ class FragmentMap : Fragment() {
         attr["geomWKT"] = parcel.geomWKT
         attr["centroid"] = parcel.centroid
         attr["isRejected"] = isRejected
+        attrLabel["unit_id"] = parcel.unitId ?: 0L
+        attrLabel["group_id"] = parcel.groupId ?: 0L
 
         surveyLabelGraphics.graphics.add(labelGraphic)
         surveyParcelsGraphics.graphics.add(parcelGraphic)
 
-
-        // 🔑 Now fetch grower codes asynchronously and update label text
         if (parcel.surveyStatusCode == 2) {
             CoroutineScope(Dispatchers.IO).launch {
                 val codes = newSurveyRepository.getGrowerCodesForParcel(parcel.id)
@@ -1689,12 +1593,10 @@ class FragmentMap : Fragment() {
                     "N/A"
                 }
                 withContext(Dispatchers.Main) {
-                    // Update with proper parcel numbering
                     val updatedLabelText =
                         "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
                     (labelGraphic.symbol as? TextSymbol)?.text = updatedLabelText
 
-                    // Force refresh the label
                     surveyLabelGraphics.graphics.remove(labelGraphic)
                     surveyLabelGraphics.graphics.add(labelGraphic)
                 }
@@ -1702,28 +1604,23 @@ class FragmentMap : Fragment() {
         }
     }
 
-    // Updated restoreOriginalGraphics to handle split parcels correctly
     private fun restoreOriginalGraphics() {
         Log.d("RESTORE_DEBUG", "Starting graphics restoration...")
 
-        // Clear merge highlights and restore original symbols
         for (graphic in surveyParcelsGraphics.graphics) {
             val parcelId = graphic.attributes["parcel_id"] as? Long ?: continue
 
             Log.d("RESTORE_DEBUG", "Processing graphic with parcel_id: $parcelId")
 
-            // Check if we have an original symbol for this ID
             val originalSymbol = originalGraphicSymbols[parcelId]
             if (originalSymbol != null) {
                 graphic.symbol = originalSymbol
                 Log.d("RESTORE_DEBUG", "Restored symbol for parcel_id: $parcelId")
             } else {
-                // If no original symbol, determine symbol based on survey status
                 val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
                 val correctSymbol = getSymbolForSurveyStatus(surveyStatus)
                 graphic.symbol = correctSymbol
 
-                // Update the original symbols map for future use
                 originalGraphicSymbols[parcelId] = correctSymbol
 
                 Log.d(
@@ -1733,10 +1630,8 @@ class FragmentMap : Fragment() {
             }
         }
 
-        // Restore labels properly
         surveyLabelGraphics.graphics.clear()
 
-        // Add back original labels that still exist in the map
         for (graphic in surveyParcelsGraphics.graphics) {
             val parcelId = graphic.attributes["parcel_id"] as? Long ?: continue
             val originalLabel = originalLabelGraphics[parcelId]
@@ -1745,7 +1640,6 @@ class FragmentMap : Fragment() {
                 surveyLabelGraphics.graphics.add(originalLabel)
                 Log.d("RESTORE_DEBUG", "Restored label for parcel_id: $parcelId")
             } else {
-                // Create a new label if original doesn't exist (for split parcels)
                 val parcelNo = graphic.attributes["parcel_no"]?.toString() ?: ""
                 val subParcelNo = graphic.attributes["sub_parcel_no"]?.toString() ?: ""
                 val khewatInfo = graphic.attributes["khewatInfo"]?.toString() ?: ""
@@ -1787,7 +1681,6 @@ class FragmentMap : Fragment() {
 
                 val newLabel = Graphic(centerPoint, polyLabelSymbol)
 
-                // Copy attributes to new label
                 val newLabelAttrs = newLabel.attributes
                 graphic.attributes.forEach { (key, value) ->
                     newLabelAttrs[key] = value
@@ -1810,7 +1703,6 @@ class FragmentMap : Fragment() {
             requestPermission()
         }
     }
-
 
     private fun setHeaderText() {
         val mauzaName = sharedPreferences.getString(
@@ -1852,15 +1744,12 @@ class FragmentMap : Fragment() {
             permissionRequestCode -> if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startLocationProcess(true)
             } else {
-
                 if (!ActivityCompat.shouldShowRequestPermissionRationale(
                         requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION
                     )
                 ) {
-                    // User has permanently denied the permission, open settings dialog
                     showSettingsDialog("Location")
                 } else {
-                    // Display a rationale and request permission again
                     showMessageOKCancel(
                         "You need to allow location permission"
                     ) { _, _ ->
@@ -1881,23 +1770,17 @@ class FragmentMap : Fragment() {
                 startActivity(intent)
             }.setNegativeButton("Cancel", null)
 
-
-        // Create the AlertDialog object
         val dialog = builder.create()
         dialog.show()
 
-        // Get the buttons from the dialog
         val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
         val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
 
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        positiveButton.textSize = 16f
+        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
 
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        negativeButton.textSize = 16f
+        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
     }
 
     private fun showMessageOKCancel(message: String, okListener: DialogInterface.OnClickListener) {
@@ -1905,27 +1788,21 @@ class FragmentMap : Fragment() {
             AlertDialog.Builder(context).setMessage(message).setPositiveButton("OK", okListener)
                 .setNegativeButton("Cancel", null)
 
-        // Create the AlertDialog object
         val dialog = builder.create()
         dialog.show()
 
-        // Get the buttons from the dialog
         val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
         val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
 
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        positiveButton.textSize = 16f
+        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
 
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        negativeButton.textSize = 16f
+        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
     }
 
     private fun startLocationProcess(enableZoom: Boolean) {
         try {
-
             if (Utility.checkGPS(requireActivity())) {
                 Utility.showProgressAlertDialog(context, "Please wait, fetching location...")
                 getCurrentLocationFromFusedProvider(enableZoom)
@@ -1939,7 +1816,6 @@ class FragmentMap : Fragment() {
 
     private fun getCurrentLocationFromFusedProvider(zoom: Boolean) {
         try {
-
             enableZoom = zoom
 
             locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
@@ -1993,7 +1869,6 @@ class FragmentMap : Fragment() {
             Log.d("TAG", location.provider.toString())
 
             if (locationAccuracy < accuracy) {
-
                 if (Build.VERSION.SDK_INT < 31) {
                     @Suppress("DEPRECATION")
                     if (!location.isFromMockProvider) {
@@ -2028,7 +1903,6 @@ class FragmentMap : Fragment() {
                         )
                     }
                 }
-
             }
         }
     }
@@ -2049,11 +1923,9 @@ class FragmentMap : Fragment() {
     private fun refreshMapData() {
         Log.d("FragmentMap", "Refreshing map data...")
         viewLifecycleOwner.lifecycleScope.launch {
-
             surveyParcelsGraphics?.graphics?.clear()
             surveyLabelGraphics?.graphics?.clear()
             delay(300)
-            // Reload map with current IDs
             loadMap(ids, ids.isNotEmpty())
         }
     }
@@ -2067,16 +1939,14 @@ class FragmentMap : Fragment() {
     }
 
     private fun setLocation(location: Location, enableZoom: Boolean) {
-        stopLocationUpdates() // Optional: stop updates after getting a good fix
+        stopLocationUpdates()
 
-        // Show marker directly without checking parcel DB
         drawMarker(
             location.latitude.toString(),
             location.longitude.toString(),
             enableZoom
         )
     }
-
 
     private fun drawMarker(lat: String, lng: String, enableZoom: Boolean) {
         try {
@@ -2090,10 +1960,8 @@ class FragmentMap : Fragment() {
                 return
             }
 
-            // Create the point using WGS84 (no projection needed)
             val location = Point(longitude, latitude, SpatialReferences.getWgs84())
 
-            // Create the marker symbol
             val markerSymbol = SimpleMarkerSymbol(
                 SimpleMarkerSymbol.Style.CIRCLE,
                 ContextCompat.getColor(context, R.color.current_location),
@@ -2102,16 +1970,13 @@ class FragmentMap : Fragment() {
                 outline = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2f)
             }
 
-            // Ensure the overlay is added only once
             if (!binding.parcelMapview.graphicsOverlays.contains(currentLocationGraphicOverlay)) {
                 binding.parcelMapview.graphicsOverlays.add(currentLocationGraphicOverlay)
             }
 
-            // Clear old markers and add the new one
             currentLocationGraphicOverlay.graphics.clear()
             currentLocationGraphicOverlay.graphics.add(Graphic(location, markerSymbol))
 
-            // Optionally zoom to the point
             if (enableZoom) {
                 binding.parcelMapview.setViewpointAsync(Viewpoint(location, 1000.0))
             }
@@ -2123,9 +1988,7 @@ class FragmentMap : Fragment() {
         }
     }
 
-
     private fun loadMapFile() {
-
         val mauzaId = sharedPreferences.getLong(
             Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
             Constants.SHARED_PREF_DEFAULT_INT.toLong()
@@ -2137,7 +2000,6 @@ class FragmentMap : Fragment() {
         )
 
         val filesDir = File(context.filesDir, "MapTpk/${areaId}")
-
         val destinationFile = File(filesDir, "${mauzaId}_${areaId}.tpk")
 
         Log.d("TAG", "inside load map file")
@@ -2168,10 +2030,18 @@ class FragmentMap : Fragment() {
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            // Handle split mode touches
             if (isSplitMode) {
                 handleSplitModeTouch(e)
                 return true
             }
+
+            // Handle task assign mode touches
+            if (isTaskAssignMode) {
+                handleTaskAssignModeTouch(e)
+                return true
+            }
+
             val screenPoint = android.graphics.Point(e.x.toInt(), e.y.toInt())
 
             val identifyFuture = mMapView.identifyGraphicsOverlayAsync(go, screenPoint, 10.0, false)
@@ -2181,10 +2051,8 @@ class FragmentMap : Fragment() {
                     if (result.graphics.isNotEmpty()) {
                         val graphic = result.graphics[0]
 
-                        // 🔹 Close any previous callout first
                         mCallOut.dismiss()
 
-                        // 🔹 Show survey dialog only once
                         showSurveyedCallOutNew(graphic, screenPoint)
                     }
                 } catch (ex: Exception) {
@@ -2197,10 +2065,8 @@ class FragmentMap : Fragment() {
         override fun onLongPress(e: MotionEvent) {
             super.onLongPress(e)
 
-            // Convert touch event to screen point
             val screenPoint = android.graphics.Point(e.x.toInt(), e.y.toInt())
 
-            // Identify which parcel was long-pressed
             val identifyFuture = mMapView.identifyGraphicsOverlayAsync(go, screenPoint, 10.0, false)
             identifyFuture.addDoneListener {
                 try {
@@ -2208,10 +2074,8 @@ class FragmentMap : Fragment() {
                     if (result.graphics.isNotEmpty()) {
                         val graphic = result.graphics[0]
 
-                        // Close any existing callout
                         mCallOut.dismiss()
 
-                        // Enter split mode with the selected parcel
                         enterSplitMode(graphic)
 
                         Toast.makeText(
@@ -2243,12 +2107,9 @@ class FragmentMap : Fragment() {
 
             val screenPoint = android.graphics.Point(e.x.toInt(), e.y.toInt())
             val mapPoint = mMapView.screenToLocation(screenPoint)
-// Avoid adding identical consecutive points
             if (splitPoints.isNotEmpty() && splitPoints.last() == mapPoint) return
 
-            // Add point to split line
             splitPoints.add(mapPoint)
-            // Update split line visual
             updateSplitLineVisual()
 
             Toast.makeText(
@@ -2256,6 +2117,73 @@ class FragmentMap : Fragment() {
                 "Added point ${splitPoints.size}. Tap to add more points or Apply Split.",
                 Toast.LENGTH_SHORT
             ).show()
+        }
+
+        private fun handleTaskAssignModeTouch(e: MotionEvent) {
+            if (!isTaskAssignMode) return
+
+            val screenPoint = android.graphics.Point(e.x.toInt(), e.y.toInt())
+
+            val identifyFuture = mMapView.identifyGraphicsOverlayAsync(go, screenPoint, 10.0, false)
+
+            identifyFuture.addDoneListener {
+                try {
+                    val result = identifyFuture.get()
+                    if (result.graphics.isNotEmpty()) {
+                        val selectedGraphic = result.graphics[0]
+                        val parcelId = selectedGraphic.attributes["parcel_id"] as? Long
+                            ?: return@addDoneListener
+
+                        if (selectedTaskParcels.containsKey(parcelId)) {
+                            // Unselect
+                            selectedTaskParcels.remove(parcelId)
+
+                            // Restore original symbol
+                            val surveyStatus =
+                                selectedGraphic.attributes["surveyStatusCode"] as? Int ?: 1
+                            selectedGraphic.symbol = getSymbolForSurveyStatus(surveyStatus)
+
+                            Toast.makeText(
+                                context,
+                                "Parcel deselected (${selectedTaskParcels.size} selected)",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            // Select
+                            val parcelInfo = ParcelInfo(
+                                parcelId = parcelId,
+                                parcelNo = selectedGraphic.attributes["parcel_no"].toString(),
+                                subParcelNo = selectedGraphic.attributes["sub_parcel_no"].toString(),
+                                area = selectedGraphic.attributes["area"].toString(),
+                                khewatInfo = selectedGraphic.attributes["khewatInfo"].toString(),
+                                unitId = selectedGraphic.attributes["unit_id"]?.toString()
+                                    ?.toLongOrNull() ?: 0L,
+                                groupId = selectedGraphic.attributes["group_id"]?.toString()
+                                    ?.toLongOrNull() ?: 0L
+                            )
+
+                            selectedTaskParcels[parcelId] = parcelInfo
+
+                            // Highlight selected parcel
+                            selectedGraphic.symbol = SimpleFillSymbol(
+                                SimpleFillSymbol.Style.SOLID,
+                                Color.argb(100, 0, 150, 255),
+                                SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3f)
+                            )
+
+                            Toast.makeText(
+                                context,
+                                "Parcel selected (${selectedTaskParcels.size} total)",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        updateTaskAssignSelectionCount()
+                    }
+                } catch (e: Exception) {
+                    Log.e("TaskAssign", "Error selecting parcel: ${e.message}")
+                }
+            }
         }
     }
 
@@ -2269,7 +2197,6 @@ class FragmentMap : Fragment() {
         }
     }
 
-
     @SuppressLint("ClickableViewAccessibility")
     private fun showSurveyedCallOutNew(
         graphics: Graphic,
@@ -2277,58 +2204,13 @@ class FragmentMap : Fragment() {
     ) {
         val inflater = this.layoutInflater
         dialogView = inflater.inflate(R.layout.cardview_map_info_new, null)
-//        val dialogView: View = inflater.inflate(R.layout.cardview_map_info_new, null)
-
-//        val tableLayout = dialogView.findViewById<TableLayout>(R.id.table_selected_parcels)
-//        val selectedGraphic = graphicsList.firstOrNull()
-//        if (selectedGraphic == null) {
-//            Toast.makeText(context, "No graphic data found.", Toast.LENGTH_SHORT).show()
-//            return
-//        }
 
         val attr = graphics.attributes
 
-//        val attr = selectedGraphic.attributes
-//
-//        val parcelInfoList = graphicsList.map { graphic ->
-//            val attr = graphic.attributes
-//
-//            ParcelInfoModel(
-//                parcelNo = attr["parcel_no"]?.toString() ?: "N/A",
-//                subParcelNo = attr["sub_parcel_no"]?.toString() ?: "N/A",
-//                parcelArea = attr["area"]?.toString() ?: "0",
-//                parcelId = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L,
-//                khewatInfo = attr["khewatInfo"]?.toString() ?: "N/A"
-//            )
-//        }
-
-//        for (parcel in parcelInfoList) {
-//            val row = TableRow(requireContext())
-//
-//            val parcelNoView = TextView(requireContext())
-//            parcelNoView.text = parcel.parcelNo
-//            parcelNoView.setPadding(8, 8, 8, 8)
-//
-//            val khewatView = TextView(requireContext())
-//            khewatView.text = parcel.khewatInfo
-//            khewatView.setPadding(8, 8, 8, 8)
-//
-//            val areaView = TextView(requireContext())
-//            areaView.text = "${parcel.parcelArea} Sq. Ft."
-//            areaView.setPadding(8, 8, 8, 8)
-//
-//            row.addView(parcelNoView)
-//            row.addView(khewatView)
-//            row.addView(areaView)
-//
-//            tableLayout.addView(row)
-//        }
-
-        tvParcelNo = dialogView.findViewById<TextView>(R.id.tv_parcel_no_value)
-        tvParcelNoUni = dialogView.findViewById<TextView>(R.id.tv_parcel_no_uni_value)
+        tvParcelNo = dialogView.findViewById(R.id.tv_parcel_no_value)
+        tvParcelNoUni = dialogView.findViewById(R.id.tv_parcel_no_uni_value)
         val tvParcelArea = dialogView.findViewById<TextView>(R.id.tv_parcel_area_value)
-        val lActionButtons =
-            dialogView.findViewById<LinearLayout>(R.id.layout_action_buttons)
+        val lActionButtons = dialogView.findViewById<LinearLayout>(R.id.layout_action_buttons)
         val lParcel = dialogView.findViewById<LinearLayout>(R.id.layout_parcel)
         val btnStartSurvey = dialogView.findViewById<Button>(R.id.btn_start_survey)
         val btnStartTaskAssign = dialogView.findViewById<Button>(R.id.btn_start_task)
@@ -2338,7 +2220,6 @@ class FragmentMap : Fragment() {
         val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
 
         val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
-
 
         val delete = dialogView.findViewById<ImageView>(R.id.delete)
         val mapLocation = dialogView.findViewById<ImageView>(R.id.mapLocaton)
@@ -2374,16 +2255,12 @@ class FragmentMap : Fragment() {
 
         tvParcelNo.text = attr["parcel_no"].toString()
         tvParcelNoUni.text = attr["khewatInfo"].toString()
-//        tvParcelArea.text = "${attr["area"]} Sq. Ft."
         val areaSqFt = attr["area"].toString().toDoubleOrNull() ?: 0.0
         val areaAcre = areaSqFt / 43560.0
         tvParcelArea.text = String.format(Locale.US, "%.2f Acres", areaAcre)
 
-
-        // Ensure MapView has a valid map
         if (binding.parcelMapview.map == null) {
-            Toast.makeText(context, "MapView does not have a valid map", Toast.LENGTH_LONG)
-                .show()
+            Toast.makeText(context, "MapView does not have a valid map", Toast.LENGTH_LONG).show()
             return
         }
 
@@ -2414,7 +2291,6 @@ class FragmentMap : Fragment() {
                 btnRevisitSurvey.visibility = View.GONE
                 btnRetakePicturesSurvey.visibility = View.GONE
                 delete.visibility = View.GONE
-
             }
 
             2 -> {
@@ -2424,39 +2300,13 @@ class FragmentMap : Fragment() {
                 btnStartSurvey.visibility = View.GONE
                 btnRevisitSurvey.visibility = View.GONE
                 delete.visibility = View.GONE
-//                lParcel.visibility = View.VISIBLE
-//                btnStartSurvey.visibility = View.VISIBLE
-//                btnRevisitSurvey.visibility = View.GONE
-//                btnRetakePicturesSurvey.visibility = View.GONE
-//                delete.visibility = View.GONE
             }
 
             else -> {
-//                // Check for revisit conditions
-//                if (attr["isRejected"].toString().toInt() == 1) {
-//                    lParcel.visibility = View.VISIBLE
-//                    btnStartSurvey.visibility = View.VISIBLE
-//                    btnRevisitSurvey.visibility = View.GONE
-//                    btnRetakePicturesSurvey.visibility = View.GONE
-//                    delete.visibility = View.GONE
-//                } else if (attr["isRejected"].toString().toInt() == 2) {
-//                    lParcel.visibility = View.GONE
-//                    btnStartSurvey.visibility = View.GONE
-//                    btnRevisitSurvey.visibility = View.GONE
-//                    btnRetakePicturesSurvey.visibility = View.VISIBLE
-//                    delete.visibility = View.GONE
-//                } else {
-//                    lParcel.visibility = View.GONE
-//                    lSplitParcel.visibility = View.GONE
-//                    lMergeParcel.visibility = View.GONE
-//                    btnStartSurvey.visibility = View.GONE
-//                    btnRevisitSurvey.visibility = View.GONE
-//                    delete.visibility = View.GONE
-//                }
             }
         }
-        val parcelId = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L
 
+        val parcelId = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L
 
         fun handleHarvestedClick(parcelId: Long, attributes: Map<String, Any>) {
             viewLifecycleOwner.lifecycleScope.launch {
@@ -2464,13 +2314,13 @@ class FragmentMap : Fragment() {
                     val parcelNo = attributes["parcel_no"]?.toString() ?: ""
                     val subParcelNo = attributes["sub_parcel_no"]?.toString() ?: ""
 
-                    // Verify parcel is surveyed
                     val parcel = withContext(Dispatchers.IO) {
                         database.activeParcelDao().getParcelById(parcelId)
                     }
 
                     if (parcel == null) {
-                        Toast.makeText(context, "Parcel not found in database", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Parcel not found in database", Toast.LENGTH_SHORT)
+                            .show()
                         return@launch
                     }
 
@@ -2483,26 +2333,23 @@ class FragmentMap : Fragment() {
                         return@launch
                     }
 
-                    // Update graphics to white
                     withContext(Dispatchers.Main) {
                         for (graphic in surveyParcelsGraphics.graphics) {
                             val graphicParcelId = graphic.attributes["parcel_id"] as? Long
 
                             if (graphicParcelId == parcelId) {
-                                // Create white fill symbol for harvested parcel
                                 val harvestedSymbol = SimpleFillSymbol(
                                     SimpleFillSymbol.Style.SOLID,
                                     Color.WHITE,
                                     SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
                                 )
 
-                                // Update the graphic symbol
                                 graphic.symbol = harvestedSymbol
                                 graphic.attributes["isHarvested"] = true
 
-                                // Update label color to black
                                 for (labelGraphic in surveyLabelGraphics.graphics) {
-                                    val labelParcelId = labelGraphic.attributes["parcel_id"] as? Long
+                                    val labelParcelId =
+                                        labelGraphic.attributes["parcel_id"] as? Long
 
                                     if (labelParcelId == parcelId) {
                                         val textSymbol = labelGraphic.symbol as? TextSymbol
@@ -2511,8 +2358,10 @@ class FragmentMap : Fragment() {
                                                 text = it.text
                                                 size = 10f
                                                 color = Color.BLACK
-                                                horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
-                                                verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                                                horizontalAlignment =
+                                                    TextSymbol.HorizontalAlignment.CENTER
+                                                verticalAlignment =
+                                                    TextSymbol.VerticalAlignment.MIDDLE
                                                 haloColor = Color.WHITE
                                                 haloWidth = 1f
                                                 fontWeight = TextSymbol.FontWeight.BOLD
@@ -2527,7 +2376,6 @@ class FragmentMap : Fragment() {
                             }
                         }
 
-                        // Save to SharedPreferences
                         saveHarvestedStatusToPreferences(parcelId, true)
 
                         closeCallOut()
@@ -2539,7 +2387,10 @@ class FragmentMap : Fragment() {
                         ).show()
                     }
 
-                    Log.d("Harvested", "Parcel $parcelNo (ID: $parcelId) marked as harvested and saved")
+                    Log.d(
+                        "Harvested",
+                        "Parcel $parcelNo (ID: $parcelId) marked as harvested and saved"
+                    )
 
                 } catch (e: Exception) {
                     Log.e("Harvested", "Error in harvested action: ${e.message}", e)
@@ -2551,7 +2402,7 @@ class FragmentMap : Fragment() {
                 }
             }
         }
-        // Add click listener for Harvested button
+
         btnHarvested.setOnClickListener {
             handleHarvestedClick(parcelId, attr)
         }
@@ -2569,22 +2420,18 @@ class FragmentMap : Fragment() {
             dialogView.findViewById<View>(R.id.card_root).visibility = View.GONE
             binding.mergeControlBar.visibility = View.VISIBLE
 
-            // Reset all parcel symbols
             for (graphic in surveyParcelsGraphics.graphics) {
                 graphic.symbol = defaultParcelSymbol
             }
 
-            // Get base parcel info from selected callout graphic
             val baseParcelId = graphics.attributes["parcel_id"].toString()
 
-            // Highlight base parcel but don't include it in selection
             graphics.symbol = SimpleFillSymbol(
                 SimpleFillSymbol.Style.SOLID,
-                Color.argb(100, 255, 140, 0), // orange fill
-                SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3f) // red outline
+                Color.argb(100, 255, 140, 0),
+                SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.RED, 3f)
             )
 
-            // Handle user taps for selecting merge parcels
             val touchListener =
                 object :
                     DefaultMapViewOnTouchListener(requireContext(), binding.parcelMapview) {
@@ -2613,7 +2460,7 @@ class FragmentMap : Fragment() {
                                     val surveyStatusCode =
                                         selectedGraphic.attributes["surveyStatusCode"].toString()
                                             .toInt()
-                                    // Skip base parcel from selection
+
                                     if (parcelId == baseParcelId) {
                                         Toast.makeText(
                                             requireContext(),
@@ -2622,6 +2469,7 @@ class FragmentMap : Fragment() {
                                         ).show()
                                         return@addDoneListener
                                     }
+
                                     if (surveyStatusCode == 2) {
                                         Toast.makeText(
                                             requireContext(),
@@ -2632,7 +2480,6 @@ class FragmentMap : Fragment() {
                                     }
 
                                     if (selectedMergeParcels.containsKey(parcelId)) {
-                                        // Unselect
                                         selectedMergeParcels.remove(parcelId)
                                         selectedGraphic.symbol = defaultParcelSymbol
                                         Toast.makeText(
@@ -2641,7 +2488,6 @@ class FragmentMap : Fragment() {
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     } else {
-                                        // Select
                                         selectedMergeParcels[parcelId] = parcelNo
                                         selectedGraphic.symbol = SimpleFillSymbol(
                                             SimpleFillSymbol.Style.SOLID,
@@ -2654,7 +2500,6 @@ class FragmentMap : Fragment() {
                                         )
                                     }
 
-                                    // Preserve original text behavior
                                     val parcelNos =
                                         selectedMergeParcels.values.joinToString(", ")
                                     val parcelIds =
@@ -2687,194 +2532,14 @@ class FragmentMap : Fragment() {
             binding.parcelMapview.onTouchListener = touchListener
         }
 
-        btnStartTaskAssign.setOnClickListener { view: View? ->
+        // Task Assign Button - Show Selection Dialog
+        btnStartTaskAssign.setOnClickListener {
             try {
                 Log.d("TaskAssign", "=== Button Clicked ===")
-
-                // Check if radio button is selected
-                val checkedId = rgParcel.checkedRadioButtonId
-                Log.d("TaskAssign", "Checked Radio Button ID: $checkedId")
-
-                if (checkedId == -1) {
-                    Log.e("TaskAssign", "No radio button selected")
-                    Toast.makeText(requireContext(), "Please select an operation", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                // Try to find the radio button
-                val radioButton: RadioButton? = dialogView.findViewById(checkedId)
-                Log.d("TaskAssign", "RadioButton found: ${radioButton != null}")
-
-                if (radioButton == null) {
-                    Log.e("TaskAssign", "RadioButton is null for ID: $checkedId")
-                    Toast.makeText(requireContext(), "Error: Radio button not found", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                val operationText = radioButton.text.toString()
-                Log.d("TaskAssign", "Operation: $operationText")
-
-                // Log attribute values
-                Log.d("TaskAssign", "Attribute keys: ${attr.keys}")
-                Log.d("TaskAssign", "parcel_id: ${attr["parcel_id"]}")
-                Log.d("TaskAssign", "parcel_no: ${attr["parcel_no"]}")
-                Log.d("TaskAssign", "sub_parcel_no: ${attr["sub_parcel_no"]}")
-                Log.d("TaskAssign", "area: ${attr["area"]}")
-                Log.d("TaskAssign", "khewatInfo: ${attr["khewatInfo"]}")
-
-                viewModel.parcelOperation = operationText
-                viewModel.parcelId = attr["parcel_id"].toString().toLong()
-                viewModel.parcelNo = attr["parcel_no"].toString().toLong()
-                viewModel.subParcelNo = attr["sub_parcel_no"].toString()
-
-                Log.d("TaskAssign", "ViewModel values set successfully")
-
-                when (checkedId) {
-                    // ---------------- SAME ----------------
-                    R.id.rb_same -> {
-                        Log.d("TaskAssign", "Processing SAME operation")
-
-                        viewModel.parcelOperationValue = ""
-                        viewModel.imageTaken = 0
-                        viewModel.discrepancyPicturePath = ""
-
-                        val context = requireContext()
-                        val intent = Intent(context, TaskAssignActivity::class.java).apply {
-                            putExtra("parcelId", attr["parcel_id"].toString().toLong())
-                            putExtra("parcelNo", attr["parcel_no"].toString())
-                            putExtra("subParcelNo", attr["sub_parcel_no"].toString())
-                            putExtra("parcelArea", attr["area"].toString())
-                            putExtra("khewatInfo", attr["khewatInfo"].toString())
-                            putExtra("parcelOperation", viewModel.parcelOperation)
-                            putExtra("parcelOperationValue", viewModel.parcelOperationValue)
-                            putExtra(
-                                "parcelOperationValueHi",
-                                tvMergeParcelHi.text.toString().trim()
-                            )
-                        }
-
-                        Log.d("TaskAssign", "Starting TaskAssignActivity")
-                        startActivity(intent)
-                    }
-
-                    // ---------------- SPLIT ----------------
-                    R.id.rb_split -> {
-                        Log.d("TaskAssign", "Processing SPLIT operation")
-
-                        if (etSplitParcel.text.toString().trim().isEmpty()) {
-                            Log.w("TaskAssign", "Split parcel field is empty")
-                            etSplitParcel.apply {
-                                setText("")
-                                error = "Field cannot be empty"
-                                requestFocus()
-                            }
-                            return@setOnClickListener
-                        }
-
-                        val splitValue = etSplitParcel.text.toString().trim().toInt()
-                        Log.d("TaskAssign", "Split value: $splitValue")
-
-                        if (splitValue < 2) {
-                            Log.w("TaskAssign", "Split value less than 2")
-                            etSplitParcel.apply {
-                                setText("")
-                                error = "Enter valid number of parcels"
-                                requestFocus()
-                            }
-                            return@setOnClickListener
-                        }
-
-                        viewModel.parcelOperationValue = etSplitParcel.text.toString().trim()
-                        viewModel.subParcelList.clear()
-
-                        if (viewModel.subParcelList.isEmpty()) {
-                            val totalParts: Int = viewModel.parcelOperationValue.toInt()
-                            val subParcels = ArrayList<SubParcel>()
-                            for (i in 1..totalParts) {
-                                subParcels.add(SubParcel(id = i))
-                            }
-                            viewModel.subParcelList = subParcels
-                            Log.d("TaskAssign", "Created ${subParcels.size} sub-parcels")
-                        }
-
-                        val bundle = Bundle().apply {
-                            putLong("parcelId", attr["parcel_id"].toString().toLong())
-                            putString("parcelNo", attr["parcel_no"].toString())
-                            putString("subParcelNo", attr["sub_parcel_no"].toString())
-                            putString("parcelArea", attr["area"].toString())
-                            putString("khewatInfo", attr["khewatInfo"].toString())
-                            putString("parcelOperation", viewModel.parcelOperation)
-                            putString("parcelOperationValue", viewModel.parcelOperationValue)
-                            putString(
-                                "parcelOperationValueHi",
-                                tvMergeParcelHi.text.toString().trim()
-                            )
-                        }
-
-                        Log.d("TaskAssign", "Navigating to SubParcelList")
-                        findNavController().navigate(
-                            R.id.action_fragmentMap_to_fragmentSubParcelList,
-                            bundle
-                        )
-                    }
-
-                    // ---------------- MERGE ----------------
-                    R.id.rb_merge -> {
-                        Log.d("TaskAssign", "Processing MERGE operation")
-
-                        if (tvMergeParcel.text.toString().trim().isEmpty()) {
-                            Log.w("TaskAssign", "Merge parcel field is empty")
-                            Toast.makeText(
-                                requireContext(),
-                                "Merge parcel field is empty",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@setOnClickListener
-                        }
-
-                        val context = requireContext()
-                        val intent = Intent(context, TaskAssignActivity::class.java).apply {
-                            putExtra("parcelId", attr["parcel_id"].toString().toLong())
-                            putExtra("parcelNo", attr["parcel_no"].toString())
-                            putExtra("subParcelNo", attr["sub_parcel_no"].toString())
-                            putExtra("parcelArea", attr["area"].toString())
-                            putExtra("khewatInfo", attr["khewatInfo"].toString())
-                            putExtra("parcelOperation", viewModel.parcelOperation)
-                            putExtra("parcelOperationValue", viewModel.parcelOperationValue)
-                            putExtra(
-                                "parcelOperationValueHi",
-                                tvMergeParcelHi.text.toString().trim()
-                            )
-                        }
-
-                        Log.d("TaskAssign", "Starting TaskAssignActivity for MERGE")
-                        startActivity(intent)
-                    }
-
-                    else -> {
-                        Log.e("TaskAssign", "Unknown radio button ID: $checkedId")
-                        Toast.makeText(requireContext(), "Invalid operation selected", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                Log.d("TaskAssign", "=== Processing Complete ===")
-
-            } catch (e: NullPointerException) {
-                Log.e("TaskAssign", "NullPointerException: ${e.message}", e)
-                e.printStackTrace()
-                Toast.makeText(requireContext(), "Error: Null value encountered - ${e.message}", Toast.LENGTH_LONG).show()
-            } catch (e: NumberFormatException) {
-                Log.e("TaskAssign", "NumberFormatException: ${e.message}", e)
-                e.printStackTrace()
-                Toast.makeText(requireContext(), "Error: Invalid number format - ${e.message}", Toast.LENGTH_LONG).show()
-            } catch (e: IllegalStateException) {
-                Log.e("TaskAssign", "IllegalStateException: ${e.message}", e)
-                e.printStackTrace()
-                Toast.makeText(requireContext(), "Error: Invalid state - ${e.message}", Toast.LENGTH_LONG).show()
+                showTaskAssignSelectionDialog(attr)
             } catch (e: Exception) {
                 Log.e("TaskAssign", "General Exception: ${e.message}", e)
-                e.printStackTrace()
-                Toast.makeText(requireContext(), "Error: ${e.javaClass.simpleName} - ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -2887,34 +2552,102 @@ class FragmentMap : Fragment() {
             viewModel.parcelNo = attr["parcel_no"].toString().toLong()
             viewModel.subParcelNo = attr["sub_parcel_no"].toString()
 
-
             when (rgParcel.checkedRadioButtonId) {
-
-
-                // ---------------- SAME ----------------
                 R.id.rb_same -> {
+                    Log.d("TaskAssign", "=== RB_SAME OPERATION STARTED ===")
+
                     viewModel.parcelOperationValue = ""
                     viewModel.imageTaken = 0
                     viewModel.discrepancyPicturePath = ""
 
+                    Log.d("TaskAssign", "All attributes in graphic:")
+                    attr.forEach { (key, value) ->
+                        Log.d("TaskAssign", "  $key = $value")
+                    }
+
+                    val parcelId = attr["parcel_id"].toString().toLong()
+                    Log.d("TaskAssign", "parcelId: $parcelId")
+
+                    val parcelNo = attr["parcel_no"].toString()
+                    Log.d("TaskAssign", "parcelNo: $parcelNo")
+
+                    val subParcelNo = attr["sub_parcel_no"].toString()
+                    Log.d("TaskAssign", "subParcelNo: $subParcelNo")
+
+                    val area = attr["area"].toString()
+                    Log.d("TaskAssign", "area: $area")
+
+                    val khewatInfo = attr["khewatInfo"].toString()
+                    Log.d("TaskAssign", "khewatInfo: $khewatInfo")
+
+                    val parcelOperation = viewModel.parcelOperation
+                    Log.d("TaskAssign", "parcelOperation: $parcelOperation")
+
+                    val parcelOperationValue = viewModel.parcelOperationValue
+                    Log.d("TaskAssign", "parcelOperationValue: $parcelOperationValue")
+
+                    val parcelOperationValueHi = tvMergeParcelHi.text.toString().trim()
+                    Log.d("TaskAssign", "parcelOperationValueHi: $parcelOperationValueHi")
+
+                    val unitIdRaw = attr["unit_id"]
+                    Log.d(
+                        "TaskAssign",
+                        "unit_id (raw): $unitIdRaw (Type: ${unitIdRaw?.javaClass?.simpleName})"
+                    )
+
+                    val groupIdRaw = attr["group_id"]
+                    Log.d(
+                        "TaskAssign",
+                        "group_id (raw): $groupIdRaw (Type: ${groupIdRaw?.javaClass?.simpleName})"
+                    )
+
+                    val unitId = try {
+                        attr["unit_id"]?.toString()?.toLongOrNull() ?: 0L
+                    } catch (e: Exception) {
+                        Log.e("TaskAssign", "Error converting unit_id: ${e.message}")
+                        0L
+                    }
+                    Log.d("TaskAssign", "unitId (converted): $unitId")
+
+                    val groupId = try {
+                        attr["group_id"]?.toString()?.toLongOrNull() ?: 0L
+                    } catch (e: Exception) {
+                        Log.e("TaskAssign", "Error converting group_id: ${e.message}")
+                        0L
+                    }
+                    Log.d("TaskAssign", "groupId (converted): $groupId")
+
                     val context = requireContext()
                     val intent = Intent(context, SurveyActivity::class.java).apply {
-                        putExtra("parcelId", attr["parcel_id"].toString().toLong())
-                        putExtra("parcelNo", attr["parcel_no"].toString())
-                        putExtra("subParcelNo", attr["sub_parcel_no"].toString())
-                        putExtra("parcelArea", attr["area"].toString())
-                        putExtra("khewatInfo", attr["khewatInfo"].toString())
-                        putExtra("parcelOperation", viewModel.parcelOperation)
-                        putExtra("parcelOperationValue", viewModel.parcelOperationValue)
-                        putExtra(
-                            "parcelOperationValueHi",
-                            tvMergeParcelHi.text.toString().trim()
-                        )
+                        putExtra("parcelId", parcelId)
+                        putExtra("parcelNo", parcelNo)
+                        putExtra("subParcelNo", subParcelNo)
+                        putExtra("parcelArea", area)
+                        putExtra("khewatInfo", khewatInfo)
+                        putExtra("parcelOperation", parcelOperation)
+                        putExtra("parcelOperationValue", parcelOperationValue)
+                        putExtra("parcelOperationValueHi", parcelOperationValueHi)
+                        putExtra("unitId", unitId)
+                        putExtra("groupId", groupId)
                     }
+
+                    Log.d("TaskAssign", "Intent extras being passed:")
+                    Log.d("TaskAssign", "  parcelId: $parcelId")
+                    Log.d("TaskAssign", "  parcelNo: $parcelNo")
+                    Log.d("TaskAssign", "  subParcelNo: $subParcelNo")
+                    Log.d("TaskAssign", "  parcelArea: $area")
+                    Log.d("TaskAssign", "  khewatInfo: $khewatInfo")
+                    Log.d("TaskAssign", "  parcelOperation: $parcelOperation")
+                    Log.d("TaskAssign", "  parcelOperationValue: $parcelOperationValue")
+                    Log.d("TaskAssign", "  parcelOperationValueHi: $parcelOperationValueHi")
+                    Log.d("TaskAssign", "  unitId: $unitId")
+                    Log.d("TaskAssign", "  groupId: $groupId")
+
+                    Log.d("TaskAssign", "Starting SurveyActivity...")
                     startActivity(intent)
+                    Log.d("TaskAssign", "=== RB_SAME OPERATION COMPLETED ===")
                 }
 
-                // ---------------- SPLIT ----------------
                 R.id.rb_split -> {
                     if (etSplitParcel.text.toString().trim().isEmpty()) {
                         etSplitParcel.apply {
@@ -2946,7 +2679,6 @@ class FragmentMap : Fragment() {
                         viewModel.subParcelList = subParcels
                     }
 
-                    // Pass same data as Bundle to intermediate SubParcelList screen
                     val bundle = Bundle().apply {
                         putLong("parcelId", attr["parcel_id"].toString().toLong())
                         putString("parcelNo", attr["parcel_no"].toString())
@@ -2959,6 +2691,8 @@ class FragmentMap : Fragment() {
                             "parcelOperationValueHi",
                             tvMergeParcelHi.text.toString().trim()
                         )
+                        putLong("unitId", attr["unit_id"].toString().toLong())
+                        putLong("groupId", attr["group_id"].toString().toLong())
                     }
 
                     findNavController().navigate(
@@ -2967,7 +2701,6 @@ class FragmentMap : Fragment() {
                     )
                 }
 
-                // ---------------- MERGE ----------------
                 R.id.rb_merge -> {
                     if (tvMergeParcel.text.toString().trim().isEmpty()) {
                         Toast.makeText(
@@ -2991,6 +2724,8 @@ class FragmentMap : Fragment() {
                             "parcelOperationValueHi",
                             tvMergeParcelHi.text.toString().trim()
                         )
+                        putExtra("unitId", attr["unit_id"].toString().toLong())
+                        putExtra("groupId", attr["group_id"].toString().toLong())
                     }
                     startActivity(intent)
                 }
@@ -2998,7 +2733,6 @@ class FragmentMap : Fragment() {
         }
 
         btnRevisitSurvey.setOnClickListener {
-
             graphicCentoid = graphics
 
             closeCallOut()
@@ -3029,7 +2763,7 @@ class FragmentMap : Fragment() {
                     Array<SubParcelStatus>::class.java
                 ).toList()
             } catch (e: Exception) {
-                emptyList() // Handle invalid JSON gracefully
+                emptyList()
             }
 
             var action = 0
@@ -3062,16 +2796,13 @@ class FragmentMap : Fragment() {
                             viewModel.subParcelsStatusList = gson.toJson(rejectedSubParcel)
                         }
 
-                        // Move to "Pictures Screen"
                         action = R.id.action_fragmentMap_to_fragmentFormRemarks
-
                     }
 
                     else -> {
                         viewModel.rejectedSubParcelsList.clear()
 
-                        val rejectedSubParcel =
-                            arrayListOf<RejectedSubParcel>() // Use a mutable list
+                        val rejectedSubParcel = arrayListOf<RejectedSubParcel>()
                         for (item in subParcelsList) {
                             if (item.fullRevisitRequired || item.pictureRevisitRequired) {
                                 rejectedSubParcel.add(
@@ -3097,7 +2828,6 @@ class FragmentMap : Fragment() {
                         viewModel.imageTaken = 0
                         viewModel.discrepancyPicturePath = ""
 
-                        // Move to "New List of target rejected SubParcels Screen"
                         action = R.id.action_fragmentMap_to_fragmentRejectedSubParcelList
                     }
                 }
@@ -3117,14 +2847,12 @@ class FragmentMap : Fragment() {
                 if (isAdded && action != 0) {
                     findNavController().navigate(action)
                 } else {
-                    Toast.makeText(context, "Action Undefined", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(context, "Action Undefined", Toast.LENGTH_SHORT).show()
                 }
             }
         }
 
         delete.setOnClickListener {
-
             graphicCentoid = graphics
 
             val builder = AlertDialog.Builder(requireContext())
@@ -3136,7 +2864,6 @@ class FragmentMap : Fragment() {
                 dialog.dismiss()
 
                 viewLifecycleOwner.lifecycleScope.launch {
-
                     val centroid = attr["centroid"].toString()
 
                     val listOfNAHRecords = database.notAtHomeSurveyFormDao()
@@ -3210,7 +2937,6 @@ class FragmentMap : Fragment() {
                                     }
                                     database.notAtHomeSurveyFormDao()
                                         .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
-
                                 }
 
                                 else -> {
@@ -3253,11 +2979,9 @@ class FragmentMap : Fragment() {
             positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
             negativeButton.textSize = 16f
             negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-
         }
 
         mapLocation.setOnClickListener { view: View? ->
-
             closeCallOut()
             val projectedPoint =
                 GeometryEngine.project(
@@ -3265,22 +2989,18 @@ class FragmentMap : Fragment() {
                     SpatialReferences.getWebMercator()
                 ) as Point
 
-            // Convert the projected point to a geographic point
             val geoPoint =
                 GeometryEngine.project(
                     projectedPoint,
                     SpatialReferences.getWgs84()
                 ) as Point
 
-            // Get the latitude and longitude values of the geographic point
             val latitude = geoPoint.y
             val longitude = geoPoint.x
 
-            // Print the latitude and longitude values
             println("latitude77=$latitude")
             println("longitude77=$longitude")
 
-//            val uri = String.format(Locale.ENGLISH, "geo:%f,%f", latitude, longitude)
             val uri = String.format(
                 Locale.ENGLISH,
                 "geo:%f,%f?q=%f,%f(Label)",
@@ -3302,18 +3022,15 @@ class FragmentMap : Fragment() {
                     SpatialReferences.getWebMercator()
                 ) as Point
 
-            // Convert the projected point to a geographic point
             val geoPoint =
                 GeometryEngine.project(
                     projectedPoint,
                     SpatialReferences.getWgs84()
                 ) as Point
 
-            // Get the latitude and longitude values of the geographic point
             val latitude = geoPoint.y
             val longitude = geoPoint.x
 
-            // Print the latitude and longitude values
             println("latitude77=$latitude")
             println("longitude77=$longitude")
 
@@ -3332,20 +3049,130 @@ class FragmentMap : Fragment() {
         callOutStyle.borderColor = R.color.primaryColor
         callOutStyle.borderWidth = 2
         mCallOut.style = callOutStyle
-        mCallOut.location = mapPoint //new Point(x,y,mMapView.getSpatialReference()));
+        mCallOut.location = mapPoint
         mCallOut.content = dialogView
         mCallOut.show()
     }
 
+    // Task Assign Selection Dialog
+    private fun showTaskAssignSelectionDialog(currentParcelAttr: Map<String, Any>) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_task_assign_selection, null)
 
-    // Save harvested status to SharedPreferences
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        // Make dialog background transparent to show custom rounded corners
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Single Parcel Card Click
+        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.cardSingleParcel)
+            .setOnClickListener {
+                dialog.dismiss()
+                startSingleParcelTaskAssign(currentParcelAttr)
+
+                // Optional: Add haptic feedback
+                it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+            }
+
+        // Multiple Parcels Card Click
+        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.cardMultipleParcels)
+            .setOnClickListener {
+                dialog.dismiss()
+                enterMultipleParcelTaskAssignMode(currentParcelAttr)
+
+                // Optional: Add haptic feedback
+                it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+            }
+
+        // Cancel Button Click
+        dialogView.findViewById<Button>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+
+        // Optional: Add enter animation
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+    }
+
+    private fun startSingleParcelTaskAssign(attr: Map<String, Any>) {
+        val context = requireContext()
+        val intent = Intent(context, TaskAssignActivity::class.java).apply {
+            putExtra("parcelId", attr["parcel_id"].toString().toLong())
+            putExtra("parcelNo", attr["parcel_no"].toString())
+            putExtra("subParcelNo", attr["sub_parcel_no"].toString())
+            putExtra("parcelArea", attr["area"].toString())
+            putExtra("khewatInfo", attr["khewatInfo"].toString())
+            putExtra("unitId", attr["unit_id"]?.toString()?.toLongOrNull() ?: 0L)
+            putExtra("groupId", attr["group_id"]?.toString()?.toLongOrNull() ?: 0L)
+            putExtra("isMultipleParcel", false)
+        }
+
+        Log.d("TaskAssign", "Starting single parcel task assignment")
+        startActivity(intent)
+        closeCallOut()
+    }
+
+    private fun enterMultipleParcelTaskAssignMode(baseParcelAttr: Map<String, Any>) {
+        isTaskAssignMode = true
+        selectedTaskParcels.clear()
+
+        closeCallOut()
+
+        binding.taskAssignControlBar.visibility = View.VISIBLE
+        dialogView.findViewById<View>(R.id.card_root)?.visibility = View.GONE
+
+        Toast.makeText(
+            requireContext(),
+            "Tap on parcels to select for task assignment",
+            Toast.LENGTH_LONG
+        ).show()
+
+        val baseParcelId = baseParcelAttr["parcel_id"].toString().toLong()
+        val baseParcelInfo = ParcelInfo(
+            parcelId = baseParcelId,
+            parcelNo = baseParcelAttr["parcel_no"].toString(),
+            subParcelNo = baseParcelAttr["sub_parcel_no"].toString(),
+            area = baseParcelAttr["area"].toString(),
+            khewatInfo = baseParcelAttr["khewatInfo"].toString(),
+            unitId = baseParcelAttr["unit_id"]?.toString()?.toLongOrNull() ?: 0L,
+            groupId = baseParcelAttr["group_id"]?.toString()?.toLongOrNull() ?: 0L
+        )
+
+        selectedTaskParcels[baseParcelId] = baseParcelInfo
+
+        for (graphic in surveyParcelsGraphics.graphics) {
+            if (graphic.attributes["parcel_id"] == baseParcelId) {
+                graphic.symbol = SimpleFillSymbol(
+                    SimpleFillSymbol.Style.SOLID,
+                    Color.argb(100, 255, 140, 0),
+                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3f)
+                )
+                break
+            }
+        }
+
+        updateTaskAssignSelectionCount()
+
+        try {
+            IdentifyFeatureLayerTouchListener(
+                context,
+                binding.parcelMapview,
+                this@FragmentMap.surveyParcelsGraphics
+            ).also { binding.parcelMapview.onTouchListener = it }
+        } catch (e: Exception) {
+            Log.e("TaskAssign", "Error setting touch listener: ${e.message}")
+        }
+    }
+
     private fun saveHarvestedStatusToPreferences(parcelId: Long, isHarvested: Boolean) {
         try {
-            // Get current set
-            val currentSet = sharedPreferences.getStringSet("harvested_parcels", emptySet()) ?: emptySet()
+            val currentSet =
+                sharedPreferences.getStringSet("harvested_parcels", emptySet()) ?: emptySet()
             Log.d("Harvested", "Current harvested parcels before save: $currentSet")
 
-            // Create a mutable copy (IMPORTANT: StringSet from SharedPreferences is immutable)
             val harvestedParcels = currentSet.toMutableSet()
 
             if (isHarvested) {
@@ -3358,10 +3185,9 @@ class FragmentMap : Fragment() {
 
             Log.d("Harvested", "New harvested parcels set: $harvestedParcels")
 
-            // Use commit() instead of apply() for immediate saving
             val success = sharedPreferences.edit()
                 .putStringSet("harvested_parcels", harvestedParcels)
-                .commit() // Use commit() instead of apply()
+                .commit()
 
             if (success) {
                 Log.d("Harvested", "Successfully saved harvested status for parcel ID: $parcelId")
@@ -3369,7 +3195,6 @@ class FragmentMap : Fragment() {
                 Log.e("Harvested", "Failed to save harvested status for parcel ID: $parcelId")
             }
 
-            // Verify it was saved
             val verifySet = sharedPreferences.getStringSet("harvested_parcels", emptySet())
             Log.d("Harvested", "Verification - Harvested parcels after save: $verifySet")
 
@@ -3377,24 +3202,29 @@ class FragmentMap : Fragment() {
             Log.e("Harvested", "Error saving harvested status: ${e.message}", e)
         }
     }
-    // Get harvested parcels from SharedPreferences
+
     private fun getHarvestedParcelsFromPreferences(): Set<String> {
         try {
-            val harvestedParcels = sharedPreferences.getStringSet("harvested_parcels", emptySet()) ?: emptySet()
-            Log.d("Harvested", "Retrieved ${harvestedParcels.size} harvested parcels: $harvestedParcels")
+            val harvestedParcels =
+                sharedPreferences.getStringSet("harvested_parcels", emptySet()) ?: emptySet()
+            Log.d(
+                "Harvested",
+                "Retrieved ${harvestedParcels.size} harvested parcels: $harvestedParcels"
+            )
             return harvestedParcels
         } catch (e: Exception) {
             Log.e("Harvested", "Error getting harvested parcels: ${e.message}", e)
             return emptySet()
         }
     }
-    // Check if parcel is harvested
+
     private fun isParcelHarvested(parcelId: Long): Boolean {
         val harvestedParcels = getHarvestedParcelsFromPreferences()
         val isHarvested = harvestedParcels.contains(parcelId.toString())
         Log.d("Harvested", "Checking parcel ID $parcelId: isHarvested = $isHarvested")
         return isHarvested
     }
+
     private fun closeCallOut() {
         if (::mCallOut.isInitialized && mCallOut.isShowing) {
             mCallOut.dismiss()
@@ -3402,7 +3232,6 @@ class FragmentMap : Fragment() {
     }
 
     private fun reVisitValidation(location: Location) {
-
         viewLifecycleOwner.lifecycleScope.launch {
             val attr = graphicCentoid.attributes
             val centroid = attr["centroid"].toString()
@@ -3418,9 +3247,8 @@ class FragmentMap : Fragment() {
 
             if (isCurrentTimeGreaterThanProvidedTime(currentMobileTime, providedTime)) {
                 val restrictionMillis: Long = when (item.visitCount) {
-                    0, 1 -> 2 * 60 * 60 * 1000L // 2 hours in milliseconds
+                    0, 1 -> 2 * 60 * 60 * 1000L
                     else -> {
-                        // Set threshold to start of next day for the second visit
                         val dateTimeFormatter =
                             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
                         val providedDateTime =
@@ -3449,7 +3277,6 @@ class FragmentMap : Fragment() {
                         }
                         putExtra("bundle_data", bundle)
                         startActivity(this)
-
                     }
                 } else {
                     val remainingHours = remainingTime / (60 * 60 * 1000)
@@ -3468,22 +3295,18 @@ class FragmentMap : Fragment() {
                         .setCancelable(false)
                         .setMessage(message)
                         .setPositiveButton("Ok", null)
-                    // Create the AlertDialog object
+
                     val dialog = builder.create()
                     dialog.show()
 
-                    // Get the buttons from the dialog
                     val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                     val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
 
-                    // Set button text size and style
-                    positiveButton.textSize =
-                        16f // Change the size according to your preference
-                    positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                    positiveButton.textSize = 16f
+                    positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
 
-                    negativeButton.textSize =
-                        16f // Change the size according to your preference
-                    negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                    negativeButton.textSize = 16f
+                    negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
                 }
             } else {
                 val builder = AlertDialog.Builder(requireActivity())
@@ -3491,22 +3314,18 @@ class FragmentMap : Fragment() {
                     .setCancelable(false)
                     .setMessage("Please try again after few minutes.")
                     .setPositiveButton("Ok", null)
-                // Create the AlertDialog object
+
                 val dialog = builder.create()
                 dialog.show()
 
-                // Get the buttons from the dialog
                 val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                 val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
 
-                // Set button text size and style
-                positiveButton.textSize =
-                    16f // Change the size according to your preference
-                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                positiveButton.textSize = 16f
+                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
 
-                negativeButton.textSize =
-                    16f // Change the size according to your preference
-                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                negativeButton.textSize = 16f
+                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
             }
         }
     }
@@ -3645,7 +3464,6 @@ class FragmentMap : Fragment() {
             }
             ls?.let {
                 lm?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0f, it)
-//                lm?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 1f, it)
             }
         } catch (e: Exception) {
             Toast.makeText(
@@ -3656,5 +3474,4 @@ class FragmentMap : Fragment() {
                 .show()
         }
     }
-
 }

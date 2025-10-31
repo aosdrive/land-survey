@@ -31,6 +31,14 @@
             android:text="Parcel: 123"
             android:textSize="14sp"
             android:textColor="#1C1B1B" />
+<!--        <TextView-->
+<!--            android:id="@+id/tvDaysTocomplete"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="4dp"-->
+<!--            android:text="Days to Complete: 1"-->
+<!--            android:textSize="14sp"-->
+<!--            android:textColor="#1C1B1B" />-->
 
         <TextView
             android:id="@+id/tvStatus"

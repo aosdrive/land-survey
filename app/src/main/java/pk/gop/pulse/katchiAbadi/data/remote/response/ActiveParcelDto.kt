@@ -1,3 +1,4 @@
+import com.google.gson.annotations.SerializedName
 
 data class ActiveParcelDto(
     val id: Long,
@@ -13,5 +14,10 @@ data class ActiveParcelDto(
     val parcelAreaKMF: String?,
     val parcelAreaAbadiDeh: String?,
     val surveyStatusCode: Int,
-    val surveyId: Int?
+    val surveyId: Int?,
+
+    @SerializedName("Unit_ID")
+    val unitId: Long?,
+    @SerializedName("Group_ID")
+    val groupId: Long?
 )

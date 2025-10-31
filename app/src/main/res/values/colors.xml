@@ -11,7 +11,7 @@
 
 <!--    <color name="parcel_green">#0C5835</color>-->
     <color name="parcel_green">#00FF0A</color>
-    <color name="parcel_red">#FD3B3B</color>
+    <color name="parcel_red">#F5F5F5</color>
     <color name="parcel_blue">#0044FF</color>
     <color name="parcel_yellow">#FFE500</color>
     <color name="current_location">#031FBD</color>
@@ -330,6 +330,12 @@
     <color name="spinner_selected_color">#000000</color> <!-- Black -->
     <color name="spinner_dropdown_color">#FFFFFF</color> <!-- White -->
 
-
+    <color name="primaryyColor">#1976D2</color>
+    <color name="primaryDark">#0D47A1</color>
+    <color name="primaryyLight">#BBDEFB</color>
+    <color name="accentColor">#FF9800</color>
+    <color name="accentLight">#FFE0B2</color>
+    <color name="gray">#757575</color>
+    <color name="divider_color">#E0E0E0</color>
 
 </resources>

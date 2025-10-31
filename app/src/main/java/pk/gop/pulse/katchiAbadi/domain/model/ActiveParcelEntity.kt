@@ -22,7 +22,9 @@ data class ActiveParcelEntity(
     val parcelAreaAbadiDeh: String?,
     val surveyStatusCode: Int,
     val surveyId: Int?,
-    val isActivate: Boolean = true  // Added IsActivate attribute with default value
+    val isActivate: Boolean = true,  // Added IsActivate attribute with default value
+    val unitId: Long? = null,
+    val groupId: Long? = null
 
 )
 

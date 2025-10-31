@@ -22,5 +22,9 @@ data class TaskSubmitDto (
     @SerializedName("AssignedToUserId")
     val assignedToUserId: Long,
 
-    val khewatInfo: String=""
+    val khewatInfo: String="",
+
+//    @SerializedName("days_To_Complete")
+//    val daysToComplete: Int
+
 )

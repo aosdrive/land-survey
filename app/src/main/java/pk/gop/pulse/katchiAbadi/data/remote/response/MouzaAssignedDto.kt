@@ -15,7 +15,8 @@ data class MauzaDetail(
     val mauzaId: Long,
     val unit: Int,
     val isPlraMauza: Boolean,
-    val serviceURL: String
+    val serviceURL: String,
+    val groupId: Long? = null
 )
 data class Settings(
     val meterDistance: String,

@@ -28,7 +28,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -65,6 +65,9 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration4to5)
                     .addMigrations(migration5to6)
                     .addMigrations(migration6to7)
+                    .addMigrations(migration7to8)
+                    .fallbackToDestructiveMigration()
+//                    .addMigrations(migration8to9)
                     .build()
                 INSTANCE = instance
                 instance
@@ -147,3 +150,16 @@ val migration6to7 = object : Migration(6, 7) {
         db.execSQL("ALTER TABLE tasks ADD COLUMN khewatInfo TEXT NOT NULL DEFAULT ''")
     }
 }
+
+val migration7to8 = object : Migration(7, 8) {  // Replace X and Y with your version numbers
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN unitId INTEGER")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN groupId INTEGER")
+    }
+}
+
+//val migration8to9 = object : Migration(8, 9) {  // Replace X and Y with your version numbers
+//    override fun migrate(database: SupportSQLiteDatabase) {
+//        database.execSQL("ALTER TABLE tasks ADD COLUMN daysToComplete INTEGER NOT NULL DEFAULT 0")
+//    }
+//}

@@ -243,18 +243,31 @@ class TaskListActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
+                Log.d("TaskList", "🔍 Requesting tasks for userId: $userId")
+
                 val response = withContext(Dispatchers.IO) {
                     serverApi.getTasksForUser(userId, "Bearer $token")
                 }
 
                 binding.progressBar.visibility = View.GONE
 
-                if (response.isSuccessful && response.body() != null) {
-                    val taskResponse = response.body()!!
+                // ✅ ADD DETAILED LOGGING
+                Log.d("TaskList", "Response code: ${response.code()}")
+                Log.d("TaskList", "Response successful: ${response.isSuccessful}")
 
-                    Log.d("TaskList", "Received ${taskResponse.data.size} tasks")
+                if (!response.isSuccessful) {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("TaskList", "❌ Error body: $errorBody")
+                    ToastUtil.showShort(context, "Failed to load tasks: ${response.code()}")
+                    return@launch
+                }
+
+                if (response.body() != null) {
+                    val taskResponse = response.body()!!
+                    Log.d("TaskList", "✅ Received ${taskResponse.data.size} tasks")
+
                     taskResponse.data.forEach { task ->
-                        Log.d("TaskList", "Task ${task.id}: picData = ${task.picData}")
+                        Log.d("TaskList", "Task ${task.id}: ${task.issue_Type}, Status: ${task.status}")
                     }
 
                     if (taskResponse.data.isEmpty()) {
@@ -265,12 +278,10 @@ class TaskListActivity : AppCompatActivity() {
                         binding.recyclerViewTasks.visibility = View.VISIBLE
                         taskAdapter.updateTasks(taskResponse.data)
                     }
-                } else {
-                    ToastUtil.showShort(context, "Failed to load tasks: ${response.code()}")
                 }
             } catch (e: Exception) {
                 binding.progressBar.visibility = View.GONE
-                Log.e("TaskList", "Error loading tasks: ${e.message}", e)
+                Log.e("TaskList", "❌ Exception: ${e.message}", e)
                 ToastUtil.showShort(context, "Error: ${e.localizedMessage}")
             }
         }
@@ -293,6 +304,7 @@ class TaskAdapter(
         val tvStatus: TextView = itemView.findViewById(R.id.tvStatus)
         val tvAssignDate: TextView = itemView.findViewById(R.id.tvAssignDate)
         val tvDetail: TextView = itemView.findViewById(R.id.tvDetail)
+//        val tvDaysToComplete: TextView = itemView.findViewById(R.id.tvDaysTocomplete)
         val tvAssignedBy: TextView = itemView.findViewById(R.id.tvAssignedBy)
         val ivTaskImage: ImageView? = itemView.findViewById(R.id.ivTaskImage)
         val tvImageCount: TextView? = itemView.findViewById(R.id.tvImageCount)
@@ -324,6 +336,10 @@ class TaskAdapter(
 
         holder.tvParcelNo.text = "Parcel No: ${task.parcelNo}"
         holder.tvParcelNo.setTextColor(textColor)
+
+//        val daysText = task.daysToComplete?.let { "Days to Complete: $it" } ?: "Days to Complete: N/A"
+//        holder.tvDaysToComplete.text = daysText
+//        holder.tvDaysToComplete.setTextColor(textColor)
 
         holder.tvStatus.text = "Status: ${task.status}"
 

@@ -1,5 +1,7 @@
 package pk.gop.pulse.katchiAbadi.data.remote.response
 
+import com.google.gson.annotations.SerializedName
+
 data class TaskListResponse(
     val success: Boolean,
     val data: List<TaskItem>,
@@ -18,5 +20,7 @@ data class TaskItem(
     val status: String,
     val createdOn: String,
     val updatedOn: String?,
-    val assignedByUser: String?
+    val assignedByUser: String?,
+//    @SerializedName("daysToComplete")
+//    val daysToComplete: Int? = 0,
 )
