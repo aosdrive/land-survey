@@ -36,18 +36,18 @@ data class SurveyPostNew(
     val remarks: String,
     val mauzaId: Long,
     val areaName: String,
-    val parcelId: Long, // ✅ Will be 0 for server creation
+    val parcelId: Long, // Will be 0 for server creation
     val parcelNo: String,
     val subParcelNo: String,
-    val parcelOperation: String, // ✅ Will be "CreateNew" for split parcels
+    val parcelOperation: String, // Will be "CreateNew" for split parcels
     val parcelOperationValue: String,
-    val geomWKT: String? = null, // ✅ Add geometry data
-    val centriod: String? = null, // ✅ Add centroid data
-    val khewatInfo: String? = null, // ✅ Add this field
+    val geomWKT: String? = null, // Add geometry data
+    val centriod: String? = null, //  Add centroid data
+    val khewatInfo: String? = null, // Add this field
     val parcelAreaKMF: String?= null,
     val distance: Int = 100, // ✅ ADD THIS with default value 100
     val pictures: List<Pictures>,
-    val persons: List<SurveyPersonPost>
+    val persons: List<SurveyPersonPost>,
 )
 
 

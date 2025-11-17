@@ -226,12 +226,12 @@ class NewSurveyRepositoryImpl @Inject constructor(
                             Log.d(TAG, "Detected split parcel with 'Same' operation - treating as new parcel")
                             Log.d(TAG, "Parcel details: ID=${localParcel.id}, ParcelNo=${localParcel.parcelNo}, SubParcel=${localParcel.subParcelNo}, KhewatInfo=${localParcel.khewatInfo}")
 
-                            // ✅ Treat split parcels as completely new entities
+                            // Treat split parcels as completely new entities
                             val surveyRecords = dao.getCompleteRecord(survey.parcelId)
                             val cleanSurveys = surveyRecords.map { surveyRecord ->
                                 surveyRecord.copy(
                                     parcelOperation = "New", // Treat as new parcel creation
-                                    parcelOperationValue = "" // ✅ No reference to any existing parcel
+                                    parcelOperationValue = "" // No reference to any existing parcel
                                 )
                             }
                             Log.d(TAG, "Converted ${cleanSurveys.size} survey records to clean 'New' operations")
@@ -264,7 +264,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
             Log.d(TAG, "Found ${subparcels.size} parcels to upload")
 
-            // ✅ Build posts with clean data including geometry AND person data AND khewatInfo from ActiveParcelEntity
+            // Build posts with clean data including geometry AND person data AND khewatInfo from ActiveParcelEntity
             val posts = withContext(Dispatchers.IO) {
                 subparcels.mapIndexed { index, subSurvey ->
                     Log.d(TAG, "=== Processing Survey ${index + 1}/${subparcels.size} ===")
@@ -272,17 +272,17 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
                     val sourceSurveyPkId = subSurvey.pkId // Use the actual survey pkId
 
-                    // ✅ Get images for this specific survey
+                    // Get images for this specific survey
                     val images = imageDao.getImagesBySurvey(sourceSurveyPkId)
                     val pictures = convertSurveyImagesToPictures(context, images)
                     Log.d(TAG, "Found ${images.size} images for survey pkId=${sourceSurveyPkId}")
 
-                    // ✅ Get persons for this specific survey
+                    // Get persons for this specific survey
                     val personsEntities = personDao.getPersonsForSurvey(sourceSurveyPkId)
                     val persons = convertPersonsToSurveyPersonPost(personsEntities)
                     Log.d(TAG, "Found ${personsEntities.size} persons for survey pkId=${sourceSurveyPkId}")
 
-                    // ✅ Get khewatInfo and parcelAreaKMF from ActiveParcelEntity based on operation type
+                    // Get khewatInfo and parcelAreaKMF from ActiveParcelEntity based on operation type
                     val (khewatInfo, parcelAreaKMF) = when (survey.parcelOperation) {
                         "Split" -> {
                             Log.d(TAG, "Getting khewatInfo and parcelAreaKMF for split parcel at index $index")
@@ -304,7 +304,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                     Log.d(TAG, "KhewatInfo from ActiveParcelEntity: $khewatInfo")
                     Log.d(TAG, "ParcelAreaKMF from ActiveParcelEntity: $parcelAreaKMF")
 
-                    // ✅ Get geometry data for ALL parcels (regardless of operation)
+                    // Get geometry data for ALL parcels (regardless of operation)
                     val (geomWKT, centroid) = when (survey.parcelOperation) {
                         "Split" -> {
                             Log.d(TAG, "Getting geometry for split parcel at index $index")
@@ -337,7 +337,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                             }
                         }
                         else -> {
-                            // ✅ FOR ALL OTHER OPERATIONS: Always get geometry from the survey's parcel
+                            // FOR ALL OTHER OPERATIONS: Always get geometry from the survey's parcel
                             Log.d(TAG, "Getting geometry for operation: ${survey.parcelOperation}")
                             val localParcel = activeParcelDao.getParcelById(subSurvey.parcelId)
                             if (localParcel != null) {
@@ -354,10 +354,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                     Log.d(TAG, "Final geometry data: geomWKT=${if (geomWKT.isNotEmpty()) "Present (${geomWKT.length} chars)" else "Empty"}")
                     Log.d(TAG, "Final centroid data: ${if (centroid.isNotEmpty()) centroid else "Empty"}")
 
-                    // ✅ Build SurveyPostNew with all data including khewatInfo, parcelAreaKMF and distance from ActiveParcelEntity
+                    // Build SurveyPostNew with all data including khewatInfo, parcelAreaKMF and distance from ActiveParcelEntity
                     val surveyPost = buildCleanSurveyPostNew(subSurvey, pictures, persons, geomWKT, centroid, khewatInfo, parcelAreaKMF, 100)
 
-                    // ✅ Log the complete survey post details
+                    // Log the complete survey post details
                     Log.d(TAG, "=== Survey Post Details ===")
                     Log.d(TAG, "Property Type: ${surveyPost.propertyType}")
                     Log.d(TAG, "Ownership Status: ${surveyPost.ownershipStatus}")
@@ -373,9 +373,9 @@ class NewSurveyRepositoryImpl @Inject constructor(
                     Log.d(TAG, "Parcel ID: ${surveyPost.parcelId}")
                     Log.d(TAG, "Parcel No: ${surveyPost.parcelNo}")
                     Log.d(TAG, "Sub Parcel No: ${surveyPost.subParcelNo}")
-                    Log.d(TAG, "KhewatInfo: ${surveyPost.khewatInfo}") // ✅ This should now show the actual value from ActiveParcelEntity
+                    Log.d(TAG, "KhewatInfo: ${surveyPost.khewatInfo}")
                     Log.d(TAG, "ParcelAreaKMF: ${surveyPost.parcelAreaKMF}")
-                    Log.d(TAG, "Distance: ${surveyPost.distance}") // ✅ Should show 100
+                    Log.d(TAG, "Distance: ${surveyPost.distance}")
                     Log.d(TAG, "Parcel Operation: ${surveyPost.parcelOperation}")
                     Log.d(TAG, "Parcel Operation Value: ${surveyPost.parcelOperationValue}")
                     Log.d(TAG, "GeomWKT: ${if (surveyPost.geomWKT?.isNotEmpty() == true) "Present (${surveyPost.geomWKT.length} chars)" else "Empty/Null"}")
@@ -424,7 +424,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         dao.markAsUploaded(subSurvey.pkId)
                         Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
                     }
-                    // ✅ NOW deactivate original parcel locally AFTER successful upload
+                    // deactivate original parcel locally AFTER successful upload
                     if (survey.parcelOperation == "Split") {
                         deactivateOriginalParcel(survey.parcelId)
                         Log.d(TAG, "Deactivated original parcel locally after successful upload")
@@ -453,16 +453,16 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
     }
 
-    // ✅ Build clean SurveyPostNew with geometry AND person data AND khewatInfo AND parcelAreaKMF AND distance from ActiveParcelEntity
+    // Build clean SurveyPostNew with geometry AND person data AND khewatInfo AND parcelAreaKMF AND distance from ActiveParcelEntity
     private fun buildCleanSurveyPostNew(
         survey: NewSurveyNewEntity,
         pictures: List<Pictures>,
         persons: List<SurveyPersonPost>,
         geomWKT: String,
         centroid: String,
-        khewatInfo: String, // ✅ Pass khewatInfo as parameter from ActiveParcelEntity
-        parcelAreaKMF: String, // ✅ Pass parcelAreaKMF as parameter from ActiveParcelEntity
-        distance: Int = 100 // ✅ Pass distance as parameter with default value 100
+        khewatInfo: String, // Pass khewatInfo as parameter from ActiveParcelEntity
+        parcelAreaKMF: String, // Pass parcelAreaKMF as parameter from ActiveParcelEntity
+        distance: Int = 100 // Pass distance as parameter with default value 100
     ): SurveyPostNew {
 
         // ✅ For split parcels (or any "New" operation), don't send parcel ID
@@ -485,7 +485,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
             remarks = survey.remarks,
             mauzaId = survey.mauzaId,
             areaName = survey.areaName,
-            parcelId = parcelIdToSend, // ✅ Use 0 for new parcels
+            parcelId = parcelIdToSend,
             parcelNo = survey.parcelNo,
             subParcelNo = survey.subParcelNo,
             parcelOperation = survey.parcelOperation, // ✅ Always "New" for clean creation

@@ -322,26 +322,6 @@ class MenuActivity : AppCompatActivity() {
                 }
             }
 
-
-//            cvSyncedAreas.setOnClickListener {
-//                lifecycleScope.launch {
-////                    val downloadedAreas = database.activeParcelDao().getDistinctDownloadedAreas()
-//
-//                    Toast.makeText(this@MenuActivity, "Not Available Yet!", Toast.LENGTH_SHORT).show()
-////                    if (downloadedAreas.isNotEmpty()) {
-////                        val intent = Intent(this@MenuActivity, DownloadedAreasActivity::class.java)
-////                        startActivity(intent)
-////                    } else {
-////                        Toast.makeText(
-////                            context,
-////                            "Data has not been downloaded yet.",
-////                            Toast.LENGTH_LONG
-////                        ).show()
-////                    }
-//                }
-//            }
-
-
             cvStartSurvey.setOnClickListener {
                 if (!Utility.checkTimeZone(this@MenuActivity)) return@setOnClickListener
 
@@ -753,7 +733,7 @@ class MenuActivity : AppCompatActivity() {
         mauzaName: String,
         areaName: String,
         unitId: Long,
-        groupId: Long,  // ✅ Add groupId parameter
+        groupId: Long,
         token: String
     ): SimpleResource {
         return try {
