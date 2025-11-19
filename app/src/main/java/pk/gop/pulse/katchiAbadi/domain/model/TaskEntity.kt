@@ -18,6 +18,6 @@ data class TaskEntity(
     val khewatInfo: String="",
     val createdOn: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
-//    val daysToComplete: Int
+    val daysToComplete: Int
 
 )

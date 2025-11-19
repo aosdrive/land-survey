@@ -592,6 +592,53 @@ class SurveyActivity : AppCompatActivity() {
 
     private fun setupSubmit(parcelId: Long, parcelNo: String, subParcelNo: String) {
         binding.btnSubmitSurvey.setOnClickListener {
+            // ===== VALIDATION: Check if survey area is filled =====
+            val surveyArea = binding.etArea.text.toString().trim()
+            if (surveyArea.isBlank()) {
+                AlertDialog.Builder(this)
+                    .setTitle("Area Required")
+                    .setMessage("Please enter the survey area before submitting.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+            // ===== END VALIDATION =====
+
+            // ===== VALIDATION: Check if at least one owner/person has been added =====
+            val rawPersons = personEntryHelper.getAllPersons()
+            if (rawPersons.isEmpty()) {
+                // Show error message and prevent submission
+                AlertDialog.Builder(this)
+                    .setTitle("Owner Required")
+                    .setMessage("Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            // ===== VALIDATION: Check that each owner has first name and area filled =====
+            val invalidPersons = rawPersons.filter { person ->
+                person.firstName.isNullOrBlank() || person.personArea.isNullOrBlank()
+            }
+
+            if (invalidPersons.isNotEmpty()) {
+                val missingFields = mutableListOf<String>()
+                invalidPersons.forEachIndexed { index, person ->
+                    val issues = mutableListOf<String>()
+                    if (person.firstName.isNullOrBlank()) issues.add("First Name")
+                    if (person.personArea.isNullOrBlank()) issues.add("Area")
+                    missingFields.add("Owner ${index + 1}: ${issues.joinToString(", ")}")
+                }
+
+                AlertDialog.Builder(this)
+                    .setTitle("Missing Required Fields")
+                    .setMessage("Please fill in the following required fields:\n\n${missingFields.joinToString("\n")}")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+            // ===== END VALIDATION =====
+
             val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
 
             val parcelOperationValue = if (parcelOperation == "Split") {
@@ -627,7 +674,6 @@ class SurveyActivity : AppCompatActivity() {
             val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
 
 //need to update this for
-            val rawPersons = personEntryHelper.getAllPersons()
             val images = viewModel.surveyImages.value!!
 
             lifecycleScope.launch {

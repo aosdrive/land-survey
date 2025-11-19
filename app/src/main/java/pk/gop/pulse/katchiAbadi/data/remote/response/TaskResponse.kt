@@ -21,6 +21,6 @@ data class TaskItem(
     val createdOn: String,
     val updatedOn: String?,
     val assignedByUser: String?,
-//    @SerializedName("daysToComplete")
-//    val daysToComplete: Int? = 0,
+    @SerializedName("daysToComplete")
+    val daysToComplete: Int? = 0,
 )

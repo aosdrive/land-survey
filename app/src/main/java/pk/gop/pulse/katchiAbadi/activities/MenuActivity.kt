@@ -699,7 +699,7 @@ class MenuActivity : AppCompatActivity() {
                         mauzaName = mauza.mauzaName,
                         areaName = selectedArea,
                         unitId = mauza.unit.toLong(),
-                        groupId = groupId,  // ✅ Pass groupId
+                        groupId = groupId,
                         token = "Bearer $token"
                     )
 
@@ -778,8 +778,8 @@ class MenuActivity : AppCompatActivity() {
                         surveyStatusCode = parcelDto.surveyStatusCode,
                         surveyId = parcelDto.surveyId,
                         isActivate = true,
-                        unitId = unitId,      // ✅ From mauza.unit
-                        groupId = groupId     // ✅ From area selection
+                        unitId = unitId,
+                        groupId = groupId
                     )
                 }
 

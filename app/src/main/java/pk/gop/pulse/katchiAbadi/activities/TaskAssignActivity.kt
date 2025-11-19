@@ -488,6 +488,7 @@ class TaskAssignActivity : AppCompatActivity() {
             val assignDate = binding.etDate.text.toString()
             val issueType = binding.spinnerPropertyStatus.selectedItem.toString()
             val details = binding.etDetail.text.toString()
+            val daysToComplete = binding.etDaysToComplete.text.toString()
 
             if (selectedUser == null) {
                 ToastUtil.showShort(context, "Please select a user to assign the task")
@@ -496,6 +497,17 @@ class TaskAssignActivity : AppCompatActivity() {
 
             if (assignDate.isEmpty()) {
                 ToastUtil.showShort(context, "Please select assign date")
+                return@setOnClickListener
+            }
+
+            if (daysToComplete.isEmpty()) {
+                ToastUtil.showShort(context, "Please enter days to complete")
+                return@setOnClickListener
+            }
+
+            val daysToCompleteInt = daysToComplete.toIntOrNull()
+            if (daysToCompleteInt == null || daysToCompleteInt <= 0) {
+                ToastUtil.showShort(context, "Please enter a valid number of days")
                 return@setOnClickListener
             }
 
@@ -533,7 +545,8 @@ class TaskAssignActivity : AppCompatActivity() {
                             mauzaId = mauzaID,
                             assignedByUserId = assignedByUserId,
                             assignedToUserId = selectedUser!!.id ?: 0L,
-                            khewatInfo = parcel.khewatInfo
+                            khewatInfo = parcel.khewatInfo,
+                            daysToComplete = daysToCompleteInt
                         )
 
                         Log.d("TaskAssign", "Submitting task for parcel ${parcel.parcelNo}")
@@ -556,7 +569,8 @@ class TaskAssignActivity : AppCompatActivity() {
                                 assignedToUserId = selectedUser!!.id ?: 0L,
                                 khewatInfo = parcel.khewatInfo,
                                 createdOn = System.currentTimeMillis(),
-                                isSynced = true
+                                isSynced = true,
+                                daysToComplete = daysToCompleteInt
                             )
 
                             withContext(Dispatchers.IO) {

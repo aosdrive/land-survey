@@ -304,7 +304,7 @@ class TaskAdapter(
         val tvStatus: TextView = itemView.findViewById(R.id.tvStatus)
         val tvAssignDate: TextView = itemView.findViewById(R.id.tvAssignDate)
         val tvDetail: TextView = itemView.findViewById(R.id.tvDetail)
-//        val tvDaysToComplete: TextView = itemView.findViewById(R.id.tvDaysTocomplete)
+        val tvDaysToComplete: TextView = itemView.findViewById(R.id.tvDaysTocomplete)
         val tvAssignedBy: TextView = itemView.findViewById(R.id.tvAssignedBy)
         val ivTaskImage: ImageView? = itemView.findViewById(R.id.ivTaskImage)
         val tvImageCount: TextView? = itemView.findViewById(R.id.tvImageCount)
@@ -337,9 +337,9 @@ class TaskAdapter(
         holder.tvParcelNo.text = "Parcel No: ${task.parcelNo}"
         holder.tvParcelNo.setTextColor(textColor)
 
-//        val daysText = task.daysToComplete?.let { "Days to Complete: $it" } ?: "Days to Complete: N/A"
-//        holder.tvDaysToComplete.text = daysText
-//        holder.tvDaysToComplete.setTextColor(textColor)
+        val daysText = task.daysToComplete?.let { "Days to Complete: $it" } ?: "Days to Complete: N/A"
+        holder.tvDaysToComplete.text = daysText
+        holder.tvDaysToComplete.setTextColor(textColor)
 
         holder.tvStatus.text = "Status: ${task.status}"
 
