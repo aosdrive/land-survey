@@ -185,7 +185,7 @@ class SurveyActivity : AppCompatActivity() {
             "Orchard",
             "Other"
         )
-        val cropTypeList = listOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "Other")
+        val cropTypeList = listOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "May")
         val varietyList = listOf(
             "CP-77400",
             "CPF-253",
@@ -280,80 +280,85 @@ class SurveyActivity : AppCompatActivity() {
     private fun showCustomVarietyInputDialog() {
         val input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT
+        input.hint = "Enter variety name"
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Enter Variety")
+            .setMessage("Please enter the variety name. This field is required.")
             .setView(input)
-            .setPositiveButton("OK") { dialog, _ ->
-                val customVariety = input.text.toString()
+            .setPositiveButton("OK") { dialogInterface, _ ->
+                val customVariety = input.text.toString().trim()
                 if (customVariety.isNotBlank()) {
+                    // ✅ Valid input - save the custom variety
                     selectedVariety = customVariety
                     ToastUtil.showShort(this, "Selected Variety: $customVariety")
+                    dialogInterface.dismiss()
                 } else {
-                    // If empty, set to "Other" and keep spinner on "Other"
-                    selectedVariety = "Other"
-                    // Keep the spinner on "Other" position
-                    isSettingSpinnerProgrammatically = true
-                    val varietyAdapter = binding.etVariety.adapter as ArrayAdapter<String>
-                    val otherPosition = varietyAdapter.getPosition("Other")
-                    binding.etVariety.setSelection(otherPosition)
-                    isSettingSpinnerProgrammatically = false
-                    ToastUtil.showShort(this, "Selected Variety: Other")
+                    // ❌ Empty input - show error and ask user to retry
+                    AlertDialog.Builder(this)
+                        .setTitle("Required Field")
+                        .setMessage("You must enter a variety name. You cannot select 'Other' without providing a value.")
+                        .setPositiveButton("Retry") { _, _ ->
+                            // Show the input dialog again
+                            showCustomVarietyInputDialog()
+                        }
+                        .show()
                 }
-                dialog.dismiss()
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                // On cancel, set to "Other" and keep spinner on "Other"
-                selectedVariety = "Other"
+            .setNegativeButton("Cancel") { _, _ ->
+                // ❌ User cancelled - reset spinner to first item (not "Other")
+                selectedVariety = null
                 isSettingSpinnerProgrammatically = true
                 val varietyAdapter = binding.etVariety.adapter as ArrayAdapter<String>
-                val otherPosition = varietyAdapter.getPosition("Other")
-                binding.etVariety.setSelection(otherPosition)
+                binding.etVariety.setSelection(0) // Reset to first item
                 isSettingSpinnerProgrammatically = false
-                ToastUtil.showShort(this, "Selected Variety: Other")
-                dialog.dismiss()
+                ToastUtil.showShort(this, "Variety selection cancelled. Please select a valid variety.")
             }
+            .setCancelable(false) // Prevent closing by clicking outside
             .show()
     }
 
     private fun showCustomCropInputDialog() {
         val input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT
+        input.hint = "Enter crop type name"
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Enter Crop Type")
+            .setMessage("Please enter the crop type name. This field is required.")
             .setView(input)
-            .setPositiveButton("OK") { dialog, _ ->
+            .setPositiveButton("OK") { dialogInterface, _ ->
                 val customCrop = input.text.toString().trim()
                 if (customCrop.isNotBlank()) {
+                    // ✅ Valid input - save the custom crop type
                     selectedCropType = customCrop
-                    Toast.makeText(this, "Custom crop selected: $customCrop", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(this, "Custom crop selected: $customCrop", Toast.LENGTH_SHORT).show()
+                    dialogInterface.dismiss()
                 } else {
-                    // If empty, set to "Other" and keep spinner on "Other"
-                    selectedCropType = "Other"
-                    // Keep the spinner on "Other" position
-                    isSettingSpinnerProgrammatically = true
-                    val cropAdapter = binding.etCropType.adapter as ArrayAdapter<String>
-                    val otherPosition = cropAdapter.getPosition("Other")
-                    binding.etCropType.setSelection(otherPosition)
-                    isSettingSpinnerProgrammatically = false
-                    ToastUtil.showShort(this, "Selected Crop Type: Other")
+                    // ❌ Empty input - show error and ask user to retry
+                    AlertDialog.Builder(this)
+                        .setTitle("Required Field")
+                        .setMessage("You must enter a crop type name. You cannot select 'Other' without providing a value.")
+                        .setPositiveButton("Retry") { _, _ ->
+                            // Show the input dialog again
+                            showCustomCropInputDialog()
+                        }
+                        .show()
                 }
-                dialog.dismiss()
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
-                // On cancel, set to "Other" and keep spinner on "Other"
-                selectedCropType = "Other"
+            .setNegativeButton("Cancel") { _, _ ->
+                // ❌ User cancelled - reset spinner to first item (not "Other")
+                selectedCropType = null
                 isSettingSpinnerProgrammatically = true
                 val cropAdapter = binding.etCropType.adapter as ArrayAdapter<String>
-                val otherPosition = cropAdapter.getPosition("Other")
-                binding.etCropType.setSelection(otherPosition)
+                binding.etCropType.setSelection(0) // Reset to first item
                 isSettingSpinnerProgrammatically = false
-                dialog.dismiss()
+                ToastUtil.showShort(this, "Crop type selection cancelled. Please select a valid crop type.")
             }
+            .setCancelable(false) // Prevent closing by clicking outside
             .show()
     }
+
 
     private fun setupPersonSection() {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
