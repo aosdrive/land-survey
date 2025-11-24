@@ -35,11 +35,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
+import pk.gop.pulse.katchiAbadi.data.local.AddVarietyRequest
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.local.PersonEntryHelper
 import pk.gop.pulse.katchiAbadi.data.local.SurveyFormViewModel
 import pk.gop.pulse.katchiAbadi.data.local.SurveyImageAdapter
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
+import pk.gop.pulse.katchiAbadi.data.repository.AddVarietyResult
+import pk.gop.pulse.katchiAbadi.data.repository.DropdownRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyNewBinding
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
@@ -57,7 +60,7 @@ class SurveyActivity : AppCompatActivity() {
     private lateinit var personEntryHelper: PersonEntryHelper
     private lateinit var imageAdapter: SurveyImageAdapter
     private var tempImageUri: Uri? = null
-    private var tempImagePath: String? = null  // ADD this line
+    private var tempImagePath: String? = null
     private var currentImageType: String = ""
 
     private val viewModel: SurveyFormViewModel by viewModels()
@@ -83,6 +86,13 @@ class SurveyActivity : AppCompatActivity() {
         tempImageUri = savedInstanceState.getString("tempImageUri")?.let { Uri.parse(it) }
     }
 
+    @Inject
+    lateinit var dropdownRepository: DropdownRepository
+
+
+    private var cropList = mutableListOf<String>()
+    private var cropTypeList = mutableListOf<String>()
+    private var varietyList = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -138,8 +148,8 @@ class SurveyActivity : AppCompatActivity() {
         setupImageSection()
         setupSubmit(parcelId, parcelNo, subParcelNo)
         loadSharedMouzaData()
+        syncUnsyncedData()
     }
-
 
     private fun requestCameraPermissionAndCapture() {
         if (checkSelfPermission(android.Manifest.permission.CAMERA) ==
@@ -150,7 +160,6 @@ class SurveyActivity : AppCompatActivity() {
             cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
         }
     }
-
 
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -171,47 +180,10 @@ class SurveyActivity : AppCompatActivity() {
         val ownershipStatusList = listOf("Self", "On Lease")
         val propertyTypeList = listOf("Farm Survey", "Other")
         val imageTypeList = listOf("CNIC", "Property", "Other Document", "Discrepancy Pic")
-        val cropList = listOf(
-            "Sugarcane",
-            "Wheat",
-            "Rice",
-            "Cotton",
-            "Maize",
-            "Plot",
-            "Sesame Seeds",
-            "Uncultivated Area",
-            "Vegetables",
-            "Fodder",
-            "Orchard",
-            "Other"
-        )
-        val cropTypeList = listOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "May")
-        val varietyList = listOf(
-            "CP-77400",
-            "CPF-253",
-            "CPF-246",
-            "NSG-59",
-            "J-16-639",
-            "J-16-487",
-            "YTFG-236",
-            "HSF-240",
-            "CPF-247",
-            "CPF-249",
-            "CPF-250",
-            "CPF-251",
-            "CPF-252",
-            "CPF-237",
-            "CPF-236",
-            "CSSG-676",
-            "Other"
-        )
 
+        // Static spinners
         binding.spinnerOwnershipStatus.adapter =
-            ArrayAdapter(
-                context,
-                android.R.layout.simple_spinner_dropdown_item,
-                ownershipStatusList
-            )
+            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, ownershipStatusList)
 
         binding.spinnerPropertyStatus.adapter =
             ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, propertyTypeList)
@@ -219,26 +191,202 @@ class SurveyActivity : AppCompatActivity() {
         binding.spinnerImageType.adapter =
             ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, imageTypeList)
 
-        binding.etCrop.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, cropList)
+        // Load dynamic spinners from API
+        loadCropsFromLocalDb()
+        loadCropTypesFromLocalDb()
+        loadVarietiesFromLocalDb()
+    }
 
-        binding.etCropType.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, cropTypeList)
+    private fun loadCropsFromLocalDb() {
+        lifecycleScope.launch {
+            try {
+                val crops = withContext(Dispatchers.IO) {
+                    dropdownRepository.getCrops(forceRefresh = false)
+                }
 
-        // Setup etVariety
-        val varietyAdapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_item, varietyList)
-        varietyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        binding.etVariety.adapter = varietyAdapter
+                cropList.clear()
+                cropList.addAll(crops)
+                cropList.add("Other")
 
-        // Listener for etVariety
+                val adapter = ArrayAdapter(
+                    context,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    cropList
+                )
+                binding.etCrop.adapter = adapter
+
+                val sugarcanePosition = cropList.indexOf("Sugarcane")
+                if (sugarcanePosition != -1) {
+                    binding.etCrop.setSelection(sugarcanePosition)
+                } else {
+                    // If "Sugarcane" not found, default to first item
+                    binding.etCrop.setSelection(0)
+                }
+
+                Log.d("SurveyActivity", "Loaded ${crops.size} crops from local DB")
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error loading crops: ${e.message}")
+                ToastUtil.showShort(context, "Error loading crops")
+                // ❌ REMOVE: setDefaultCropList() - No fallback
+            }
+        }
+    }
+
+    private fun loadCropTypesFromLocalDb() {
+        lifecycleScope.launch {
+            try {
+                val cropTypes = withContext(Dispatchers.IO) {
+                    dropdownRepository.getCropTypes(forceRefresh = false)
+                }
+
+                cropTypeList.clear()
+                cropTypeList.addAll(cropTypes)
+
+                val adapter = ArrayAdapter(
+                    context,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    cropTypeList
+                )
+                binding.etCropType.adapter = adapter
+                setupCropTypeListener()
+
+                Log.d("SurveyActivity", "Loaded ${cropTypes.size} crop types from local DB")
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error loading crop types: ${e.message}")
+                ToastUtil.showShort(context, "Error loading crop types")
+                // ❌ REMOVE: setDefaultCropTypeList() - No fallback
+            }
+        }
+    }
+
+    private fun loadVarietiesFromLocalDb() {
+        lifecycleScope.launch {
+            try {
+                val varieties = withContext(Dispatchers.IO) {
+                    dropdownRepository.getVarieties(forceRefresh = false)
+                }
+
+                varietyList.clear()
+                varietyList.addAll(varieties)
+                varietyList.add("Other")
+
+                val adapter = ArrayAdapter(
+                    context,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    varietyList
+                )
+                binding.etVariety.adapter = adapter
+                setupVarietyListener()
+
+                Log.d("SurveyActivity", "Loaded ${varieties.size} varieties from local DB")
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error loading varieties: ${e.message}")
+                ToastUtil.showShort(context, "Error loading varieties")
+                // REMOVE: setDefaultVarietyList() - No fallback
+            }
+        }
+    }
+
+
+
+//    private fun loadCropsFromServer() {
+//        lifecycleScope.launch {
+//            try {
+//                val response = withContext(Dispatchers.IO) {
+//                    serverApi.getCrops()
+//                }
+//
+//                if (response.isSuccessful && response.body() != null) {
+//                    cropList.clear()
+//                    cropList.addAll(response.body()!!.map { it.value })
+//                    cropList.add("Other") // Add "Other" option at the end
+//
+//                    val adapter = ArrayAdapter(
+//                        context,
+//                        android.R.layout.simple_spinner_dropdown_item,
+//                        cropList
+//                    )
+//                    binding.etCrop.adapter = adapter
+//                } else {
+//                    ToastUtil.showShort(context, "Failed to load crops")
+//                    setDefaultCropList() // Fallback to hardcoded list
+//                }
+//            } catch (e: Exception) {
+//                Log.e("SurveyActivity", "Error loading crops: ${e.message}")
+//                ToastUtil.showShort(context, "Error loading crops: ${e.message}")
+//                setDefaultCropList() // Fallback to hardcoded list
+//            }
+//        }
+//    }
+//
+//    private fun loadCropTypesFromServer() {
+//        lifecycleScope.launch {
+//            try {
+//                val response = withContext(Dispatchers.IO) {
+//                    serverApi.getCropTypes()
+//                }
+//
+//                if (response.isSuccessful && response.body() != null) {
+//                    cropTypeList.clear()
+//                    cropTypeList.addAll(response.body()!!.map { it.value })
+//
+//                    val adapter = ArrayAdapter(
+//                        context,
+//                        android.R.layout.simple_spinner_dropdown_item,
+//                        cropTypeList
+//                    )
+//                    binding.etCropType.adapter = adapter
+//
+//                    // Setup listener after adapter is set
+//                    setupCropTypeListener()
+//                } else {
+//                    ToastUtil.showShort(context, "Failed to load crop types")
+//                    setDefaultCropTypeList()
+//                }
+//            } catch (e: Exception) {
+//                Log.e("SurveyActivity", "Error loading crop types: ${e.message}")
+//                ToastUtil.showShort(context, "Error loading crop types: ${e.message}")
+//                setDefaultCropTypeList()
+//            }
+//        }
+//    }
+//
+//    private fun loadVarietiesFromServer() {
+//        lifecycleScope.launch {
+//            try {
+//                val response = withContext(Dispatchers.IO) {
+//                    serverApi.getCropVarieties()
+//                }
+//
+//                if (response.isSuccessful && response.body() != null) {
+//                    varietyList.clear()
+//                    varietyList.addAll(response.body()!!.map { it.value })
+//                    varietyList.add("Other") // Add "Other" option at the end
+//
+//                    val adapter = ArrayAdapter(
+//                        context,
+//                        android.R.layout.simple_spinner_dropdown_item,
+//                        varietyList
+//                    )
+//                    binding.etVariety.adapter = adapter
+//
+//                    // Setup listener after adapter is set
+//                    setupVarietyListener()
+//                } else {
+//                    ToastUtil.showShort(context, "Failed to load varieties")
+//                    setDefaultVarietyList()
+//                }
+//            } catch (e: Exception) {
+//                Log.e("SurveyActivity", "Error loading varieties: ${e.message}")
+//                ToastUtil.showShort(context, "Error loading varieties: ${e.message}")
+//                setDefaultVarietyList()
+//            }
+//        }
+//    }
+
+    private fun setupVarietyListener() {
         binding.etVariety.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 if (isSettingSpinnerProgrammatically) return
 
                 val selected = parent.getItemAtPosition(position).toString()
@@ -252,15 +400,11 @@ class SurveyActivity : AppCompatActivity() {
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
+    }
 
-        // Listener for etCropType
+    private fun setupCropTypeListener() {
         binding.etCropType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 if (isSettingSpinnerProgrammatically) return
 
                 val selected = parent.getItemAtPosition(position).toString()
@@ -276,89 +420,267 @@ class SurveyActivity : AppCompatActivity() {
         }
     }
 
-
     private fun showCustomVarietyInputDialog() {
         val input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT
         input.hint = "Enter variety name"
 
-        val dialog = AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Enter Variety")
             .setMessage("Please enter the variety name. This field is required.")
             .setView(input)
             .setPositiveButton("OK") { dialogInterface, _ ->
                 val customVariety = input.text.toString().trim()
                 if (customVariety.isNotBlank()) {
-                    // ✅ Valid input - save the custom variety
+                    // Just set the selected variety, don't add to database
                     selectedVariety = customVariety
-                    ToastUtil.showShort(this, "Selected Variety: $customVariety")
+                    ToastUtil.showShort(this, "Custom variety selected: $customVariety")
                     dialogInterface.dismiss()
                 } else {
-                    // ❌ Empty input - show error and ask user to retry
                     AlertDialog.Builder(this)
                         .setTitle("Required Field")
-                        .setMessage("You must enter a variety name. You cannot select 'Other' without providing a value.")
+                        .setMessage("You must enter a variety name.")
                         .setPositiveButton("Retry") { _, _ ->
-                            // Show the input dialog again
                             showCustomVarietyInputDialog()
                         }
                         .show()
                 }
             }
             .setNegativeButton("Cancel") { _, _ ->
-                // ❌ User cancelled - reset spinner to first item (not "Other")
-                selectedVariety = null
-                isSettingSpinnerProgrammatically = true
-                val varietyAdapter = binding.etVariety.adapter as ArrayAdapter<String>
-                binding.etVariety.setSelection(0) // Reset to first item
-                isSettingSpinnerProgrammatically = false
-                ToastUtil.showShort(this, "Variety selection cancelled. Please select a valid variety.")
+                resetVarietySpinner()
             }
-            .setCancelable(false) // Prevent closing by clicking outside
+            .setCancelable(false)
             .show()
     }
 
+    private fun addVarietyToRepository(varietyName: String) {
+        lifecycleScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    dropdownRepository.addVariety(varietyName)
+                }
+
+                when (result) {
+                    is AddVarietyResult.Success -> {
+                        // Successfully added to server and local DB
+                        selectedVariety = varietyName
+                        addVarietyToSpinner(varietyName)
+                        ToastUtil.showShort(context, "Variety added successfully: $varietyName")
+                    }
+                    is AddVarietyResult.AlreadyExists -> {
+                        // Variety already exists
+                        AlertDialog.Builder(this@SurveyActivity)
+                            .setTitle("Variety Already Exists")
+                            .setMessage("This variety already exists. Do you want to select it?")
+                            .setPositiveButton("Yes") { _, _ ->
+                                selectedVariety = varietyName
+                                addVarietyToSpinner(varietyName)
+                                ToastUtil.showShort(context, "Selected existing variety: $varietyName")
+                            }
+                            .setNegativeButton("No") { _, _ ->
+                                resetVarietySpinner()
+                            }
+                            .show()
+                    }
+                    is AddVarietyResult.SavedOffline -> {
+                        // Saved locally, will sync later
+                        selectedVariety = varietyName
+                        addVarietyToSpinner(varietyName)
+                        ToastUtil.showShort(context, "Variety saved offline (will sync when online): $varietyName")
+                    }
+                    is AddVarietyResult.Error -> {
+                        ToastUtil.showShort(context, "Error: ${result.message}")
+                        resetVarietySpinner()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error adding variety: ${e.message}")
+                ToastUtil.showShort(context, "Error adding variety")
+                resetVarietySpinner()
+            }
+        }
+    }
+
+    private fun addVarietyToSpinner(varietyName: String) {
+        if (!varietyList.contains(varietyName)) {
+            varietyList.add(varietyList.size - 1, varietyName) // Add before "Other"
+        }
+
+        isSettingSpinnerProgrammatically = true
+        val adapter = ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_dropdown_item,
+            varietyList
+        )
+        binding.etVariety.adapter = adapter
+
+        val newPosition = varietyList.indexOf(varietyName)
+        binding.etVariety.setSelection(newPosition)
+        isSettingSpinnerProgrammatically = false
+
+        setupVarietyListener()
+    }
+
     private fun showCustomCropInputDialog() {
+        // You can implement similar logic for crop types if needed
         val input = EditText(this)
         input.inputType = InputType.TYPE_CLASS_TEXT
         input.hint = "Enter crop type name"
 
-        val dialog = AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Enter Crop Type")
             .setMessage("Please enter the crop type name. This field is required.")
             .setView(input)
             .setPositiveButton("OK") { dialogInterface, _ ->
                 val customCrop = input.text.toString().trim()
                 if (customCrop.isNotBlank()) {
-                    // ✅ Valid input - save the custom crop type
                     selectedCropType = customCrop
-                    Toast.makeText(this, "Custom crop selected: $customCrop", Toast.LENGTH_SHORT).show()
+                    ToastUtil.showShort(this, "Custom crop type selected: $customCrop")
                     dialogInterface.dismiss()
                 } else {
-                    // ❌ Empty input - show error and ask user to retry
                     AlertDialog.Builder(this)
                         .setTitle("Required Field")
-                        .setMessage("You must enter a crop type name. You cannot select 'Other' without providing a value.")
+                        .setMessage("You must enter a crop type name.")
                         .setPositiveButton("Retry") { _, _ ->
-                            // Show the input dialog again
                             showCustomCropInputDialog()
                         }
                         .show()
                 }
             }
             .setNegativeButton("Cancel") { _, _ ->
-                // ❌ User cancelled - reset spinner to first item (not "Other")
                 selectedCropType = null
                 isSettingSpinnerProgrammatically = true
-                val cropAdapter = binding.etCropType.adapter as ArrayAdapter<String>
-                binding.etCropType.setSelection(0) // Reset to first item
+                binding.etCropType.setSelection(0)
                 isSettingSpinnerProgrammatically = false
-                ToastUtil.showShort(this, "Crop type selection cancelled. Please select a valid crop type.")
             }
-            .setCancelable(false) // Prevent closing by clicking outside
+            .setCancelable(false)
             .show()
     }
 
+    private fun addVarietyToServer(varietyName: String) {
+        lifecycleScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    serverApi.addCropVariety(AddVarietyRequest(varietyName))
+                }
+
+                if (response.isSuccessful && response.body() != null) {
+                    val result = response.body()!!
+
+                    if (result.alreadyExists == true) {
+                        // Variety already exists
+                        AlertDialog.Builder(this@SurveyActivity)
+                            .setTitle("Variety Already Exists")
+                            .setMessage("This variety already exists in the database. Do you want to select it?")
+                            .setPositiveButton("Yes") { _, _ ->
+                                selectedVariety = varietyName
+                                ToastUtil.showShort(context, "Selected existing variety: $varietyName")
+                            }
+                            .setNegativeButton("No") { _, _ ->
+                                // Reset spinner
+                                isSettingSpinnerProgrammatically = true
+                                binding.etVariety.setSelection(0)
+                                isSettingSpinnerProgrammatically = false
+                            }
+                            .show()
+                    } else {
+                        // Successfully added
+                        selectedVariety = varietyName
+
+                        // Add to local list and refresh spinner
+                        varietyList.add(varietyList.size - 1, varietyName) // Add before "Other"
+
+                        isSettingSpinnerProgrammatically = true
+                        val adapter = ArrayAdapter(
+                            context,
+                            android.R.layout.simple_spinner_dropdown_item,
+                            varietyList
+                        )
+                        binding.etVariety.adapter = adapter
+
+                        // Select the newly added variety
+                        val newPosition = varietyList.indexOf(varietyName)
+                        binding.etVariety.setSelection(newPosition)
+                        isSettingSpinnerProgrammatically = false
+
+                        setupVarietyListener() // Re-setup listener
+
+                        ToastUtil.showShort(context, "Variety added successfully: $varietyName")
+                    }
+                } else {
+                    ToastUtil.showShort(context, "Failed to add variety")
+                    resetVarietySpinner()
+                }
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error adding variety: ${e.message}")
+                ToastUtil.showShort(context, "Error adding variety: ${e.message}")
+                resetVarietySpinner()
+            }
+        }
+    }
+
+    private fun syncUnsyncedData() {
+        lifecycleScope.launch {
+            try {
+                val syncedCount = withContext(Dispatchers.IO) {
+                    dropdownRepository.syncUnsyncedVarieties()
+                }
+                if (syncedCount > 0) {
+                    Log.d("SurveyActivity", "Synced $syncedCount unsynced varieties")
+                    // Optionally refresh the varieties list
+                    loadVarietiesFromLocalDb()
+                }
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error syncing unsynced data: ${e.message}")
+            }
+        }
+    }
+
+
+    private fun resetVarietySpinner() {
+        selectedVariety = null
+        isSettingSpinnerProgrammatically = true
+        binding.etVariety.setSelection(0)
+        isSettingSpinnerProgrammatically = false
+    }
+
+//    private fun setDefaultCropList() {
+//        cropList = mutableListOf(
+//            "Sugarcane", "Wheat", "Rice", "Cotton", "Maize", "Plot",
+//            "Sesame Seeds", "Uncultivated Area", "Vegetables", "Fodder", "Orchard", "Other"
+//        )
+//        binding.etCrop.adapter = ArrayAdapter(
+//            context,
+//            android.R.layout.simple_spinner_dropdown_item,
+//            cropList
+//        )
+//    }
+
+//    private fun setDefaultCropTypeList() {
+//        cropTypeList = mutableListOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "May")
+//        val adapter = ArrayAdapter(
+//            context,
+//            android.R.layout.simple_spinner_dropdown_item,
+//            cropTypeList
+//        )
+//        binding.etCropType.adapter = adapter
+//        setupCropTypeListener()
+//    }
+
+//    private fun setDefaultVarietyList() {
+//        varietyList = mutableListOf(
+//            "CP-77400", "CPF-253", "CPF-246", "NSG-59", "J-16-639", "J-16-487",
+//            "YTFG-236", "HSF-240", "CPF-247", "CPF-249", "CPF-250", "CPF-251",
+//            "CPF-252", "CPF-237", "CPF-236", "CSSG-676", "Other"
+//        )
+//        val adapter = ArrayAdapter(
+//            context,
+//            android.R.layout.simple_spinner_dropdown_item,
+//            varietyList
+//        )
+//        binding.etVariety.adapter = adapter
+//        setupVarietyListener()
+//    }
 
     private fun setupPersonSection() {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)

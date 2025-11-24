@@ -13,6 +13,9 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
+import pk.gop.pulse.katchiAbadi.domain.model.CropEntity
+import pk.gop.pulse.katchiAbadi.domain.model.CropTypeEntity
+import pk.gop.pulse.katchiAbadi.domain.model.CropVarietyEntity
 import pk.gop.pulse.katchiAbadi.domain.model.KachiAbadiEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NotAtHomeSurveyFormEntity
@@ -27,8 +30,8 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
-    entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class],
-    version = 9,
+    entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class],
+    version = 10,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -45,8 +48,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun personDao(): SurveyPersonDao
     abstract fun imageDao(): SurveyImageDao
     abstract fun taskDao(): TaskDao
-
-
+    abstract fun cropDao(): CropDao
+    abstract fun cropTypeDao(): CropTypeDao
+    abstract fun cropVarietyDao(): CropVarietyDao
     companion object {
 
         @Volatile

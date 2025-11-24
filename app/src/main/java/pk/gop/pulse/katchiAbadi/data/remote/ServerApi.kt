@@ -3,6 +3,9 @@ package pk.gop.pulse.katchiAbadi.data.remote
 import ActiveParcelResponse
 import AreaResponse
 import OwnerResponse
+import pk.gop.pulse.katchiAbadi.data.local.AddVarietyRequest
+import pk.gop.pulse.katchiAbadi.data.local.AddVarietyResponse
+import pk.gop.pulse.katchiAbadi.data.local.DropdownItem
 import pk.gop.pulse.katchiAbadi.data.local.TaskSubmitDto
 import pk.gop.pulse.katchiAbadi.data.local.TaskUpdateDto
 import pk.gop.pulse.katchiAbadi.data.local.TaskUpdateResponse
@@ -175,4 +178,16 @@ interface ServerApi {
         @Header("Authorization") token: String,
         @Body updateDto: TaskUpdateDto
     ): Response<TaskUpdateResponse>
+
+    @GET("api/MobileData/GetCrops")
+    suspend fun getCrops(): Response<List<DropdownItem>>
+
+    @GET("api/MobileData/GetCropTypes")
+    suspend fun getCropTypes(): Response<List<DropdownItem>>
+
+    @GET("api/MobileData/GetCropVarieties")
+    suspend fun getCropVarieties(): Response<List<DropdownItem>>
+
+    @POST("api/MobileData/AddCropVariety")
+    suspend fun addCropVariety(@Body request: AddVarietyRequest): Response<AddVarietyResponse>
 }
