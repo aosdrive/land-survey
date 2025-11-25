@@ -1038,6 +1038,8 @@ class FragmentMap : Fragment() {
     override fun onResume() {
         super.onResume()
 
+        closeCallOut()
+
         refreshReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "REFRESH_MAP") {
@@ -2645,6 +2647,7 @@ class FragmentMap : Fragment() {
 
                     Log.d("TaskAssign", "Starting SurveyActivity...")
                     startActivity(intent)
+//                    dialog.dismiss()
                     Log.d("TaskAssign", "=== RB_SAME OPERATION COMPLETED ===")
                 }
 
@@ -2699,6 +2702,7 @@ class FragmentMap : Fragment() {
                         R.id.action_fragmentMap_to_fragmentSubParcelList,
                         bundle
                     )
+//                    dialog.dismiss()
                 }
 
                 R.id.rb_merge -> {
@@ -2728,6 +2732,7 @@ class FragmentMap : Fragment() {
                         putExtra("groupId", attr["group_id"].toString().toLong())
                     }
                     startActivity(intent)
+//                    dialog.dismiss()
                 }
             }
         }

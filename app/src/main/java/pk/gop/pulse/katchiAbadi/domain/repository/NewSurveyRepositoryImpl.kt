@@ -32,7 +32,7 @@ import java.io.File
 import javax.inject.Inject
 
 
-private const val TAG = "SurveyRepository" // or whatever your class name is
+private const val TAG = "SurveyRepository" //
 
 class NewSurveyRepositoryImpl @Inject constructor(
     private val dao: NewSurveyNewDao,
@@ -59,58 +59,85 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
     override suspend fun deleteSurvey(survey: NewSurveyNewEntity): Resource<Unit> {
         return try {
+            Log.d(TAG, "=== DELETE SURVEY STARTED ===")
+            Log.d(TAG, "Survey: parcelId=${survey.parcelId}, parcelNo=${survey.parcelNo}, operation=${survey.parcelOperation}")
+
+            // Delete the survey from database
             dao.deleteSurvey(survey)
+            Log.d(TAG, "Survey deleted from database")
 
-            // Check if there are any other surveys for this parcel
-            val remainingSurveys = dao.getSurveysByParcelId(survey.parcelId)
+            // Handle different parcel operations
+            when (survey.parcelOperation) {
+                "Merge" -> {
+                    Log.d(TAG, "=== HANDLING MERGE DELETE ===")
 
-            if (remainingSurveys.isEmpty()) {
-                // No more surveys for this parcel, set status back to unsurveyed (1)
-                activeParcelDao.updateSurveyStatus(survey.parcelId, 1)
+                    // 1. Reset the PARENT parcel status
+                    activeParcelDao.updateSurveyStatus(survey.parcelId, 1) // 1 = Unsurveyed
+                    Log.d(TAG, "✓ Reset parent parcel ${survey.parcelId} to unsurveyed")
+
+                    // 2. Reset ALL MERGED CHILD parcels
+                    if (survey.parcelOperationValue.isNotBlank()) {
+                        val mergedParcelIds = survey.parcelOperationValue
+                            .split(",")
+                            .mapNotNull { it.trim().toLongOrNull() }
+                            .filter { it != survey.parcelId } // Exclude parent parcel
+
+                        Log.d(TAG, "Found ${mergedParcelIds.size} merged child parcels: $mergedParcelIds")
+
+                        for (childParcelId in mergedParcelIds) {
+                            // Check if this child parcel has any other surveys
+                            val childSurveys = dao.getSurveysByParcelId(childParcelId)
+
+                            if (childSurveys.isEmpty()) {
+                                activeParcelDao.updateSurveyStatus(childParcelId, 1) // 1 = Unsurveyed
+                                Log.d(TAG, "✓ Reset child parcel $childParcelId to unsurveyed")
+                            } else {
+                                Log.d(TAG, "Child parcel $childParcelId has other surveys, skipping reset")
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Merge operation but no parcelOperationValue found")
+                    }
+                }
+
+                "Split" -> {
+                    Log.d(TAG, "=== HANDLING SPLIT DELETE ===")
+
+                    // For split parcels, check if this was the original parcel
+                    // Get all surveys for this parcel number
+                    val allSplitSurveys = dao.getSurveysByParcelId(survey.parcelId)
+
+                    if (allSplitSurveys.isEmpty()) {
+                        // No more surveys for this split parcel, reset status
+                        activeParcelDao.updateSurveyStatus(survey.parcelId, 1)
+                        Log.d(TAG, "✓ Reset split parcel ${survey.parcelId} to unsurveyed")
+
+                        // If this was part of a split operation, you might want to reactivate the original parcel
+                        // This depends on your business logic
+                    }
+                }
+
+                else -> {
+                    Log.d(TAG, "=== HANDLING SAME/OTHER DELETE ===")
+
+                    // Check if there are any other surveys for this parcel
+                    val remainingSurveys = dao.getSurveysByParcelId(survey.parcelId)
+
+                    if (remainingSurveys.isEmpty()) {
+                        // No more surveys for this parcel, set status back to unsurveyed (1)
+                        activeParcelDao.updateSurveyStatus(survey.parcelId, 1)
+                        Log.d(TAG, "✓ Reset parcel ${survey.parcelId} to unsurveyed")
+                    }
+                }
             }
 
+            Log.d(TAG, "=== DELETE SURVEY COMPLETED ===")
             Resource.Success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "Delete failed: ${e.message}", e)
             Resource.Error(e.message ?: "Delete failed")
         }
     }
-//    override suspend fun uploadSurvey(survey: NewSurveyNewEntity): Resource<Unit> {
-//override suspend fun uploadSurvey(context: Context, survey: NewSurveyNewEntity): Resource<Unit>
-//{
-//    return try {
-//            val images = imageDao.getImagesBySurvey(survey.pkId)
-//
-////            val pictures = convertSurveyImagesToPictures(images)
-//            val pictures = convertSurveyImagesToPictures(context, images)
-//
-//            val personsEntities = personDao.getPersonsForSurvey(survey.pkId)
-//            val persons = convertPersonsToPost(personsEntities)
-//
-//            val post = buildSurveyPost(survey, pictures, persons)
-//
-//            val gson = Gson()
-//            val json = gson.toJson(post)
-//            println("SurveyPost JSON = $json")
-//        val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
-//            val response = api.postSurveyDataNew("Bearer $token", post)
-//
-////            return Resource.Success(Unit)
-////        val response = api.postSurveyDataNew(token, post)
-//
-//        return if (response.isSuccessful && response.body() != null) {
-//            dao.markAsUploaded(survey.pkId)
-//            Resource.Success(Unit)
-//        } else {
-//            Resource.Error("Server error: ${response.errorBody()?.string() ?: "Unknown"} (code ${response.code()})")
-//        }
-//
-//
-//    } catch (e: Exception) {
-//            Resource.Error(e.message ?: "Unexpected error")
-//        }
-//    }
-
-
 
     override suspend fun uploadSurvey(
         context: Context,
@@ -138,7 +165,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                                 it.parcelNo == originalParcel.parcelNo &&
                                         it.isActivate == true &&
                                         it.subParcelNo.isNotBlank() &&
-                                        it.subParcelNo != "0" // ✅ Only get actual split parcels, exclude original
+                                        it.subParcelNo != "0" // Only get actual split parcels, exclude original
                             }
 
                             Log.d(TAG, "Found ${splitParcels.size} split parcels to upload (excluding original)")
@@ -154,7 +181,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                                     parcelNo = splitParcel.parcelNo.toString(),
                                     subParcelNo = splitParcel.subParcelNo,
                                     parcelOperation = "New", // Always use "New" for clean creation
-                                    parcelOperationValue = survey.parcelId.toString() // ✅ No reference to original parcel
+                                    parcelOperationValue = survey.parcelId.toString() // No reference to original parcel
                                 )
                                 splitSurveys.add(splitSurvey)
                                 Log.d(TAG, "Created clean survey record for split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, KhewatInfo=${originalParcel.khewatInfo}")
