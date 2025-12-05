@@ -20,7 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.activities.MenuActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.adapter.SurveyAdapter
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Results
@@ -32,8 +32,6 @@ import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import pk.gop.pulse.katchiAbadi.domain.model.OwnerInfo
-import javax.annotation.meta.When
 
 @AndroidEntryPoint
 class FragmentSurveyList : Fragment(), RadioGroup.OnCheckedChangeListener, SurveyItemClickListener {

@@ -1,11 +1,9 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import android.content.Context
 import android.content.DialogInterface
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
@@ -22,7 +20,6 @@ import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.adapter.DownloadedAreasAdapter
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.DownloadType
-import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.databinding.ActivityDownloadedAreasBinding
 import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil

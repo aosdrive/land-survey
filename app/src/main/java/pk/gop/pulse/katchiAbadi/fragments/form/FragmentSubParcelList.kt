@@ -19,8 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.activities.MenuActivity
-import pk.gop.pulse.katchiAbadi.activities.SurveyActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.SurveyActivity
 import pk.gop.pulse.katchiAbadi.adapter.SubParcelAdapter
 import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.common.SubParcel

@@ -15,8 +15,8 @@ import android.widget.RadioButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.activities.DownloadedAreasItemClickListener
-import pk.gop.pulse.katchiAbadi.activities.MauzaAreaEntry
+import pk.gop.pulse.katchiAbadi.ui.activities.DownloadedAreasItemClickListener
+import pk.gop.pulse.katchiAbadi.ui.activities.MauzaAreaEntry
 import pk.gop.pulse.katchiAbadi.common.Constants
 
 class DownloadedAreasAdapter(

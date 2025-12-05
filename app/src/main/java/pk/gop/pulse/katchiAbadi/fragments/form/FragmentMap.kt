@@ -91,10 +91,10 @@ import org.threeten.bp.LocalDateTime
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.activities.MenuActivity
-import pk.gop.pulse.katchiAbadi.activities.NotAtHomeActivity
-import pk.gop.pulse.katchiAbadi.activities.SurveyActivity
-import pk.gop.pulse.katchiAbadi.activities.TaskAssignActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.NotAtHomeActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.SurveyActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.TaskAssignActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.CustomTileLayer
 import pk.gop.pulse.katchiAbadi.common.DownloadType

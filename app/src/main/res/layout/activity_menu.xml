@@ -9,7 +9,7 @@
     android:fitsSystemWindows="true"
     android:focusable="true"
     android:focusableInTouchMode="true"
-    tools:context=".activities.MenuActivity">
+    tools:context=".ui.activities.MenuActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_parent"

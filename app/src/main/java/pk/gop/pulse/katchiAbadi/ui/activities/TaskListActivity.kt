@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -16,7 +16,6 @@ import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView

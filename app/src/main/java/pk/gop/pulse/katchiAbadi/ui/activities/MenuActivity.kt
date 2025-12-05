@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import android.app.ProgressDialog
 import android.content.Context
@@ -33,8 +33,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.room.withTransaction
 import com.esri.arcgisruntime.geometry.Envelope
 import com.esri.arcgisruntime.geometry.GeometryEngine
-import com.esri.arcgisruntime.geometry.Point
-import com.esri.arcgisruntime.geometry.PointCollection
 import com.esri.arcgisruntime.geometry.Polygon
 import com.esri.arcgisruntime.geometry.SpatialReferences
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,7 +46,6 @@ import pk.gop.pulse.katchiAbadi.MyApplication
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.DownloadFileTask
-import pk.gop.pulse.katchiAbadi.common.DownloadTpkTask
 import pk.gop.pulse.katchiAbadi.common.DownloadType
 import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.common.ResourceSealed
@@ -57,7 +54,6 @@ import pk.gop.pulse.katchiAbadi.common.TileManager
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
-import pk.gop.pulse.katchiAbadi.data.remote.response.KachiAbadiList
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaDetail
 import pk.gop.pulse.katchiAbadi.databinding.ActivityMenuBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
@@ -65,10 +61,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.presentation.menu.MenuViewModel
 import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
-import java.io.IOException
 import javax.inject.Inject
 import kotlin.math.cos
 import kotlin.math.floor

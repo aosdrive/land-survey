@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/album_card_bg"
-    tools:context=".activities.SavedRecordsActivity">
+    tools:context=".ui.activities.SavedRecordsActivity">
 
     <TextView
         android:id="@+id/tv_details"

@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.SharedPreferences
@@ -22,7 +22,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.local.SurveyFormViewModel

@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import android.Manifest
 import android.content.Context
@@ -9,24 +9,14 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.findNavController
-import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyFormBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Utility
-import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.databinding.ActivityNotAtHomeBinding
-import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
 import pk.gop.pulse.katchiAbadi.presentation.not_at_home.SharedNAHViewModel
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class NotAtHomeActivity : AppCompatActivity() {

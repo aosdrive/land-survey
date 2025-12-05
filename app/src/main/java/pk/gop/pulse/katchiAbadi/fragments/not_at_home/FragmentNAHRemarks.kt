@@ -3,7 +3,6 @@ package pk.gop.pulse.katchiAbadi.fragments.not_at_home
 import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.Context.LOCATION_SERVICE
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
@@ -12,8 +11,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
 import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.os.Build
@@ -28,7 +25,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
@@ -47,7 +43,7 @@ import com.google.android.gms.location.Priority
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.activities.MenuActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.ExtraPictures
 import pk.gop.pulse.katchiAbadi.common.Resource

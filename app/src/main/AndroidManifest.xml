@@ -34,16 +34,16 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:allowBackup">
         <activity
-            android:name=".activities.TaskListActivity"
+            android:name=".ui.activities.TaskListActivity"
             android:exported="false" />
         <activity
             android:name=".data.local.UserSelectionDialog"
             android:exported="false" />
         <activity
-            android:name=".activities.TaskAssignActivity"
+            android:name=".ui.activities.TaskAssignActivity"
             android:exported="false" />
         <activity
-            android:name=".activities.AuthActivity"
+            android:name=".ui.activities.AuthActivity"
             android:exported="true"
             android:theme="@style/Theme.AppSplash">
             <intent-filter>
@@ -53,67 +53,67 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activities.SurveyListActivity"
+            android:name=".ui.activities.SurveyListActivity"
             android:exported="false"
             android:label="Owners List"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.NewSavedRecordsActivity"
+            android:name=".ui.activities.NewSavedRecordsActivity"
             android:exported="false"
             android:label="Saved Records"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.MenuActivity"
+            android:name=".ui.activities.MenuActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.SurveyActivity"
+            android:name=".ui.activities.SurveyActivity"
             android:exported="false"
             android:label="Survey Form"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.SavedRecordsActivity"
+            android:name=".ui.activities.SavedRecordsActivity"
             android:exported="false"
             android:label="Saved Records"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.SentRecordsActivity"
+            android:name=".ui.activities.SentRecordsActivity"
             android:exported="false"
             android:label="Surveyed Records"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.SurveyFormActivity"
+            android:name=".ui.activities.SurveyFormActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".activities.NotAtHomeActivity"
+            android:name=".ui.activities.NotAtHomeActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".activities.ViewRecordActivity"
+            android:name=".ui.activities.ViewRecordActivity"
             android:exported="false"
             android:label="View Record"
             android:theme="@style/Theme.Survey"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".activities.SettingsActivity"
+            android:name=".ui.activities.SettingsActivity"
             android:exported="false"
             android:label="Settings"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.DownloadedAreasActivity"
+            android:name=".ui.activities.DownloadedAreasActivity"
             android:exported="false"
             android:label="Synced Areas"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.PrivacyPolicyActivity"
+            android:name=".ui.activities.PrivacyPolicyActivity"
             android:exported="false"
             android:label="Privacy Policy"
             android:theme="@style/Theme.Survey" />
         <activity
-            android:name=".activities.OfflineViewpagerActivity"
+            android:name=".ui.activities.OfflineViewpagerActivity"
             android:exported="false"
             android:theme="@style/Theme.Survey.NoActionBar" />
 

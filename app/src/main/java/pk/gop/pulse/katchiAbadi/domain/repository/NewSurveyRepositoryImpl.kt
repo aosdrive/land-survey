@@ -50,13 +50,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
     override suspend fun getActiveParcelById(parcelId: Long): ActiveParcelEntity? {
         return activeParcelDao.getParcelById(parcelId)
     }
-
     override fun getAllPendingSurveys(): Flow<List<NewSurveyNewEntity>> =
         dao.getAllPendingSurveys()
-
     override fun getTotalPendingCount(): Flow<Int> =
         dao.liveTotalPendingCount()
-
     override suspend fun deleteSurvey(survey: NewSurveyNewEntity): Resource<Unit> {
         return try {
             Log.d(TAG, "=== DELETE SURVEY STARTED ===")
@@ -138,7 +135,6 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Resource.Error(e.message ?: "Delete failed")
         }
     }
-
     override suspend fun uploadSurvey(
         context: Context,
         survey: NewSurveyNewEntity
@@ -176,12 +172,12 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
                             splitParcels.forEach { splitParcel ->
                                 val splitSurvey = survey.copy(
-                                    pkId = 0, // Reset pkId for new record
+                                    pkId = 0,
                                     parcelId = 0L,
                                     parcelNo = splitParcel.parcelNo.toString(),
                                     subParcelNo = splitParcel.subParcelNo,
-                                    parcelOperation = "New", // Always use "New" for clean creation
-                                    parcelOperationValue = survey.parcelId.toString() // No reference to original parcel
+                                    parcelOperation = "New",
+                                    parcelOperationValue = survey.parcelId.toString()
                                 )
                                 splitSurveys.add(splitSurvey)
                                 Log.d(TAG, "Created clean survey record for split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, KhewatInfo=${originalParcel.khewatInfo}")
@@ -550,43 +546,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
     }
 
-    // ✅ Build clean SurveyPostNew with geometry AND person data
-// ✅ Build clean SurveyPostNew with geometry AND person data
-
-
-
-    fun saveJsonToFile(context: Context, json: String, filename: String = "survey_post.json") {
-        val file = File(context.filesDir, filename)
-        file.writeText(json)
-        Log.d("SurveyPostJSON", "JSON saved to file: ${file.absolutePath}")
-    }
-
-
     override suspend fun getOnePendingSurvey(): NewSurveyNewEntity? =
         dao.getOnePendingSurvey()
-
-//    private fun convertSurveyImagesToPictures(context: Context, images: List<SurveyImage>): List<Pictures> = images.map { img ->
-//        val base64Encoded = try {
-//            val uri = Uri.parse(img.uri)
-//            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-//                BitmapFactory.decodeStream(inputStream)?.let { bmp ->
-//                    ByteArrayOutputStream().use { os ->
-//                        var quality = 100
-//                        do {
-//                            os.reset()
-//                            bmp.compress(Bitmap.CompressFormat.JPEG, quality, os)
-//                            quality -= 5
-//                        } while (os.size() / 1024 > 200 && quality > 75)
-//                        Base64.encodeToString(os.toByteArray(), Base64.NO_WRAP)
-//                    }
-//                } ?: "Image decoding failed"
-//            } ?: "InputStream not found"
-//        } catch (e: Exception) {
-//            "Image not found: ${e.localizedMessage}"
-//        }
-//
-//        Pictures(img.id.toInt(), img.type, base64Encoded, img.type)
-//    }
 
     private fun convertSurveyImagesToPictures(
         context: Context,
@@ -619,57 +580,6 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
 
         Pictures(img.id.toInt(), img.type, base64Encoded, img.type)
-
-    }
-
-
-    private fun convertPersonsToPost(persons: List<SurveyPersonEntity>): List<SurveyPersonPost> =
-        persons.map { p ->
-            SurveyPersonPost(
-                personId = p.personId,
-                firstName = p.firstName,
-                lastName = p.lastName,
-                gender = p.gender,
-                relation = p.relation,
-                religion = p.religion,
-                mobile = p.mobile,
-                nic = p.nic,
-                growerCode = p.growerCode,
-                personArea = p.personArea,
-                ownershipType = p.ownershipType,
-                extra1 = p.extra1,
-                extra2 = p.extra2,
-                mauzaId = p.mauzaId,
-                mauzaName = p.mauzaName
-            )
-        }
-
-    private fun buildSurveyPost(
-        survey: NewSurveyNewEntity,
-        pictures: List<Pictures>,
-        persons: List<SurveyPersonPost>
-    ): SurveyPostNew {
-        return SurveyPostNew(
-            propertyType = survey.propertyType,
-            ownershipStatus = survey.ownershipStatus,
-            variety = survey.variety,
-            cropType = survey.cropType,
-            crop = survey.crop,
-            year = survey.year,
-            area = survey.area,
-            isGeometryCorrect = survey.isGeometryCorrect,
-            remarks = survey.remarks,
-            mauzaId = survey.mauzaId,
-            areaName = survey.areaName,
-            parcelId = survey.parcelId,
-            parcelNo = survey.parcelNo,
-            subParcelNo = survey.subParcelNo,
-            parcelOperation = survey.parcelOperation,
-            parcelOperationValue = survey.parcelOperationValue,
-            pictures = pictures,
-            persons = persons
-        )
-
 
     }
 

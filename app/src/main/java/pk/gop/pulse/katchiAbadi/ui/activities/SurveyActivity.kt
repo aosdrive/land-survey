@@ -1,5 +1,5 @@
 // SurveyActivity.kt
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import OwnerSelectionDialog
 import android.content.Context
@@ -35,13 +35,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
-import pk.gop.pulse.katchiAbadi.data.local.AddVarietyRequest
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.local.PersonEntryHelper
 import pk.gop.pulse.katchiAbadi.data.local.SurveyFormViewModel
 import pk.gop.pulse.katchiAbadi.data.local.SurveyImageAdapter
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
-import pk.gop.pulse.katchiAbadi.data.repository.AddVarietyResult
 import pk.gop.pulse.katchiAbadi.data.repository.DropdownRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyNewBinding
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
@@ -73,6 +71,17 @@ class SurveyActivity : AppCompatActivity() {
 
     @Inject
     lateinit var serverApi: ServerApi
+    @Inject
+    lateinit var dropdownRepository: DropdownRepository
+
+
+    private var cropList = mutableListOf<String>()
+    private var cropTypeList = mutableListOf<String>()
+    private var varietyList = mutableListOf<String>()
+
+    private var selectedCropType: String? = null
+    private var selectedVariety: String? = null
+    private var isSettingSpinnerProgrammatically = false
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -86,22 +95,19 @@ class SurveyActivity : AppCompatActivity() {
         tempImageUri = savedInstanceState.getString("tempImageUri")?.let { Uri.parse(it) }
     }
 
-    @Inject
-    lateinit var dropdownRepository: DropdownRepository
-
-
-    private var cropList = mutableListOf<String>()
-    private var cropTypeList = mutableListOf<String>()
-    private var varietyList = mutableListOf<String>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySurveyNewBinding.inflate(layoutInflater)
         setContentView(binding.root)
         context = this@SurveyActivity
 
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowHomeEnabled(true)
         // Set default year
         binding.etYear.setText("2025")
+        setupAreaInputRestrictions()
+
+
         if (!sharedPreferences.getBoolean("sample_persons_inserted", false)) {
             //  insertSamplePersonsOnce()
         }
@@ -151,6 +157,31 @@ class SurveyActivity : AppCompatActivity() {
         syncUnsyncedData()
     }
 
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return true
+    }
+    private fun setupAreaInputRestrictions() {
+        binding.etArea.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val text = s.toString()
+                if (text.isNotEmpty()) {
+                    val value = text.toDoubleOrNull()
+                    if (value != null && value > 8) {
+                        binding.etArea.error = "Maximum area is 8"
+                    } else {
+                        binding.etArea.error = null
+                    }
+                }
+            }
+        })
+    }
+
     private fun requestCameraPermissionAndCapture() {
         if (checkSelfPermission(android.Manifest.permission.CAMERA) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -170,26 +201,36 @@ class SurveyActivity : AppCompatActivity() {
             }
         }
 
-    private var selectedCropType: String? = null
-    private var selectedVariety: String? = null
-
-    // Add these as class-level variables
-    private var isSettingSpinnerProgrammatically = false
 
     private fun setupSpinners() {
         val ownershipStatusList = listOf("Self", "On Lease")
         val propertyTypeList = listOf("Farm Survey", "Other")
         val imageTypeList = listOf("CNIC", "Property", "Other Document", "Discrepancy Pic")
 
-        // Static spinners
-        binding.spinnerOwnershipStatus.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, ownershipStatusList)
+        // Static spinners - FIXED
+        val ownershipAdapter = ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
+            ownershipStatusList
+        )
+        ownershipAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerOwnershipStatus.adapter = ownershipAdapter
 
-        binding.spinnerPropertyStatus.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, propertyTypeList)
+        val propertyAdapter = ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
+            propertyTypeList
+        )
+        propertyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerPropertyStatus.adapter = propertyAdapter
 
-        binding.spinnerImageType.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, imageTypeList)
+        val imageAdapter = ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
+            imageTypeList
+        )
+        imageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerImageType.adapter = imageAdapter
 
         // Load dynamic spinners from API
         loadCropsFromLocalDb()
@@ -206,20 +247,19 @@ class SurveyActivity : AppCompatActivity() {
 
                 cropList.clear()
                 cropList.addAll(crops)
-                cropList.add("Other")
 
                 val adapter = ArrayAdapter(
                     context,
-                    android.R.layout.simple_spinner_dropdown_item,
+                    android.R.layout.simple_spinner_item,  // Changed
                     cropList
                 )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Added
                 binding.etCrop.adapter = adapter
 
                 val sugarcanePosition = cropList.indexOf("Sugarcane")
                 if (sugarcanePosition != -1) {
                     binding.etCrop.setSelection(sugarcanePosition)
                 } else {
-                    // If "Sugarcane" not found, default to first item
                     binding.etCrop.setSelection(0)
                 }
 
@@ -227,7 +267,6 @@ class SurveyActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("SurveyActivity", "Error loading crops: ${e.message}")
                 ToastUtil.showShort(context, "Error loading crops")
-                // ❌ REMOVE: setDefaultCropList() - No fallback
             }
         }
     }
@@ -244,9 +283,10 @@ class SurveyActivity : AppCompatActivity() {
 
                 val adapter = ArrayAdapter(
                     context,
-                    android.R.layout.simple_spinner_dropdown_item,
+                    android.R.layout.simple_spinner_item,  // Changed
                     cropTypeList
                 )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Added
                 binding.etCropType.adapter = adapter
                 setupCropTypeListener()
 
@@ -254,7 +294,6 @@ class SurveyActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("SurveyActivity", "Error loading crop types: ${e.message}")
                 ToastUtil.showShort(context, "Error loading crop types")
-                // ❌ REMOVE: setDefaultCropTypeList() - No fallback
             }
         }
     }
@@ -272,9 +311,10 @@ class SurveyActivity : AppCompatActivity() {
 
                 val adapter = ArrayAdapter(
                     context,
-                    android.R.layout.simple_spinner_dropdown_item,
+                    android.R.layout.simple_spinner_item,  // Changed
                     varietyList
                 )
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Added
                 binding.etVariety.adapter = adapter
                 setupVarietyListener()
 
@@ -282,107 +322,9 @@ class SurveyActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("SurveyActivity", "Error loading varieties: ${e.message}")
                 ToastUtil.showShort(context, "Error loading varieties")
-                // REMOVE: setDefaultVarietyList() - No fallback
             }
         }
     }
-
-
-
-//    private fun loadCropsFromServer() {
-//        lifecycleScope.launch {
-//            try {
-//                val response = withContext(Dispatchers.IO) {
-//                    serverApi.getCrops()
-//                }
-//
-//                if (response.isSuccessful && response.body() != null) {
-//                    cropList.clear()
-//                    cropList.addAll(response.body()!!.map { it.value })
-//                    cropList.add("Other") // Add "Other" option at the end
-//
-//                    val adapter = ArrayAdapter(
-//                        context,
-//                        android.R.layout.simple_spinner_dropdown_item,
-//                        cropList
-//                    )
-//                    binding.etCrop.adapter = adapter
-//                } else {
-//                    ToastUtil.showShort(context, "Failed to load crops")
-//                    setDefaultCropList() // Fallback to hardcoded list
-//                }
-//            } catch (e: Exception) {
-//                Log.e("SurveyActivity", "Error loading crops: ${e.message}")
-//                ToastUtil.showShort(context, "Error loading crops: ${e.message}")
-//                setDefaultCropList() // Fallback to hardcoded list
-//            }
-//        }
-//    }
-//
-//    private fun loadCropTypesFromServer() {
-//        lifecycleScope.launch {
-//            try {
-//                val response = withContext(Dispatchers.IO) {
-//                    serverApi.getCropTypes()
-//                }
-//
-//                if (response.isSuccessful && response.body() != null) {
-//                    cropTypeList.clear()
-//                    cropTypeList.addAll(response.body()!!.map { it.value })
-//
-//                    val adapter = ArrayAdapter(
-//                        context,
-//                        android.R.layout.simple_spinner_dropdown_item,
-//                        cropTypeList
-//                    )
-//                    binding.etCropType.adapter = adapter
-//
-//                    // Setup listener after adapter is set
-//                    setupCropTypeListener()
-//                } else {
-//                    ToastUtil.showShort(context, "Failed to load crop types")
-//                    setDefaultCropTypeList()
-//                }
-//            } catch (e: Exception) {
-//                Log.e("SurveyActivity", "Error loading crop types: ${e.message}")
-//                ToastUtil.showShort(context, "Error loading crop types: ${e.message}")
-//                setDefaultCropTypeList()
-//            }
-//        }
-//    }
-//
-//    private fun loadVarietiesFromServer() {
-//        lifecycleScope.launch {
-//            try {
-//                val response = withContext(Dispatchers.IO) {
-//                    serverApi.getCropVarieties()
-//                }
-//
-//                if (response.isSuccessful && response.body() != null) {
-//                    varietyList.clear()
-//                    varietyList.addAll(response.body()!!.map { it.value })
-//                    varietyList.add("Other") // Add "Other" option at the end
-//
-//                    val adapter = ArrayAdapter(
-//                        context,
-//                        android.R.layout.simple_spinner_dropdown_item,
-//                        varietyList
-//                    )
-//                    binding.etVariety.adapter = adapter
-//
-//                    // Setup listener after adapter is set
-//                    setupVarietyListener()
-//                } else {
-//                    ToastUtil.showShort(context, "Failed to load varieties")
-//                    setDefaultVarietyList()
-//                }
-//            } catch (e: Exception) {
-//                Log.e("SurveyActivity", "Error loading varieties: ${e.message}")
-//                ToastUtil.showShort(context, "Error loading varieties: ${e.message}")
-//                setDefaultVarietyList()
-//            }
-//        }
-//    }
 
     private fun setupVarietyListener() {
         binding.etVariety.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -453,74 +395,6 @@ class SurveyActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun addVarietyToRepository(varietyName: String) {
-        lifecycleScope.launch {
-            try {
-                val result = withContext(Dispatchers.IO) {
-                    dropdownRepository.addVariety(varietyName)
-                }
-
-                when (result) {
-                    is AddVarietyResult.Success -> {
-                        // Successfully added to server and local DB
-                        selectedVariety = varietyName
-                        addVarietyToSpinner(varietyName)
-                        ToastUtil.showShort(context, "Variety added successfully: $varietyName")
-                    }
-                    is AddVarietyResult.AlreadyExists -> {
-                        // Variety already exists
-                        AlertDialog.Builder(this@SurveyActivity)
-                            .setTitle("Variety Already Exists")
-                            .setMessage("This variety already exists. Do you want to select it?")
-                            .setPositiveButton("Yes") { _, _ ->
-                                selectedVariety = varietyName
-                                addVarietyToSpinner(varietyName)
-                                ToastUtil.showShort(context, "Selected existing variety: $varietyName")
-                            }
-                            .setNegativeButton("No") { _, _ ->
-                                resetVarietySpinner()
-                            }
-                            .show()
-                    }
-                    is AddVarietyResult.SavedOffline -> {
-                        // Saved locally, will sync later
-                        selectedVariety = varietyName
-                        addVarietyToSpinner(varietyName)
-                        ToastUtil.showShort(context, "Variety saved offline (will sync when online): $varietyName")
-                    }
-                    is AddVarietyResult.Error -> {
-                        ToastUtil.showShort(context, "Error: ${result.message}")
-                        resetVarietySpinner()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("SurveyActivity", "Error adding variety: ${e.message}")
-                ToastUtil.showShort(context, "Error adding variety")
-                resetVarietySpinner()
-            }
-        }
-    }
-
-    private fun addVarietyToSpinner(varietyName: String) {
-        if (!varietyList.contains(varietyName)) {
-            varietyList.add(varietyList.size - 1, varietyName) // Add before "Other"
-        }
-
-        isSettingSpinnerProgrammatically = true
-        val adapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_dropdown_item,
-            varietyList
-        )
-        binding.etVariety.adapter = adapter
-
-        val newPosition = varietyList.indexOf(varietyName)
-        binding.etVariety.setSelection(newPosition)
-        isSettingSpinnerProgrammatically = false
-
-        setupVarietyListener()
-    }
-
     private fun showCustomCropInputDialog() {
         // You can implement similar logic for crop types if needed
         val input = EditText(this)
@@ -557,68 +431,6 @@ class SurveyActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun addVarietyToServer(varietyName: String) {
-        lifecycleScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    serverApi.addCropVariety(AddVarietyRequest(varietyName))
-                }
-
-                if (response.isSuccessful && response.body() != null) {
-                    val result = response.body()!!
-
-                    if (result.alreadyExists == true) {
-                        // Variety already exists
-                        AlertDialog.Builder(this@SurveyActivity)
-                            .setTitle("Variety Already Exists")
-                            .setMessage("This variety already exists in the database. Do you want to select it?")
-                            .setPositiveButton("Yes") { _, _ ->
-                                selectedVariety = varietyName
-                                ToastUtil.showShort(context, "Selected existing variety: $varietyName")
-                            }
-                            .setNegativeButton("No") { _, _ ->
-                                // Reset spinner
-                                isSettingSpinnerProgrammatically = true
-                                binding.etVariety.setSelection(0)
-                                isSettingSpinnerProgrammatically = false
-                            }
-                            .show()
-                    } else {
-                        // Successfully added
-                        selectedVariety = varietyName
-
-                        // Add to local list and refresh spinner
-                        varietyList.add(varietyList.size - 1, varietyName) // Add before "Other"
-
-                        isSettingSpinnerProgrammatically = true
-                        val adapter = ArrayAdapter(
-                            context,
-                            android.R.layout.simple_spinner_dropdown_item,
-                            varietyList
-                        )
-                        binding.etVariety.adapter = adapter
-
-                        // Select the newly added variety
-                        val newPosition = varietyList.indexOf(varietyName)
-                        binding.etVariety.setSelection(newPosition)
-                        isSettingSpinnerProgrammatically = false
-
-                        setupVarietyListener() // Re-setup listener
-
-                        ToastUtil.showShort(context, "Variety added successfully: $varietyName")
-                    }
-                } else {
-                    ToastUtil.showShort(context, "Failed to add variety")
-                    resetVarietySpinner()
-                }
-            } catch (e: Exception) {
-                Log.e("SurveyActivity", "Error adding variety: ${e.message}")
-                ToastUtil.showShort(context, "Error adding variety: ${e.message}")
-                resetVarietySpinner()
-            }
-        }
-    }
-
     private fun syncUnsyncedData() {
         lifecycleScope.launch {
             try {
@@ -636,51 +448,12 @@ class SurveyActivity : AppCompatActivity() {
         }
     }
 
-
     private fun resetVarietySpinner() {
         selectedVariety = null
         isSettingSpinnerProgrammatically = true
         binding.etVariety.setSelection(0)
         isSettingSpinnerProgrammatically = false
     }
-
-//    private fun setDefaultCropList() {
-//        cropList = mutableListOf(
-//            "Sugarcane", "Wheat", "Rice", "Cotton", "Maize", "Plot",
-//            "Sesame Seeds", "Uncultivated Area", "Vegetables", "Fodder", "Orchard", "Other"
-//        )
-//        binding.etCrop.adapter = ArrayAdapter(
-//            context,
-//            android.R.layout.simple_spinner_dropdown_item,
-//            cropList
-//        )
-//    }
-
-//    private fun setDefaultCropTypeList() {
-//        cropTypeList = mutableListOf("Ratoon 1", "Ratoon 2", "Sep", "Feb", "May")
-//        val adapter = ArrayAdapter(
-//            context,
-//            android.R.layout.simple_spinner_dropdown_item,
-//            cropTypeList
-//        )
-//        binding.etCropType.adapter = adapter
-//        setupCropTypeListener()
-//    }
-
-//    private fun setDefaultVarietyList() {
-//        varietyList = mutableListOf(
-//            "CP-77400", "CPF-253", "CPF-246", "NSG-59", "J-16-639", "J-16-487",
-//            "YTFG-236", "HSF-240", "CPF-247", "CPF-249", "CPF-250", "CPF-251",
-//            "CPF-252", "CPF-237", "CPF-236", "CSSG-676", "Other"
-//        )
-//        val adapter = ArrayAdapter(
-//            context,
-//            android.R.layout.simple_spinner_dropdown_item,
-//            varietyList
-//        )
-//        binding.etVariety.adapter = adapter
-//        setupVarietyListener()
-//    }
 
     private fun setupPersonSection() {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
@@ -714,6 +487,7 @@ class SurveyActivity : AppCompatActivity() {
         imageAdapter = SurveyImageAdapter { imageToRemove ->
             viewModel.removeImage(imageToRemove)
             imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
+            updateImageSectionUI()
         }
 
         binding.recyclerPictures.apply {
@@ -730,42 +504,52 @@ class SurveyActivity : AppCompatActivity() {
             currentImageType = binding.spinnerImageType.selectedItem.toString()
             captureImage()
         }
+
+        // Initial UI state
+        updateImageSectionUI()
     }
 
-//    private fun setupImageSection() {
-//        imageAdapter = SurveyImageAdapter()
-//        binding.recyclerPictures.apply {
-//            layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
-//            adapter = imageAdapter
-//        }
-//
-//        binding.btnAddImage.setOnClickListener {
-//            currentImageType = binding.spinnerImageType.selectedItem.toString()
-//            imagePickerLauncher.launch("image/*")
-//        }
-//
-//        binding.btnTakePhoto.setOnClickListener {
-//            currentImageType = binding.spinnerImageType.selectedItem.toString()
-//            captureImage()
-//        }
-//    }
+    private fun updateImageSectionUI() {
+        val hasImages = viewModel.surveyImages.value?.isNotEmpty() == true
 
-//    private val imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-//        uri?.let {
-//            val image = SurveyImage(uri = it.toString(), type = currentImageType)
-//            viewModel.addImage(image)
-//            imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
-//        }
-//    }
+        binding.recyclerPictures.visibility = if (hasImages) View.VISIBLE else View.GONE
+        binding.layoutEmptyState.visibility = if (hasImages) View.GONE else View.VISIBLE
+        binding.layoutLoadingState.visibility = View.GONE
+    }
+
+    private fun showImageLoading() {
+        binding.layoutEmptyState.visibility = View.GONE
+        binding.recyclerPictures.visibility = View.GONE
+        binding.layoutLoadingState.visibility = View.VISIBLE
+    }
+
+    private fun hideImageLoading() {
+        binding.layoutLoadingState.visibility = View.GONE
+        updateImageSectionUI()
+    }
 
     private val imagePickerLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             uri?.let {
-                val savedPath = savePickedImageToInternalStorage(uri)
-                val image =
-                    SurveyImage(uri = savedPath, type = currentImageType)  // Store path here
-                viewModel.addImage(image)
-                imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
+                showImageLoading()
+
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val savedPath = savePickedImageToInternalStorage(uri)
+                        val image = SurveyImage(uri = savedPath, type = currentImageType)
+
+                        withContext(Dispatchers.Main) {
+                            viewModel.addImage(image)
+                            imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
+                            hideImageLoading()
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            hideImageLoading()
+                            ToastUtil.showShort(context, "Error loading image: ${e.message}")
+                        }
+                    }
+                }
             }
         }
 
@@ -824,6 +608,9 @@ class SurveyActivity : AppCompatActivity() {
                 return@registerForActivityResult
             }
 
+            // Show loading indicator
+            showImageLoading()
+
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     var finalFile: File? = null
@@ -858,6 +645,7 @@ class SurveyActivity : AppCompatActivity() {
 
                     if (finalFile == null) {
                         withContext(Dispatchers.Main) {
+                            hideImageLoading()
                             ToastUtil.showShort(context, "Failed to get photo")
                         }
                         return@launch
@@ -872,17 +660,18 @@ class SurveyActivity : AppCompatActivity() {
                         viewModel.addImage(image)
                         database.imageDao().insertImage(image)
                         imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
+                        hideImageLoading()
                         ToastUtil.showShort(context, "Photo added successfully")
                     }
                 } catch (e: Exception) {
                     Log.e("Camera", "Error handling image: ${e.message}", e)
                     withContext(Dispatchers.Main) {
+                        hideImageLoading()
                         ToastUtil.showShort(context, "Error: ${e.message}")
                     }
                 }
             }
         }
-
 
     // Compress file function compressing bitmap until <= targetKB size
     private fun compressImageFile(inputFile: File, targetKB: Int = 300): File? {
@@ -916,7 +705,6 @@ class SurveyActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupSubmit(parcelId: Long, parcelNo: String, subParcelNo: String) {
         binding.btnSubmitSurvey.setOnClickListener {
             // ===== VALIDATION: Check if survey area is filled =====
@@ -929,6 +717,37 @@ class SurveyActivity : AppCompatActivity() {
                     .show()
                 return@setOnClickListener
             }
+
+            // ===== NEW VALIDATION: Check if area exceeds maximum value of 8 =====
+            val areaValue = surveyArea.toDoubleOrNull()
+            if (areaValue == null) {
+                AlertDialog.Builder(this)
+                    .setTitle("Invalid Area")
+                    .setMessage("Please enter a valid numeric value for area.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            if (areaValue > 8) {
+                AlertDialog.Builder(this)
+                    .setTitle("Area Limit Exceeded")
+                    .setMessage("Survey area cannot exceed 8. Please enter a value between 0 and 8.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            if (areaValue <= 0) {
+                AlertDialog.Builder(this)
+                    .setTitle("Invalid Area")
+                    .setMessage("Survey area must be greater than 0.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+
             // ===== END VALIDATION =====
 
             // ===== VALIDATION: Check if at least one owner/person has been added =====

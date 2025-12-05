@@ -19,7 +19,7 @@ import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.activities.MenuActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.adapter.RejectedSubParcelAdapter
 import pk.gop.pulse.katchiAbadi.common.RejectedSubParcel
 import pk.gop.pulse.katchiAbadi.common.Resource

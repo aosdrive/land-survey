@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Focused/Pressed State -->
+    <item android:state_pressed="true">
+        <layer-list>
+            <!-- Background -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#E8F5E9" />
+                    <corners android:radius="8dp" />
+                    <stroke
+                        android:width="2dp"
+                        android:color="@color/forest_green" />
+                </shape>
+            </item>
+            <!-- Dropdown Arrow -->
+            <item
+                android:gravity="end|center_vertical"
+                android:right="12dp"
+                android:width="24dp"
+                android:height="24dp">
+                <rotate
+                    android:fromDegrees="0"
+                    android:toDegrees="0"
+                    android:pivotX="50%"
+                    android:pivotY="50%">
+                    <shape android:shape="rectangle">
+                        <size android:width="24dp" android:height="24dp"/>
+                        <solid android:color="@android:color/transparent"/>
+                    </shape>
+                </rotate>
+                <bitmap
+                    android:src="@android:drawable/arrow_down_float"
+                    android:tint="@color/forest_green"
+                    android:gravity="center"/>
+            </item>
+        </layer-list>
+    </item>
+
+    <item android:state_focused="true">
+        <layer-list>
+            <!-- Background -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#E8F5E9" />
+                    <corners android:radius="8dp" />
+                    <stroke
+                        android:width="2dp"
+                        android:color="@color/forest_green" />
+                </shape>
+            </item>
+            <!-- Dropdown Arrow -->
+            <item
+                android:gravity="end|center_vertical"
+                android:right="12dp"
+                android:width="24dp"
+                android:height="24dp">
+                <bitmap
+                    android:src="@android:drawable/arrow_down_float"
+                    android:tint="@color/forest_green"
+                    android:gravity="center"/>
+            </item>
+        </layer-list>
+    </item>
+
+    <!-- Normal State -->
+    <item>
+        <layer-list>
+            <!-- Background -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#F8F9FA" />
+                    <corners android:radius="8dp" />
+                    <stroke
+                        android:width="1.5dp"
+                        android:color="@color/forest_green" />
+                </shape>
+            </item>
+            <!-- Dropdown Arrow -->
+            <item
+                android:gravity="end|center_vertical"
+                android:right="12dp"
+                android:width="24dp"
+                android:height="24dp">
+                <bitmap
+                    android:src="@android:drawable/arrow_down_float"
+                    android:tint="@color/forest_green"
+                    android:gravity="center"/>
+            </item>
+        </layer-list>
+    </item>
+</selector>

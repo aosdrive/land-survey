@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import android.content.Intent
 import android.content.pm.ActivityInfo

@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.activities
+package pk.gop.pulse.katchiAbadi.ui.activities
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -20,7 +20,6 @@ import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Base64
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity

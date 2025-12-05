@@ -20,7 +20,7 @@ import pk.gop.pulse.katchiAbadi.databinding.FragmentLoginBinding
 import pk.gop.pulse.katchiAbadi.presentation.login.LoginViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import pk.gop.pulse.katchiAbadi.activities.MenuActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
 import javax.inject.Inject
 
