@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.fragments.auth
+package pk.gop.pulse.katchiAbadi.ui.fragments.auth
 
 import android.os.Bundle
 import android.view.LayoutInflater

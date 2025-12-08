@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.fragments.not_at_home
+package pk.gop.pulse.katchiAbadi.ui.fragments.not_at_home
 
 import android.Manifest
 import android.app.Activity

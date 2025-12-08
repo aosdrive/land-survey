@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.fragments.form
+package pk.gop.pulse.katchiAbadi.ui.fragments.form
 
 import android.content.Context
 import android.os.Bundle

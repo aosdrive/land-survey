@@ -1,4 +1,4 @@
-package pk.gop.pulse.katchiAbadi.fragments.not_at_home
+package pk.gop.pulse.katchiAbadi.ui.fragments.form
 
 import android.content.Context
 import android.os.Bundle
@@ -13,23 +13,23 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import pk.gop.pulse.katchiAbadi.R
-import pk.gop.pulse.katchiAbadi.common.Constants
-import pk.gop.pulse.katchiAbadi.common.ExtraFloors
-import pk.gop.pulse.katchiAbadi.common.Utility
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.R
+import pk.gop.pulse.katchiAbadi.common.Constants
+import pk.gop.pulse.katchiAbadi.common.ExtraFloors
 import pk.gop.pulse.katchiAbadi.common.ExtraFloorsInterface
-import pk.gop.pulse.katchiAbadi.databinding.FragmentNahOccupancyDetailsBinding
-import pk.gop.pulse.katchiAbadi.presentation.not_at_home.SharedNAHViewModel
+import pk.gop.pulse.katchiAbadi.common.Utility
+import pk.gop.pulse.katchiAbadi.databinding.FragmentFormOccupancyDetailsBinding
+import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
 
 @AndroidEntryPoint
-class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
+class FragmentFormOccupancyDetails : Fragment(), ExtraFloorsInterface {
 
-    private val viewModel: SharedNAHViewModel by activityViewModels()
+    private val viewModel: SharedFormViewModel by activityViewModels()
 
-    private var _binding: FragmentNahOccupancyDetailsBinding? = null
+    private var _binding: FragmentFormOccupancyDetailsBinding? = null
     private val binding get() = _binding!!
 
     private var extraFloorsList = arrayListOf<ExtraFloors>()
@@ -39,7 +39,7 @@ class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentNahOccupancyDetailsBinding.inflate(inflater, container, false)
+        _binding = FragmentFormOccupancyDetailsBinding.inflate(inflater, container, false)
         floorInflater =
             requireContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         extraFloorsList = viewModel.extraFloorsList
@@ -52,18 +52,30 @@ class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
         requireActivity().let { activity -> Utility.closeKeyBoard(activity) }
 
         extraFloorsList = viewModel.extraFloorsList
-
         binding.apply {
 
             if (viewModel.parcelOperation == "Split") {
-                tvDetails.text =
-                    "Parcel No: ${viewModel.parcelNo} (${viewModel.surveyFormCounter}/${viewModel.parcelOperationValue})"
+                if(viewModel.isRevisit == 1){
+                    tvDetails.text =
+                        "Parcel No: ${viewModel.parcelNo} (${viewModel.surveyFormCounter})"
+                }else{
+                    tvDetails.text =
+                        "Parcel No: ${viewModel.parcelNo} (${viewModel.surveyFormCounter}/${viewModel.parcelOperationValue})"
+                }
             } else {
                 tvDetails.text = "Parcel No: ${viewModel.parcelNo}"
             }
 
             addFloorBtn.setOnClickListener {
                 extraFloor()
+            }
+
+            if (viewModel.interviewStatus == "Respondent Present") {
+                tvPageNumber.text = "3/4"
+            } else if (viewModel.interviewStatus == "Respondent Declined Response" ||
+                viewModel.interviewStatus == "Respondent Not Present"
+            ) {
+                tvPageNumber.text = "3/4"
             }
 
             btnNext.setOnClickListener {
@@ -75,7 +87,8 @@ class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
                             "Commercial" -> {
                                 val commercialActivityType = partition.commercialActivityType
 
-                                val tLayout = partition.view?.findViewById<TableLayout>(R.id.tlayout)
+                                val tLayout =
+                                    partition.view?.findViewById<TableLayout>(R.id.tlayout)
                                 val tRow = tLayout?.getChildAt(3) as TableRow
 
                                 val listOfEditText = arrayListOf<AutoCompleteTextView>()
@@ -143,8 +156,8 @@ class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
                     // Recreate dynamic layouts based on extraFloorsList
                     for (extraFloor in extraFloorsList) {
                         extraFloor.inflate(
-                            this@FragmentNAHOccupancyDetails,
-                            this@FragmentNAHOccupancyDetails,
+                            this@FragmentFormOccupancyDetails,
+                            this@FragmentFormOccupancyDetails,
                             layoutInflater,
                             layoutFloorContainer,
                             extraFloorsList,
@@ -164,7 +177,7 @@ class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
 
     private fun navigateToNextScreen() {
         if (isAdded) {
-            findNavController().navigate(R.id.action_fragmentNAHOccupancyDetails_to_fragmentNAHRemarks)
+            findNavController().navigate(R.id.action_fragmentFormOccupancyDetails_to_fragmentFormRemarks)
         }
     }
 
@@ -216,4 +229,5 @@ class FragmentNAHOccupancyDetails : Fragment(), ExtraFloorsInterface {
     override fun makeAddMoreButtonVisible() {
         binding.addFloorBtn.visibility = View.VISIBLE
     }
+
 }

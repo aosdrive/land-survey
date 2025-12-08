@@ -6,7 +6,7 @@
     app:startDestination="@id/fragmentMap">
     <fragment
         android:id="@+id/fragmentMap"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentMap"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentMap"
         android:label="FragmentMap"
         tools:layout="@layout/fragment_map">
         <action
@@ -31,7 +31,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentParcelDetails"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentParcelDetails"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentParcelDetails"
         android:label="FragmentParcelDetails"
         tools:layout="@layout/fragment_parcel_details">
         <action
@@ -47,7 +47,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentSurveyList"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentSurveyList"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentSurveyList"
         android:label="FragmentSurveyList"
         tools:layout="@layout/fragment_survey_list">
         <action
@@ -56,7 +56,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentFormPropertyDetails"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentFormPropertyDetails"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentFormPropertyDetails"
         android:label="Property Details"
         tools:layout="@layout/fragment_form_property_details">
 <!--        <action-->
@@ -71,7 +71,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentFormOccupancyDetails"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentFormOccupancyDetails"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentFormOccupancyDetails"
         android:label="Occupancy Details"
         tools:layout="@layout/fragment_form_occupancy_details">
         <action
@@ -80,7 +80,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentFormRemarks"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentFormRemarks"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentFormRemarks"
         android:label="Remarks"
         tools:layout="@layout/fragment_form_remarks">
         <action
@@ -94,7 +94,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentSubParcelList"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentSubParcelList"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentSubParcelList"
         android:label="Fragment SubParcel List"
         tools:layout="@layout/fragment_sub_parcel_list" >
         <action
@@ -107,7 +107,7 @@
     </fragment>
     <fragment
         android:id="@+id/fragmentRejectedSubParcelList"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.form.FragmentRejectedSubParcelList"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.form.FragmentRejectedSubParcelList"
         android:label="FragmentRejectedSubParcelList"
         tools:layout="@layout/fragment_rejected_sub_parcel_list" >
         <action

@@ -4,7 +4,7 @@
 static std::string apiBaseUrlPublic = "https://zdost.aoserv.com/"; // PUBLIC URL JDW and Ashraf
 //static std::string apiBaseUrlPublic = "https://zd.aoserv.com/"; // PUBLIC URL RYK
 static std::string API_LOGIN = "api/Account/login";
-static std::string API_LOGIN_SUR = "api/Account/LoginSurveyor";
+static std::string API_LOGIN_SUR = "api/Account/LoginUser";
 static std::string API_FORGOT_PASSWORD = "api/Account/forgetpassword";
 static std::string API_OTP_VERIFICATION = "api/Account/VerifyTotp";
 static std::string API_UPDATE_PASSWORD = "api/Account/updatepassword";

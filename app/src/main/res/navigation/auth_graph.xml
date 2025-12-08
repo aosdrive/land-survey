@@ -6,7 +6,7 @@
     app:startDestination="@id/loginFragment">
     <fragment
         android:id="@+id/loginFragment"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.LoginFragment"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.auth.LoginFragment"
         android:label="LoginFragment"
         tools:layout="@layout/fragment_login">
         <action
@@ -18,7 +18,7 @@
     </fragment>
     <fragment
         android:id="@+id/forgotFragment"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.ForgotFragment"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.auth.ForgotFragment"
         android:label="ForgotFragment"
         tools:layout="@layout/fragment_forgot_password">
         <argument
@@ -31,7 +31,7 @@
     </fragment>
     <fragment
         android:id="@+id/otpVerificationFragment"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.OtpVerificationFragment"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.auth.OtpVerificationFragment"
         android:label="OtpVerificationFragment"
         tools:layout="@layout/fragment_otp">
         <argument
@@ -49,7 +49,7 @@
     </fragment>
     <fragment
         android:id="@+id/updateFragment"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.UpdateFragment"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.auth.UpdateFragment"
         android:label="UpdateFragment"
         tools:layout="@layout/fragment_update_password">
         <argument
@@ -69,7 +69,7 @@
     </fragment>
     <fragment
         android:id="@+id/successFragment"
-        android:name="pk.gop.pulse.katchiAbadi.fragments.auth.SuccessFragment"
+        android:name="pk.gop.pulse.katchiAbadi.ui.fragments.auth.SuccessFragment"
         android:label="SuccessFragment"
         tools:layout="@layout/fragment_success">
         <action
