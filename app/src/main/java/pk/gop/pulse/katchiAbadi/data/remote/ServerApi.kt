@@ -19,6 +19,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.KachiAbadiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.KatchiAbadiApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.LoginDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.LoginSurveyorResponse
+import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
@@ -53,6 +54,8 @@ interface ServerApi {
         @Url url: String,
         @Body json: LoginRequest
     ): LoginSurveyorResponse
+
+
 
     @POST
     suspend fun forgotPassword(
@@ -190,4 +193,10 @@ interface ServerApi {
 
     @POST("api/MobileData/AddCropVariety")
     suspend fun addCropVariety(@Body request: AddVarietyRequest): Response<AddVarietyResponse>
+
+    @POST("api/Account/logoutUser")
+    suspend fun logoutUser(
+        @Query("userId") userId: Long,
+        @Query("Mode") mode: String = "Android",
+    ): Response<LogoutResponse>
 }

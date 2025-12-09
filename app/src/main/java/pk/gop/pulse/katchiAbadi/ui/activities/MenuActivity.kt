@@ -39,6 +39,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,6 +60,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaDetail
 import pk.gop.pulse.katchiAbadi.databinding.ActivityMenuBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
+import pk.gop.pulse.katchiAbadi.domain.use_case.auth.LogoutUseCase
 import pk.gop.pulse.katchiAbadi.presentation.menu.MenuViewModel
 import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
@@ -87,6 +90,12 @@ class MenuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var serverApi: ServerApi
+
+    @Inject
+    lateinit var logoutUseCase: LogoutUseCase
+
+    private val logoutScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
 
 //    @Inject
 //    lateinit var retrofit: Retrofit
@@ -585,7 +594,10 @@ class MenuActivity : AppCompatActivity() {
                                             this@MenuActivity,
                                             "Fetching areas..."
                                         )
-                                        Log.d("API_CALL", "Calling getAreasByMauzaId with mauzaId: ${selectedMauza.mauzaId}")
+                                        Log.d(
+                                            "API_CALL",
+                                            "Calling getAreasByMauzaId with mauzaId: ${selectedMauza.mauzaId}"
+                                        )
 
                                         val areaResponse = serverApi.getAreasByMauzaId(
                                             selectedMauza.mauzaId,
@@ -593,8 +605,14 @@ class MenuActivity : AppCompatActivity() {
                                         )
 
                                         Log.d("API_RESPONSE", "Raw response: $areaResponse")
-                                        Log.d("API_RESPONSE", "Response areas field: ${areaResponse.areas}")
-                                        Log.d("API_RESPONSE", "Areas type: ${areaResponse.areas::class.java}")
+                                        Log.d(
+                                            "API_RESPONSE",
+                                            "Response areas field: ${areaResponse.areas}"
+                                        )
+                                        Log.d(
+                                            "API_RESPONSE",
+                                            "Areas type: ${areaResponse.areas::class.java}"
+                                        )
 
 
                                         Utility.dismissProgressAlertDialog()
@@ -681,7 +699,10 @@ class MenuActivity : AppCompatActivity() {
                 // ✅ Convert area to groupId (if area is numeric)
                 val groupId = selectedArea.toLongOrNull() ?: 0L
 
-                Log.d("AREA_DIALOG", "Selected area: $selectedArea, groupId: $groupId, unitId: ${mauza.unit}")
+                Log.d(
+                    "AREA_DIALOG",
+                    "Selected area: $selectedArea, groupId: $groupId, unitId: ${mauza.unit}"
+                )
 
                 lifecycleScope.launch {
                     Utility.showProgressAlertDialog(this@MenuActivity, "Downloading data...")
@@ -706,12 +727,14 @@ class MenuActivity : AppCompatActivity() {
                                 "Download successful!"
                             )
                         }
+
                         is Resource.Error -> {
                             ToastUtil.showShort(
                                 this@MenuActivity,
                                 result.message ?: "Download failed."
                             )
                         }
+
                         is Resource.Loading -> TODO()
                         is Resource.Unspecified -> TODO()
                     }
@@ -736,7 +759,8 @@ class MenuActivity : AppCompatActivity() {
 
             val authToken = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
 
-            val response = serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $authToken")
+            val response =
+                serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $authToken")
 
             Log.d("FETCH_PARCELS", "API Response received: ${response.parcelsData.size} parcels")
 
@@ -745,13 +769,15 @@ class MenuActivity : AppCompatActivity() {
                 Log.d("FETCH_PARCELS", "Deleted old parcels for mauzaId: $mauzaId, area: $areaName")
 
                 val entities = response.parcelsData.mapIndexed { index, parcelDto ->
-                    Log.d("FETCH_PARCELS", """
+                    Log.d(
+                        "FETCH_PARCELS", """
                     Parcel $index:
                     - id: ${parcelDto.id}
                     - parcelNo: ${parcelDto.parcelNo}
                     - unitId: $unitId (from mauza.unit)
                     - groupId: $groupId (from area)
-                """.trimIndent())
+                """.trimIndent()
+                    )
 
                     ActiveParcelEntity(
                         pkid = 0,
@@ -779,22 +805,28 @@ class MenuActivity : AppCompatActivity() {
                 Log.d("FETCH_PARCELS", "Inserting ${entities.size} parcels into database")
 
                 entities.take(3).forEachIndexed { index, entity ->
-                    Log.d("FETCH_PARCELS", "Entity $index: unitId=${entity.unitId}, groupId=${entity.groupId}")
+                    Log.d(
+                        "FETCH_PARCELS",
+                        "Entity $index: unitId=${entity.unitId}, groupId=${entity.groupId}"
+                    )
                 }
 
                 database.activeParcelDao().insertActiveParcels(entities)
 
-                val insertedParcels = database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
+                val insertedParcels =
+                    database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
                 Log.d("FETCH_PARCELS", "✅ Verification: ${insertedParcels.size} parcels inserted")
 
                 insertedParcels.take(3).forEachIndexed { index, parcel ->
-                    Log.d("FETCH_PARCELS", """
+                    Log.d(
+                        "FETCH_PARCELS", """
                     ✅ Inserted Parcel $index:
                     - id: ${parcel.id}
                     - parcelNo: ${parcel.parcelNo}
                     - unitId: ${parcel.unitId}
                     - groupId: ${parcel.groupId}
-                """.trimIndent())
+                """.trimIndent()
+                    )
                 }
             }
 
@@ -859,33 +891,13 @@ class MenuActivity : AppCompatActivity() {
             setSpan(ForegroundColorSpan(grayColor), 0, length, 0)
         }
 
-        val builder = AlertDialog.Builder(context)
+        val builder = AlertDialog.Builder(this)
             .setTitle("Exit!")
             .setCancelable(false)
             .setMessage("Are you sure you want to log out?")
             .setPositiveButton(yesText) { _, _ ->
-                Utility.showProgressAlertDialog(context, "Please wait...")
-                val handler = Handler(Looper.getMainLooper())
-                handler.postDelayed({
-                    sharedPreferences.edit().putInt(
-                        Constants.SHARED_PREF_LOGIN_STATUS,
-                        Constants.LOGIN_STATUS_INACTIVE
-                    ).putLong(
-                        Constants.SHARED_PREF_USER_ID,
-                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                    ).putString(
-                        Constants.SHARED_PREF_USER_CNIC,
-                        Constants.SHARED_PREF_DEFAULT_STRING
-                    ).putString(
-                        Constants.SHARED_PREF_USER_NAME,
-                        Constants.SHARED_PREF_DEFAULT_STRING
-                    ).apply()
-                    Utility.dismissProgressAlertDialog()
-                    Intent(this@MenuActivity, AuthActivity::class.java).apply {
-                        startActivity(this)
-                        finish()
-                    }
-                }, 100)
+                Utility.showProgressAlertDialog(this, "Please wait...")
+                performLogout()
             }
             .setNegativeButton(noText, null)
 
@@ -895,7 +907,6 @@ class MenuActivity : AppCompatActivity() {
         val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
         val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
 
-        // You can still style other properties (optional)
         positiveButton.textSize = 16f
         positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
 
@@ -903,6 +914,74 @@ class MenuActivity : AppCompatActivity() {
         negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
     }
 
+    private fun performLogout() {
+        val userId = sharedPreferences.getLong(
+            Constants.SHARED_PREF_USER_ID,
+            Constants.SHARED_PREF_DEFAULT_INT.toLong()
+        )
+
+        if (userId == Constants.SHARED_PREF_DEFAULT_INT.toLong()) {
+            Utility.dismissProgressAlertDialog()
+            clearLocalDataAndNavigate()
+            return
+        }
+
+        logoutScope.launch {
+            logoutUseCase(userId, "Android").collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        Utility.dismissProgressAlertDialog()
+                        clearLocalDataAndNavigate()
+                    }
+
+                    is Resource.Error -> {
+                        Utility.dismissProgressAlertDialog()
+                        // Still logout locally even if server call fails
+                        Toast.makeText(
+                            this@MenuActivity,
+                            "Logged out locally",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        clearLocalDataAndNavigate()
+                    }
+
+                    is Resource.Loading -> {
+                        // Progress dialog is already showing
+                    }
+
+                    is Resource.Unspecified -> TODO()
+                }
+            }
+        }
+    }
+
+    private fun clearLocalDataAndNavigate() {
+        sharedPreferences.edit()
+            .putInt(Constants.SHARED_PREF_LOGIN_STATUS, Constants.LOGIN_STATUS_INACTIVE)
+            .putLong(Constants.SHARED_PREF_USER_ID, Constants.SHARED_PREF_DEFAULT_INT.toLong())
+            .putString(Constants.SHARED_PREF_USER_CNIC, Constants.SHARED_PREF_DEFAULT_STRING)
+            .putString(Constants.SHARED_PREF_USER_NAME, Constants.SHARED_PREF_DEFAULT_STRING)
+            .putString(Constants.SHARED_PREF_TOKEN, Constants.SHARED_PREF_DEFAULT_STRING)
+            .apply()
+
+        Intent(this, AuthActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(this)
+            finish()
+        }
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::progressDialogTwo.isInitialized) {
+            if (progressDialogTwo.isShowing) {
+                progressDialogTwo.dismiss()
+            }
+        }
+        logoutScope.cancel() // Add this line
+
+    }
     private fun downloadMapNew() {
         when (Constants.MAP_DOWNLOAD_TYPE) {
             DownloadType.TPK -> {
@@ -1586,14 +1665,7 @@ class MenuActivity : AppCompatActivity() {
         return ytile
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (::progressDialogTwo.isInitialized) {
-            if (progressDialogTwo.isShowing) {
-                progressDialogTwo.dismiss()
-            }
-        }
-    }
+
 
     override fun onPause() {
         super.onPause()

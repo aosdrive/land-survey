@@ -41,6 +41,7 @@ import pk.gop.pulse.katchiAbadi.domain.repository.SurveyRepository
 import pk.gop.pulse.katchiAbadi.domain.use_case.*
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.AuthenticateUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.ForgotPasswordUseCase
+import pk.gop.pulse.katchiAbadi.domain.use_case.auth.LogoutUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.OtpVerificationUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.UpdatePasswordUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.ValidateCredentials
@@ -446,6 +447,13 @@ object AppModule {
             sharedPreferences,
             activeParcelDao
         )
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideLogoutUseCase(repository: AuthRepository): LogoutUseCase {
+        return LogoutUseCase(repository)
     }
 
 }

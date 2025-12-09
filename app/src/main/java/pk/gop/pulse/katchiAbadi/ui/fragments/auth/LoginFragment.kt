@@ -3,6 +3,7 @@ package pk.gop.pulse.katchiAbadi.ui.fragments.auth
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +23,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
+import pk.gop.pulse.katchiAbadi.presentation.util.DialogUtil
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -179,10 +181,28 @@ class LoginFragment : Fragment() {
 
 
                         is Resource.Error -> {
-                            Toast.makeText(activity, it.message, Toast.LENGTH_LONG).show()
                             binding.btnLogin.revertAnimation()
-                        }
 
+                            val errorMessage = it.message ?: "Login failed. Please try again."
+
+                            Log.d("LoginFragment", "Login error: $errorMessage")
+
+                            // Check if it's the "already logged in" error
+                            if (errorMessage.contains("already logged in", ignoreCase = true) ||
+                                errorMessage.contains("another device", ignoreCase = true) ||
+                                errorMessage.contains("other machine", ignoreCase = true)) {
+
+                                // Show specific dialog for already logged in
+                                DialogUtil.showAlreadyLoggedInDialog(requireContext())
+                            } else {
+                                // Show generic error dialog
+                                DialogUtil.showErrorDialog(
+                                    requireContext(),
+                                    "Login Error",
+                                    errorMessage
+                                )
+                            }
+                        }
                         else -> Unit
 
                     }

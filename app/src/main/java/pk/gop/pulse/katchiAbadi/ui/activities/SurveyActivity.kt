@@ -747,13 +747,9 @@ class SurveyActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-
-            // ===== END VALIDATION =====
-
             // ===== VALIDATION: Check if at least one owner/person has been added =====
             val rawPersons = personEntryHelper.getAllPersons()
             if (rawPersons.isEmpty()) {
-                // Show error message and prevent submission
                 AlertDialog.Builder(this)
                     .setTitle("Owner Required")
                     .setMessage("Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button.")
@@ -783,10 +779,8 @@ class SurveyActivity : AppCompatActivity() {
                     .show()
                 return@setOnClickListener
             }
-            // ===== END VALIDATION =====
 
             val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
-
             val parcelOperationValue = if (parcelOperation == "Split") {
                 intent.getStringExtra("parcelOperationValue") ?: ""
             } else {
@@ -817,41 +811,61 @@ class SurveyActivity : AppCompatActivity() {
                     Constants.SHARED_PREF_DEFAULT_STRING
                 ).orEmpty()
             )
-            val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
 
-//need to update this for
+            val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
             val images = viewModel.surveyImages.value!!
 
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     val surveyId = database.newSurveyNewDao().insertSurvey(survey)
 
-//                    persons.forEach {
-//                        it.surveyId = surveyId
-//                        database.personDao().insertPerson(it)
-//                    }
-                    val persons = rawPersons.map {
-                        it.copy(surveyId = surveyId, mauzaId = mauzaId)
+                    // ========== FIXED: Handle existing vs new persons ==========
+                    rawPersons.forEach { person ->
+                        val personWithSurveyId = person.copy(surveyId = surveyId, mauzaId = mauzaId)
+
+                        // Check if this is an existing person (personId > 0) or a new person
+                        if (person.personId != null && person.personId!! > 0) {
+                            // EXISTING PERSON: Check if already in database
+                            val existingPerson = database.personDao().getPersonById(person.personId!!)
+
+                            if (existingPerson != null) {
+                                // Person exists: Create a LINK/RELATIONSHIP record only
+                                // Option 1: Update the existing person with new surveyId
+                                database.personDao().updatePerson(personWithSurveyId.copy(id = existingPerson.id))
+
+                                // Option 2 (Better): If you have a separate junction table for many-to-many
+                                // database.surveyPersonDao().insert(SurveyPersonLink(surveyId, person.personId!!))
+                            } else {
+                                // Person ID exists but not in DB (shouldn't happen), insert as new
+                                database.personDao().insertPerson(personWithSurveyId)
+                            }
+                        } else {
+                            // NEW PERSON: Check if similar person exists by CNIC
+                            val similarPerson = if (!person.nic.isNullOrBlank()) {
+                                database.personDao().getPersonByCnic(person.nic!!)
+                            } else {
+                                null
+                            }
+
+                            if (similarPerson != null) {
+                                // Similar person found, link to existing
+                                database.personDao().updatePerson(
+                                    personWithSurveyId.copy(id = similarPerson.id, personId = similarPerson.personId)
+                                )
+                            } else {
+                                // Completely new person, insert
+                                database.personDao().insertPerson(personWithSurveyId)
+                            }
+                        }
                     }
-
-                    database.personDao()
-                        .insertAll(persons) // Or use insertPerson in loop if insertAll not available
-
+                    // ========== END FIX ==========
 
                     images.forEach {
                         it.surveyId = surveyId
                         database.imageDao().insertImage(it)
                     }
 
-
-                    //   database.activeParcelDao().updateParcelSurveyStatus(2, surveyId,parcelId, )
-
-
-                    val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
-                    val commaseparatedparcelids =
-                        intent.getStringExtra("parcelOperationValueHi") ?: ""
-
-// mark the main parcel as surveyed
+                    // Mark parcel as surveyed
                     database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, parcelId)
 
                     val log = TempSurveyLogEntity(
@@ -861,31 +875,22 @@ class SurveyActivity : AppCompatActivity() {
                     )
                     database.tempSurveyLogDao().insertLog(log)
 
-// If operation is "Merge", mark the merged parcels as surveyed too
-                    if (parcelOperation.equals(
-                            "Merge",
-                            ignoreCase = true
-                        ) && commaseparatedparcelids.isNotBlank()
-                    ) {
+                    // If operation is "Merge", mark the merged parcels as surveyed
+                    if (parcelOperation.equals("Merge", ignoreCase = true) && parcelOperationValue.isNotBlank()) {
                         Log.d("SurveyActivity", "Merge operation detected.")
-                        Log.d("SurveyActivity", "Raw merge parcel IDs: $commaseparatedparcelids")
+                        Log.d("SurveyActivity", "Raw merge parcel IDs: $parcelOperationValue")
 
-                        val parcelIdList = commaseparatedparcelids
+                        val parcelIdList = parcelOperationValue
                             .split(",")
                             .mapNotNull { it.trim().toLongOrNull() }
 
                         Log.d("SurveyActivity", "Parsed merge parcel IDs: $parcelIdList")
 
                         parcelIdList.forEach { id ->
-                            Log.d(
-                                "SurveyActivity",
-                                "Marking parcelId=$id as surveyed with surveyId=$surveyId"
-                            )
+                            Log.d("SurveyActivity", "Marking parcelId=$id as surveyed with surveyId=$surveyId")
                             database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
                         }
                     }
-
-
                 }
                 ToastUtil.showShort(context, "Survey saved locally")
                 finish()

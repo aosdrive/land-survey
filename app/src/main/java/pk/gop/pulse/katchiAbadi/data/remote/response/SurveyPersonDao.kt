@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.Query
+import androidx.room.Update
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 
 @Dao
@@ -38,5 +39,12 @@ interface SurveyPersonDao {
     """)
     suspend fun getGrowerCodesForParcel(parcelId: Long): List<String>
 
+    @Query("SELECT * FROM survey_persons WHERE id = :id LIMIT 1")
+    suspend fun getPersonById(id: Long): SurveyPersonEntity?
 
+    @Query("SELECT * FROM survey_persons WHERE nic = :cnic LIMIT 1")
+    suspend fun getPersonByCnic(cnic: String): SurveyPersonEntity?
+
+    @Update
+    suspend fun updatePerson(person: SurveyPersonEntity)
 }

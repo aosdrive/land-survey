@@ -5,6 +5,7 @@ import pk.gop.pulse.katchiAbadi.common.SimpleResource
 import pk.gop.pulse.katchiAbadi.data.remote.response.ForgotPasswordDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.LoginDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.LoginSurveyorResponse
+import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.OtpVerificationDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.UpdatePasswordDto
 
@@ -35,6 +36,12 @@ interface AuthRepository {
         cnic: String,
         password: String
     ): SimpleResource
+
+
+    suspend fun logoutUser(
+        userId: Long,
+        mode: String
+    ): LogoutResponse
 
 
 }
