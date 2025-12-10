@@ -14,6 +14,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import dagger.hilt.android.AndroidEntryPoint
+import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.databinding.ActivitySurveyFormBinding
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
@@ -36,6 +37,8 @@ class SurveyFormActivity : AppCompatActivity() {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContentView(binding.root)
 //        supportActionBar?.title = supportActionBar?.title?.toString()?.uppercase()
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeButtonEnabled(true) // This line ensures the home button responds

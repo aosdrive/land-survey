@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.presentation.util.DialogUtil
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -170,13 +171,14 @@ class LoginFragment : Fragment() {
                                     .putString(Constants.SHARED_PREF_USER_NAME, loginData.name)
                                     .apply()
 
+                                ToastUtil.showShort(requireContext(),"Login successful! Welcome ${loginData.name}")
                                 Intent(requireActivity(), MenuActivity::class.java).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                                     startActivity(this)
                                     requireActivity().finish()
                                 }
 
-                            } ?: Toast.makeText(activity, "Login failed: no user data", Toast.LENGTH_LONG).show()
+                            } ?:ToastUtil.showShort(requireContext(),"Login failed: no user data")
                         }
 
 

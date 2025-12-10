@@ -927,366 +927,381 @@ class MenuActivity : AppCompatActivity() {
         }
 
         logoutScope.launch {
-            logoutUseCase(userId, "Android").collect { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        Utility.dismissProgressAlertDialog()
-                        clearLocalDataAndNavigate()
-                    }
+            try {
+                logoutUseCase(userId, "Android").collect { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            Utility.dismissProgressAlertDialog()
+                            ToastUtil.showShort(this@MenuActivity, "Logged out successfully")
+                            delay(800)
+                            clearLocalDataAndNavigate()
+                        }
 
-                    is Resource.Error -> {
-                        Utility.dismissProgressAlertDialog()
-                        // Still logout locally even if server call fails
-                        Toast.makeText(
-                            this@MenuActivity,
-                            "Logged out locally",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        clearLocalDataAndNavigate()
-                    }
+                        is Resource.Error -> {
+                            Utility.dismissProgressAlertDialog()
+                            // Still logout locally even if server call fails
+                            Toast.makeText(
+                                this@MenuActivity,
+                                "Logged out locally",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            clearLocalDataAndNavigate()
+                        }
 
-                    is Resource.Loading -> {
-                        // Progress dialog is already showing
-                    }
+                        is Resource.Loading -> {
+                            // Progress dialog is already showing
+                        }
 
-                    is Resource.Unspecified -> TODO()
+                        is Resource.Unspecified -> TODO()
+                    }
+                }
+            }catch (e: Exception) {
+                Utility.dismissProgressAlertDialog()
+                Log.e("LOGOUT", "Logout exception: ${e.message}", e)
+                ToastUtil.showShort(this@MenuActivity, "Session ended")
+                delay(800)
+                clearLocalDataAndNavigate()
+            }
+        }
+    }
+
+        private fun clearLocalDataAndNavigate() {
+            sharedPreferences.edit()
+                .putInt(Constants.SHARED_PREF_LOGIN_STATUS, Constants.LOGIN_STATUS_INACTIVE)
+                .putLong(Constants.SHARED_PREF_USER_ID, Constants.SHARED_PREF_DEFAULT_INT.toLong())
+                .putString(Constants.SHARED_PREF_USER_CNIC, Constants.SHARED_PREF_DEFAULT_STRING)
+                .putString(Constants.SHARED_PREF_USER_NAME, Constants.SHARED_PREF_DEFAULT_STRING)
+                .putString(Constants.SHARED_PREF_TOKEN, Constants.SHARED_PREF_DEFAULT_STRING)
+                .apply()
+
+            Intent(this, AuthActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(this)
+                finish()
+            }
+        }
+
+
+        override fun onDestroy() {
+            super.onDestroy()
+            if (::progressDialogTwo.isInitialized) {
+                if (progressDialogTwo.isShowing) {
+                    progressDialogTwo.dismiss()
+                }
+            }
+            logoutScope.cancel() // Add this line
+
+        }
+
+        private fun downloadMapNew() {
+            when (Constants.MAP_DOWNLOAD_TYPE) {
+                DownloadType.TPK -> {
+//                startDownloadingTPK()
+                }
+
+                DownloadType.TILES -> {
+                    downloadMapTilesNew()
                 }
             }
         }
-    }
 
-    private fun clearLocalDataAndNavigate() {
-        sharedPreferences.edit()
-            .putInt(Constants.SHARED_PREF_LOGIN_STATUS, Constants.LOGIN_STATUS_INACTIVE)
-            .putLong(Constants.SHARED_PREF_USER_ID, Constants.SHARED_PREF_DEFAULT_INT.toLong())
-            .putString(Constants.SHARED_PREF_USER_CNIC, Constants.SHARED_PREF_DEFAULT_STRING)
-            .putString(Constants.SHARED_PREF_USER_NAME, Constants.SHARED_PREF_DEFAULT_STRING)
-            .putString(Constants.SHARED_PREF_TOKEN, Constants.SHARED_PREF_DEFAULT_STRING)
-            .apply()
-
-        Intent(this, AuthActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(this)
-            finish()
-        }
-    }
-
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (::progressDialogTwo.isInitialized) {
-            if (progressDialogTwo.isShowing) {
-                progressDialogTwo.dismiss()
-            }
-        }
-        logoutScope.cancel() // Add this line
-
-    }
-    private fun downloadMapNew() {
-        when (Constants.MAP_DOWNLOAD_TYPE) {
-            DownloadType.TPK -> {
+        private fun downloadMap() {
+            when (Constants.MAP_DOWNLOAD_TYPE) {
+                DownloadType.TPK -> {
 //                startDownloadingTPK()
-            }
+                }
 
-            DownloadType.TILES -> {
-                downloadMapTilesNew()
-            }
-        }
-    }
-
-    private fun downloadMap() {
-        when (Constants.MAP_DOWNLOAD_TYPE) {
-            DownloadType.TPK -> {
-//                startDownloadingTPK()
-            }
-
-            DownloadType.TILES -> {
-                downloadMapTiles()
+                DownloadType.TILES -> {
+                    downloadMapTiles()
+                }
             }
         }
-    }
 
-    private fun downloadMapTilesNew() {
-        downloadComplete = false
+        private fun downloadMapTilesNew() {
+            downloadComplete = false
 
-        progressAlertDialog = AlertDialog.Builder(this@MenuActivity)
-            .setTitle("Please wait!")
-            .setMessage("Initializing download...")
-            .setCancelable(false)
-            .create()
+            progressAlertDialog = AlertDialog.Builder(this@MenuActivity)
+                .setTitle("Please wait!")
+                .setMessage("Initializing download...")
+                .setCancelable(false)
+                .create()
 
-        tileManager = TileManager(this)
-        progressAlertDialog.show()
+            tileManager = TileManager(this)
+            progressAlertDialog.show()
 
-        val mauzaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
+            val mauzaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
 
-        val areaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-            Constants.SHARED_PREF_DEFAULT_STRING
-        ).orEmpty()
+            val areaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
+                Constants.SHARED_PREF_DEFAULT_STRING
+            ).orEmpty()
 
-        val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
-        val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
+            val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
 
-        val minZoomLevel = sharedPreferences.getInt(
-            Constants.SHARED_PREF_MAP_MIN_SCALE,
-            Constants.SHARED_PREF_DEFAULT_MIN_SCALE
-        )
+            val minZoomLevel = sharedPreferences.getInt(
+                Constants.SHARED_PREF_MAP_MIN_SCALE,
+                Constants.SHARED_PREF_DEFAULT_MIN_SCALE
+            )
 
 //        val maxZoomLevel = sharedPreferences.getInt(
 //            Constants.SHARED_PREF_MAP_MAX_SCALE,
 //            Constants.SHARED_PREF_DEFAULT_MAX_SCALE
 //        )
 
-        val maxZoomLevel = 16
+            val maxZoomLevel = 16
 
-        var currentTile = 0
-        var relevantMaxZoom = 0
-        var tilesToDownload = 0
+            var currentTile = 0
+            var relevantMaxZoom = 0
+            var tilesToDownload = 0
 
-        job = CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val parcels = database.activeParcelDao().getParcelsByMauzaAndArea(mauzaId, areaName)
+            job = CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val parcels =
+                        database.activeParcelDao().getParcelsByMauzaAndArea(mauzaId, areaName)
 
-                val polygonsList = mutableListOf<Polygon>()
-                for (parcel in parcels) {
-                    val geomString = parcel.geomWKT
-                    try {
-                        val multiPolygons = Utility.getMultiPolygonFromString(geomString, wgs84)
-                        multiPolygons.mapTo(polygonsList) { Utility.simplifyPolygon(it) }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                    val polygonsList = mutableListOf<Polygon>()
+                    for (parcel in parcels) {
+                        val geomString = parcel.geomWKT
+                        try {
+                            val multiPolygons = Utility.getMultiPolygonFromString(geomString, wgs84)
+                            multiPolygons.mapTo(polygonsList) { Utility.simplifyPolygon(it) }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
-                }
 
-                val combinedGeometry = GeometryEngine.union(polygonsList)
-                val bufferedExtent =
-                    GeometryEngine.buffer(combinedGeometry.extent, 0.0001) as Polygon
-                val result =
-                    calculateTilesToDownload(bufferedExtent.extent, minZoomLevel, maxZoomLevel)
+                    val combinedGeometry = GeometryEngine.union(polygonsList)
+                    val bufferedExtent =
+                        GeometryEngine.buffer(combinedGeometry.extent, 0.0001) as Polygon
+                    val result =
+                        calculateTilesToDownload(bufferedExtent.extent, minZoomLevel, maxZoomLevel)
 
-                relevantMaxZoom = result.first
-                tilesToDownload = result.second
+                    relevantMaxZoom = result.first
+                    tilesToDownload = result.second
 
-                withContext(Dispatchers.Main) {
-                    progressAlertDialog.setMessage("Total tiles to download: $tilesToDownload")
-                    Log.e("tiles", "downloadMapTilesNew: $tilesToDownload")
-                }
+                    withContext(Dispatchers.Main) {
+                        progressAlertDialog.setMessage("Total tiles to download: $tilesToDownload")
+                        Log.e("tiles", "downloadMapTilesNew: $tilesToDownload")
+                    }
 
-                for (zoomLevel in minZoomLevel..relevantMaxZoom) {
-                    val extent = bufferedExtent.extent
-                    val (x1, y1, x2, y2) = listOf(
-                        getTileX(extent.xMin, zoomLevel),
-                        getTileY(extent.yMin, zoomLevel),
-                        getTileX(extent.xMax, zoomLevel),
-                        getTileY(extent.yMax, zoomLevel)
-                    )
+                    for (zoomLevel in minZoomLevel..relevantMaxZoom) {
+                        val extent = bufferedExtent.extent
+                        val (x1, y1, x2, y2) = listOf(
+                            getTileX(extent.xMin, zoomLevel),
+                            getTileY(extent.yMin, zoomLevel),
+                            getTileX(extent.xMax, zoomLevel),
+                            getTileY(extent.yMax, zoomLevel)
+                        )
 
-                    val minX = minOf(x1, x2)
-                    val maxX = maxOf(x1, x2)
-                    val minY = minOf(y1, y2)
-                    val maxY = maxOf(y1, y2)
+                        val minX = minOf(x1, x2)
+                        val maxX = maxOf(x1, x2)
+                        val minY = minOf(y1, y2)
+                        val maxY = maxOf(y1, y2)
 
-                    for (tileX in minX..maxX) {
-                        for (tileY in minY..maxY) {
-                            if (Utility.checkInternetConnection(this@MenuActivity)) {
-                                currentTile++
-                                tileManager.downloadAndCacheTileNew(
-                                    zoomLevel,
-                                    tileY,
-                                    tileX,
-                                    folderKey, // use sanitized mauza+areaName as folder
-                                    "cached",
-                                    minZoomLevel,
-                                    relevantMaxZoom
-                                )
-                                withContext(Dispatchers.Main) {
-                                    progressAlertDialog.setMessage("Downloading tile $currentTile of $tilesToDownload")
+                        for (tileX in minX..maxX) {
+                            for (tileY in minY..maxY) {
+                                if (Utility.checkInternetConnection(this@MenuActivity)) {
+                                    currentTile++
+                                    tileManager.downloadAndCacheTileNew(
+                                        zoomLevel,
+                                        tileY,
+                                        tileX,
+                                        folderKey, // use sanitized mauza+areaName as folder
+                                        "cached",
+                                        minZoomLevel,
+                                        relevantMaxZoom
+                                    )
+                                    withContext(Dispatchers.Main) {
+                                        progressAlertDialog.setMessage("Downloading tile $currentTile of $tilesToDownload")
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-            } finally {
-                withContext(Dispatchers.Main) {
-                    val sourceFile = File(context.cacheDir, "MapTiles/$folderKey")
-                    val destinationFile = File(context.filesDir, "MapTiles/$folderKey")
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        val sourceFile = File(context.cacheDir, "MapTiles/$folderKey")
+                        val destinationFile = File(context.filesDir, "MapTiles/$folderKey")
 
-                    if (currentTile == tilesToDownload) {
-                        if (!(isFinishing || isDestroyed)) {
-                            copyFolder(sourceFile, destinationFile)
-                            sourceFile.deleteRecursively()
+                        if (currentTile == tilesToDownload) {
+                            if (!(isFinishing || isDestroyed)) {
+                                copyFolder(sourceFile, destinationFile)
+                                sourceFile.deleteRecursively()
 
-                            binding.apply {
-                                cvStartSurvey.isEnabled = true
-                                cvPropertyList.isEnabled = true
-                                llStartSurvey.setBackgroundColor(Color.WHITE)
-                                llPropertyList.setBackgroundColor(Color.WHITE)
+                                binding.apply {
+                                    cvStartSurvey.isEnabled = true
+                                    cvPropertyList.isEnabled = true
+                                    llStartSurvey.setBackgroundColor(Color.WHITE)
+                                    llPropertyList.setBackgroundColor(Color.WHITE)
+                                }
+
+
+
+                                sharedPreferences.edit()
+                                    .putInt(
+                                        Constants.SHARED_PREF_SYNC_STATUS,
+                                        Constants.SYNC_STATUS_SUCCESS
+                                    )
+                                    .apply()
+
+                                progressAlertDialog.setMessage("Download complete")
+                                progressAlertDialog.dismiss()
+
+                                updateSelectedMauzaAndArea()
+
+                                Toast.makeText(
+                                    context,
+                                    "Data downloaded successfully",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                downloadComplete = true
+                            }
+                        } else {
+                            if (!(isFinishing || isDestroyed)) {
+                                progressAlertDialog.setMessage("Download Incomplete")
+                                progressAlertDialog.dismiss()
                             }
 
-
-
-                            sharedPreferences.edit()
-                                .putInt(
-                                    Constants.SHARED_PREF_SYNC_STATUS,
-                                    Constants.SYNC_STATUS_SUCCESS
-                                )
-                                .apply()
-
-                            progressAlertDialog.setMessage("Download complete")
-                            progressAlertDialog.dismiss()
-
-                            updateSelectedMauzaAndArea()
-
-                            Toast.makeText(
-                                context,
-                                "Data downloaded successfully",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            downloadComplete = true
-                        }
-                    } else {
-                        if (!(isFinishing || isDestroyed)) {
-                            progressAlertDialog.setMessage("Download Incomplete")
-                            progressAlertDialog.dismiss()
-                        }
-
-                        destinationFile.deleteRecursively()
-                        downloadComplete = false
+                            destinationFile.deleteRecursively()
+                            downloadComplete = false
 //                        deleteUnSyncedData()
-                        ToastUtil.showShort(
-                            this@MenuActivity,
-                            "Download Incomplete"
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private fun updateSelectedMauzaAndArea() {
-        val downloadedMauzaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
-        val downloadedMauzaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
-            Constants.SHARED_PREF_DEFAULT_STRING
-        )
-        val downloadedAreaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
-        val downloadedAreaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-            Constants.SHARED_PREF_DEFAULT_STRING
-        )
-
-        sharedPreferences.edit().apply {
-            putLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, downloadedMauzaId)
-            putString(Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME, downloadedMauzaName)
-            putLong(Constants.SHARED_PREF_USER_SELECTED_AREA_ID, downloadedAreaId)
-            putString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, downloadedAreaName)
-            apply()
-        }
-
-        binding.apply {
-            if (!downloadedMauzaName.isNullOrEmpty() && !downloadedAreaName.isNullOrEmpty()) {
-                tvSelectedAbadiName.text = "$downloadedMauzaName\n($downloadedAreaName)"
-                llSelectedAbadi.visibility = View.VISIBLE
-            } else {
-                llSelectedAbadi.visibility = View.INVISIBLE
-            }
-        }
-    }
-
-    private fun downloadMapTiles() {
-
-        downloadComplete = false
-
-        // Initialize the ProgressDialog
-        progressAlertDialog = AlertDialog.Builder(this@MenuActivity)
-            .setTitle("Please wait!")
-            .setMessage("Initializing download...")
-            .setCancelable(false)
-            .create()
-
-        tileManager = TileManager(this)
-
-        progressAlertDialog.show()
-
-        val mauzaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
-
-        val areaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
-
-        val minZoomLevel = sharedPreferences.getInt(
-            Constants.SHARED_PREF_MAP_MIN_SCALE,
-            Constants.SHARED_PREF_DEFAULT_MIN_SCALE
-        )
-
-        val maxZoomLevel = sharedPreferences.getInt(
-            Constants.SHARED_PREF_MAP_MAX_SCALE,
-            Constants.SHARED_PREF_DEFAULT_MAX_SCALE
-        )
-
-        var currentTile = 0
-        var relevantMaxZoom = 0
-        var tilesToDownload = 0
-
-        job = CoroutineScope(Dispatchers.IO).launch {
-            try {
-
-                val parcels = database.parcelDao().getAllParcelsWithAreaId(areaId)
-
-                val polygonsList = mutableListOf<Polygon>()
-
-                for (parcel in parcels) {
-                    val parcelGeom = parcel.geom
-                    if (parcelGeom.contains("MULTIPOLYGON (((")) {
-                        val polygons = Utility.getMultiPolygonFromString(parcelGeom, wgs84)
-                        for (polygon in polygons) {
-                            val simplifiedPolygon = Utility.simplifyPolygon(polygon)
-                            polygonsList.add(simplifiedPolygon)
+                            ToastUtil.showShort(
+                                this@MenuActivity,
+                                "Download Incomplete"
+                            )
                         }
-                    } else if (parcelGeom.contains("POLYGON ((")) {
-                        Utility.getPolygonFromString(parcelGeom, wgs84)?.let { parsedPolygon ->
-                            val polygon = Utility.simplifyPolygon(parsedPolygon)
-                            polygonsList.add(polygon)
-                        } ?: Log.w("downloadMapTiles", "Skipped invalid POLYGON WKT: $parcelGeom")
-                    } else {
-                        Utility.getPolyFromString(parcelGeom, wgs84)?.let { parsedPolygon ->
-                            val polygon = Utility.simplifyPolygon(parsedPolygon)
-                            polygonsList.add(polygon)
-                        } ?: Log.w(
-                            "downloadMapTiles",
-                            "Skipped invalid malformed geometry: $parcelGeom"
-                        )
                     }
                 }
+            }
+        }
 
-                // Union all polygons into a single geometry
-                val combinedGeometry = GeometryEngine.union(polygonsList)
+        private fun updateSelectedMauzaAndArea() {
+            val downloadedMauzaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
+            val downloadedMauzaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
+                Constants.SHARED_PREF_DEFAULT_STRING
+            )
+            val downloadedAreaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
+            val downloadedAreaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
+                Constants.SHARED_PREF_DEFAULT_STRING
+            )
 
-                // Get the extent (bounding box) of the combined geometry
-                val combinedExtent = combinedGeometry.extent
+            sharedPreferences.edit().apply {
+                putLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, downloadedMauzaId)
+                putString(Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME, downloadedMauzaName)
+                putLong(Constants.SHARED_PREF_USER_SELECTED_AREA_ID, downloadedAreaId)
+                putString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, downloadedAreaName)
+                apply()
+            }
 
-                // Apply a 10-meter buffer to the extent in WGS84
-                val bufferDistance = 0.0001 // Roughly 50 meters in latitude/longitude
-                val bufferedGeometry =
-                    GeometryEngine.buffer(combinedExtent, bufferDistance) as Polygon
+            binding.apply {
+                if (!downloadedMauzaName.isNullOrEmpty() && !downloadedAreaName.isNullOrEmpty()) {
+                    tvSelectedAbadiName.text = "$downloadedMauzaName\n($downloadedAreaName)"
+                    llSelectedAbadi.visibility = View.VISIBLE
+                } else {
+                    llSelectedAbadi.visibility = View.INVISIBLE
+                }
+            }
+        }
 
-                // Get the extent of the buffered polygon
-                val bufferedExtent = bufferedGeometry.extent
+        private fun downloadMapTiles() {
+
+            downloadComplete = false
+
+            // Initialize the ProgressDialog
+            progressAlertDialog = AlertDialog.Builder(this@MenuActivity)
+                .setTitle("Please wait!")
+                .setMessage("Initializing download...")
+                .setCancelable(false)
+                .create()
+
+            tileManager = TileManager(this)
+
+            progressAlertDialog.show()
+
+            val mauzaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
+
+            val areaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
+
+            val minZoomLevel = sharedPreferences.getInt(
+                Constants.SHARED_PREF_MAP_MIN_SCALE,
+                Constants.SHARED_PREF_DEFAULT_MIN_SCALE
+            )
+
+            val maxZoomLevel = sharedPreferences.getInt(
+                Constants.SHARED_PREF_MAP_MAX_SCALE,
+                Constants.SHARED_PREF_DEFAULT_MAX_SCALE
+            )
+
+            var currentTile = 0
+            var relevantMaxZoom = 0
+            var tilesToDownload = 0
+
+            job = CoroutineScope(Dispatchers.IO).launch {
+                try {
+
+                    val parcels = database.parcelDao().getAllParcelsWithAreaId(areaId)
+
+                    val polygonsList = mutableListOf<Polygon>()
+
+                    for (parcel in parcels) {
+                        val parcelGeom = parcel.geom
+                        if (parcelGeom.contains("MULTIPOLYGON (((")) {
+                            val polygons = Utility.getMultiPolygonFromString(parcelGeom, wgs84)
+                            for (polygon in polygons) {
+                                val simplifiedPolygon = Utility.simplifyPolygon(polygon)
+                                polygonsList.add(simplifiedPolygon)
+                            }
+                        } else if (parcelGeom.contains("POLYGON ((")) {
+                            Utility.getPolygonFromString(parcelGeom, wgs84)?.let { parsedPolygon ->
+                                val polygon = Utility.simplifyPolygon(parsedPolygon)
+                                polygonsList.add(polygon)
+                            } ?: Log.w(
+                                "downloadMapTiles",
+                                "Skipped invalid POLYGON WKT: $parcelGeom"
+                            )
+                        } else {
+                            Utility.getPolyFromString(parcelGeom, wgs84)?.let { parsedPolygon ->
+                                val polygon = Utility.simplifyPolygon(parsedPolygon)
+                                polygonsList.add(polygon)
+                            } ?: Log.w(
+                                "downloadMapTiles",
+                                "Skipped invalid malformed geometry: $parcelGeom"
+                            )
+                        }
+                    }
+
+                    // Union all polygons into a single geometry
+                    val combinedGeometry = GeometryEngine.union(polygonsList)
+
+                    // Get the extent (bounding box) of the combined geometry
+                    val combinedExtent = combinedGeometry.extent
+
+                    // Apply a 10-meter buffer to the extent in WGS84
+                    val bufferDistance = 0.0001 // Roughly 50 meters in latitude/longitude
+                    val bufferedGeometry =
+                        GeometryEngine.buffer(combinedExtent, bufferDistance) as Polygon
+
+                    // Get the extent of the buffered polygon
+                    val bufferedExtent = bufferedGeometry.extent
 
 //                 Get minX, minY, maxX, and maxY from the buffered envelope in WGS84
 //                val minX = bufferedExtent.xMin
@@ -1296,30 +1311,297 @@ class MenuActivity : AppCompatActivity() {
 
 //                Log.d("MapExtent", "$minX, $minY, $maxX, $maxY")
 
-                val result =
-                    calculateTilesToDownload(bufferedExtent, minZoomLevel, maxZoomLevel)
-                relevantMaxZoom = result.first
-                tilesToDownload = result.second
+                    val result =
+                        calculateTilesToDownload(bufferedExtent, minZoomLevel, maxZoomLevel)
+                    relevantMaxZoom = result.first
+                    tilesToDownload = result.second
 
 
-                // Add these logs
-                Log.d("TileDownload", "=== TILE DOWNLOAD STARTED ===")
-                Log.d("TileDownload", "Min Zoom Level: $minZoomLevel")
-                Log.d("TileDownload", "Max Zoom Level: $maxZoomLevel")
-                Log.d("TileDownload", "Relevant Max Zoom: $relevantMaxZoom")
-                Log.d("TileDownload", "Total Tiles to Download: $tilesToDownload")
-                Log.d("TileDownload", "Buffered Extent: ${bufferedExtent.xMin}, ${bufferedExtent.yMin}, ${bufferedExtent.xMax}, ${bufferedExtent.yMax}")
-                // Now use relevantMaxZoom and tilesToDownload in your download logic
-                println("Max Zoom Level: $relevantMaxZoom")
-                println("Total Tiles to Download: $tilesToDownload")
+                    // Add these logs
+                    Log.d("TileDownload", "=== TILE DOWNLOAD STARTED ===")
+                    Log.d("TileDownload", "Min Zoom Level: $minZoomLevel")
+                    Log.d("TileDownload", "Max Zoom Level: $maxZoomLevel")
+                    Log.d("TileDownload", "Relevant Max Zoom: $relevantMaxZoom")
+                    Log.d("TileDownload", "Total Tiles to Download: $tilesToDownload")
+                    Log.d(
+                        "TileDownload",
+                        "Buffered Extent: ${bufferedExtent.xMin}, ${bufferedExtent.yMin}, ${bufferedExtent.xMax}, ${bufferedExtent.yMax}"
+                    )
+                    // Now use relevantMaxZoom and tilesToDownload in your download logic
+                    println("Max Zoom Level: $relevantMaxZoom")
+                    println("Total Tiles to Download: $tilesToDownload")
 
-                // Update the progress dialog with the total number of tiles
-                withContext(Dispatchers.Main) {
-                    progressAlertDialog.setMessage("Total tiles to download: $tilesToDownload")
+                    // Update the progress dialog with the total number of tiles
+                    withContext(Dispatchers.Main) {
+                        progressAlertDialog.setMessage("Total tiles to download: $tilesToDownload")
+                    }
+
+                    // Download the tiles
+                    for (zoomLevel in minZoomLevel..relevantMaxZoom) {
+                        val x1: Int = getTileX(bufferedExtent.xMin, zoomLevel)
+                        val y1: Int = getTileY(bufferedExtent.yMin, zoomLevel)
+                        val x2: Int = getTileX(bufferedExtent.xMax, zoomLevel)
+                        val y2: Int = getTileY(bufferedExtent.yMax, zoomLevel)
+
+                        var minX = x1
+                        var maxX = x2
+                        var minY = y1
+                        var maxY = y2 // Assume the min , max values
+
+                        if (minX > maxX) {
+                            val temp = minX
+                            minX = maxX
+                            maxX = temp
+                        }
+
+                        if (minY > maxY) {
+                            val temp = minY
+                            minY = maxY
+                            maxY = temp
+                        }
+
+                        val tilesForThisZoom = (maxX - minX + 1) * (maxY - minY + 1)
+                        Log.d("TileDownload", "--- Zoom Level $zoomLevel ---")
+                        Log.d("TileDownload", "Tile range: X($minX-$maxX), Y($minY-$maxY)")
+                        Log.d("TileDownload", "Tiles for zoom $zoomLevel: $tilesForThisZoom")
+
+                        for (tileX in minX..maxX) {
+                            for (tileY in minY..maxY) {
+                                if (Utility.checkInternetConnection(this@MenuActivity)) {
+                                    currentTile++
+                                    Log.v(
+                                        "TileDownload",
+                                        "Downloading tile $currentTile/$tilesToDownload - Zoom:$zoomLevel, X:$tileX, Y:$tileY"
+                                    )
+                                    tileManager.downloadAndCacheTile(
+                                        zoomLevel,
+                                        tileY,
+                                        tileX,
+                                        areaId,
+                                        "cached",
+                                        minZoomLevel,
+                                        relevantMaxZoom,
+                                    )
+                                    // Update progress dialog
+                                    withContext(Dispatchers.Main) {
+                                        progressAlertDialog.setMessage("Downloading tile $currentTile of $tilesToDownload")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        // Hide the progress dialog when done
+                        if (currentTile == tilesToDownload) {
+
+                            if (!(isFinishing || isDestroyed)) {
+
+                                val sourceFile = File(context.cacheDir, "MapTiles/${areaId}")
+                                val destinationFile = File(context.filesDir, "MapTiles/${areaId}")
+
+                                copyFolder(sourceFile, destinationFile)
+
+                                sourceFile.deleteRecursively()
+
+                                binding.apply {
+                                    cvStartSurvey.isEnabled = true
+                                    cvPropertyList.isEnabled = true
+
+                                    llStartSurvey.setBackgroundColor(Color.WHITE)
+                                    llPropertyList.setBackgroundColor(Color.WHITE)
+                                }
+
+                                sharedPreferences.edit().putInt(
+                                    Constants.SHARED_PREF_SYNC_STATUS, Constants.SYNC_STATUS_SUCCESS
+                                ).apply()
+
+                                val selectedAreaId = sharedPreferences.getLong(
+                                    Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
+                                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                                )
+
+                                progressAlertDialog.setMessage("Download complete")
+                                progressAlertDialog.dismiss()
+
+                                if (selectedAreaId == Constants.SHARED_PREF_DEFAULT_INT.toLong() || selectedAreaId == areaId) {
+                                    val downloadedMauzaId = sharedPreferences.getLong(
+                                        Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
+                                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                                    )
+
+                                    val downloadedMauzaName = sharedPreferences.getString(
+                                        Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
+                                        Constants.SHARED_PREF_DEFAULT_STRING
+                                    )
+
+                                    val downloadedAreaId = sharedPreferences.getLong(
+                                        Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
+                                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                                    )
+
+                                    val downloadedAreaName = sharedPreferences.getString(
+                                        Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
+                                        Constants.SHARED_PREF_DEFAULT_STRING
+                                    )
+
+                                    sharedPreferences.edit().putLong(
+                                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
+                                        downloadedMauzaId
+                                    ).apply()
+
+                                    sharedPreferences.edit().putString(
+                                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                                        downloadedMauzaName
+                                    ).apply()
+
+                                    sharedPreferences.edit().putLong(
+                                        Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
+                                        downloadedAreaId
+                                    ).apply()
+
+                                    sharedPreferences.edit().putString(
+                                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
+                                        downloadedAreaName
+                                    ).apply()
+
+                                    //visible the selected mauza area header
+                                    binding.apply {
+                                        if (downloadedMauzaName != "" && downloadedAreaName != "") {
+                                            tvSelectedAbadiName.text =
+                                                "$downloadedMauzaName\n($downloadedAreaName)"
+                                            llSelectedAbadi.visibility = View.VISIBLE
+                                        } else {
+                                            llSelectedAbadi.visibility = View.INVISIBLE
+                                        }
+                                    }
+                                    ToastUtil.showShort(
+                                        context,
+                                        "Data downloaded successfully"
+                                    )
+                                } else {
+                                    val builder = AlertDialog.Builder(this@MenuActivity)
+                                        .setMessage("Do you want to select the current downloaded area to start survey?")
+                                        .setPositiveButton("YES") { dialog, _ ->
+                                            val downloadedMauzaId = sharedPreferences.getLong(
+                                                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
+                                                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                                            )
+
+                                            val downloadedMauzaName = sharedPreferences.getString(
+                                                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
+                                                Constants.SHARED_PREF_DEFAULT_STRING
+                                            )
+
+                                            val downloadedAreaId = sharedPreferences.getLong(
+                                                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
+                                                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                                            )
+
+                                            val downloadedAreaName = sharedPreferences.getString(
+                                                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
+                                                Constants.SHARED_PREF_DEFAULT_STRING
+                                            )
+
+                                            sharedPreferences.edit().putLong(
+                                                Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
+                                                downloadedMauzaId
+                                            ).apply()
+
+                                            sharedPreferences.edit().putString(
+                                                Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                                                downloadedMauzaName
+                                            ).apply()
+
+                                            sharedPreferences.edit().putLong(
+                                                Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
+                                                downloadedAreaId
+                                            ).apply()
+
+                                            sharedPreferences.edit().putString(
+                                                Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
+                                                downloadedAreaName
+                                            ).apply()
+
+                                            //visible the selected mauza area header
+                                            binding.apply {
+                                                if (downloadedMauzaName != "" && downloadedAreaName != "") {
+                                                    tvSelectedAbadiName.text =
+                                                        "$downloadedMauzaName\n($downloadedAreaName)"
+                                                    llSelectedAbadi.visibility = View.VISIBLE
+                                                } else {
+                                                    llSelectedAbadi.visibility = View.INVISIBLE
+                                                }
+                                            }
+                                            ToastUtil.showShort(
+                                                context,
+                                                "Data downloaded successfully"
+                                            )
+                                            dialog.dismiss()
+                                        }.setNegativeButton("No") { dialog, _ ->
+                                            ToastUtil.showShort(
+                                                context,
+                                                "Data downloaded successfully"
+                                            )
+                                            dialog.dismiss()
+                                        }
+
+                                    val dialog = builder.create()
+                                    dialog.show()
+
+                                    val positiveButton =
+                                        dialog.getButton(DialogInterface.BUTTON_POSITIVE)
+                                    val negativeButton =
+                                        dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
+
+                                    positiveButton.textSize = 16f
+                                    positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+
+                                    negativeButton.textSize = 16f
+                                    negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+                                }
+                                downloadComplete = true
+                            }
+
+                        } else {
+
+                            if (!(isFinishing || isDestroyed)) {
+                                progressAlertDialog.setMessage("Download Incomplete")
+                                progressAlertDialog.dismiss()
+                            }
+
+                            val filesDir = File(context.filesDir, "MapTiles/${areaId}")
+                            // Recursively delete all files and subdirectories within filesDir, then delete filesDir itself
+                            filesDir.deleteRecursively()
+
+                            downloadComplete = false
+
+//                        deleteUnSyncedData()
+
+                            ToastUtil.showShort(
+                                this@MenuActivity,
+                                "Data Incomplete"
+                            )
+                        }
+
+                    }
                 }
+            }
+        }
 
-                // Download the tiles
-                for (zoomLevel in minZoomLevel..relevantMaxZoom) {
+        private fun calculateTilesToDownload(
+            bufferedExtent: Envelope,
+            minZoomLevel: Int,
+            maxZoomLevel: Int
+        ): Pair<Int, Int> { // Return type is Pair<Int, Int>
+            var tilesToDownload: Int
+            var currentMaxZoom = maxZoomLevel
+
+            do {
+                tilesToDownload = 0
+
+                // Calculate tiles for the current max zoom level
+                for (zoomLevel in minZoomLevel..currentMaxZoom) {
                     val x1: Int = getTileX(bufferedExtent.xMin, zoomLevel)
                     val y1: Int = getTileY(bufferedExtent.yMin, zoomLevel)
                     val x2: Int = getTileX(bufferedExtent.xMax, zoomLevel)
@@ -1328,681 +1610,419 @@ class MenuActivity : AppCompatActivity() {
                     var minX = x1
                     var maxX = x2
                     var minY = y1
-                    var maxY = y2 // Assume the min , max values
+                    var maxY = y2 // Assume the min, max values
 
+                    // Ensure min/max values are in correct order
                     if (minX > maxX) {
                         val temp = minX
                         minX = maxX
                         maxX = temp
                     }
-
                     if (minY > maxY) {
                         val temp = minY
                         minY = maxY
                         maxY = temp
                     }
 
-                    val tilesForThisZoom = (maxX - minX + 1) * (maxY - minY + 1)
-                    Log.d("TileDownload", "--- Zoom Level $zoomLevel ---")
-                    Log.d("TileDownload", "Tile range: X($minX-$maxX), Y($minY-$maxY)")
-                    Log.d("TileDownload", "Tiles for zoom $zoomLevel: $tilesForThisZoom")
+                    // Calculate the number of tiles to download
+                    tilesToDownload += (maxX - minX + 1) * (maxY - minY + 1)
+                }
 
-                    for (tileX in minX..maxX) {
-                        for (tileY in minY..maxY) {
-                            if (Utility.checkInternetConnection(this@MenuActivity)) {
-                                currentTile++
-                                Log.v("TileDownload", "Downloading tile $currentTile/$tilesToDownload - Zoom:$zoomLevel, X:$tileX, Y:$tileY")
-                                tileManager.downloadAndCacheTile(
-                                    zoomLevel,
-                                    tileY,
-                                    tileX,
-                                    areaId,
-                                    "cached",
-                                    minZoomLevel,
-                                    relevantMaxZoom,
-                                )
-                                // Update progress dialog
-                                withContext(Dispatchers.Main) {
-                                    progressAlertDialog.setMessage("Downloading tile $currentTile of $tilesToDownload")
-                                }
-                            }
+                // Check the number of tiles to download
+                if (tilesToDownload <= 2000 || currentMaxZoom <= 16) {
+                    break // Exit if under the limit or at max zoom level
+                }
+
+                // Reduce max zoom level
+                currentMaxZoom--
+            } while (true)
+
+            return Pair(currentMaxZoom, tilesToDownload) // Return max zoom level and tile count
+        }
+
+        private fun copyFolder(sourceFolder: File, destinationFolder: File) {
+            // Create the destination folder if it doesn't exist
+            if (!destinationFolder.exists()) {
+                destinationFolder.mkdirs()
+            }
+
+            // Loop through each file and folder inside the source folder
+            sourceFolder.listFiles()?.forEach { file ->
+                val destinationFile = File(destinationFolder, file.name)
+                if (file.isDirectory) {
+                    // Recursively copy sub-folders
+                    copyFolder(file, destinationFile)
+                } else {
+                    // Copy files using InputStream and OutputStream
+                    file.inputStream().use { input ->
+                        destinationFile.outputStream().use { output ->
+                            input.copyTo(output)
                         }
                     }
                 }
-            } finally {
-                withContext(Dispatchers.Main) {
-                    // Hide the progress dialog when done
-                    if (currentTile == tilesToDownload) {
+            }
+        }
 
-                        if (!(isFinishing || isDestroyed)) {
+        private fun getTileX(lon: Double, zoom: Int): Int {
+            var xtile =
+                floor((lon + 180) / 360 * (1 shl zoom)).toInt()
 
-                            val sourceFile = File(context.cacheDir, "MapTiles/${areaId}")
-                            val destinationFile = File(context.filesDir, "MapTiles/${areaId}")
+            if (xtile < 0) xtile = 0
 
-                            copyFolder(sourceFile, destinationFile)
+            if (xtile >= (1 shl zoom)) xtile = ((1 shl zoom) - 1)
 
-                            sourceFile.deleteRecursively()
+            return xtile
+        }
 
-                            binding.apply {
-                                cvStartSurvey.isEnabled = true
-                                cvPropertyList.isEnabled = true
+        private fun getTileY(lat: Double, zoom: Int): Int {
+            var ytile =
+                floor((1 - ln(tan(Math.toRadians(lat)) + 1 / cos(Math.toRadians(lat))) / Math.PI) / 2 * (1 shl zoom))
+                    .toInt()
 
-                                llStartSurvey.setBackgroundColor(Color.WHITE)
-                                llPropertyList.setBackgroundColor(Color.WHITE)
-                            }
+            if (ytile < 0) ytile = 0
 
-                            sharedPreferences.edit().putInt(
-                                Constants.SHARED_PREF_SYNC_STATUS, Constants.SYNC_STATUS_SUCCESS
-                            ).apply()
+            if (ytile >= (1 shl zoom)) ytile = ((1 shl zoom) - 1)
 
-                            val selectedAreaId = sharedPreferences.getLong(
-                                Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-                                Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                            )
+            return ytile
+        }
 
-                            progressAlertDialog.setMessage("Download complete")
-                            progressAlertDialog.dismiss()
 
-                            if (selectedAreaId == Constants.SHARED_PREF_DEFAULT_INT.toLong() || selectedAreaId == areaId) {
-                                val downloadedMauzaId = sharedPreferences.getLong(
-                                    Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-                                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                                )
-
-                                val downloadedMauzaName = sharedPreferences.getString(
-                                    Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
-                                    Constants.SHARED_PREF_DEFAULT_STRING
-                                )
-
-                                val downloadedAreaId = sharedPreferences.getLong(
-                                    Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
-                                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                                )
-
-                                val downloadedAreaName = sharedPreferences.getString(
-                                    Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-                                    Constants.SHARED_PREF_DEFAULT_STRING
-                                )
-
-                                sharedPreferences.edit().putLong(
-                                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-                                    downloadedMauzaId
-                                ).apply()
-
-                                sharedPreferences.edit().putString(
-                                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
-                                    downloadedMauzaName
-                                ).apply()
-
-                                sharedPreferences.edit().putLong(
-                                    Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-                                    downloadedAreaId
-                                ).apply()
-
-                                sharedPreferences.edit().putString(
-                                    Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-                                    downloadedAreaName
-                                ).apply()
-
-                                //visible the selected mauza area header
-                                binding.apply {
-                                    if (downloadedMauzaName != "" && downloadedAreaName != "") {
-                                        tvSelectedAbadiName.text =
-                                            "$downloadedMauzaName\n($downloadedAreaName)"
-                                        llSelectedAbadi.visibility = View.VISIBLE
-                                    } else {
-                                        llSelectedAbadi.visibility = View.INVISIBLE
-                                    }
-                                }
-                                ToastUtil.showShort(
-                                    context,
-                                    "Data downloaded successfully"
-                                )
-                            } else {
-                                val builder = AlertDialog.Builder(this@MenuActivity)
-                                    .setMessage("Do you want to select the current downloaded area to start survey?")
-                                    .setPositiveButton("YES") { dialog, _ ->
-                                        val downloadedMauzaId = sharedPreferences.getLong(
-                                            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-                                            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                                        )
-
-                                        val downloadedMauzaName = sharedPreferences.getString(
-                                            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_NAME,
-                                            Constants.SHARED_PREF_DEFAULT_STRING
-                                        )
-
-                                        val downloadedAreaId = sharedPreferences.getLong(
-                                            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_ID,
-                                            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                                        )
-
-                                        val downloadedAreaName = sharedPreferences.getString(
-                                            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-                                            Constants.SHARED_PREF_DEFAULT_STRING
-                                        )
-
-                                        sharedPreferences.edit().putLong(
-                                            Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-                                            downloadedMauzaId
-                                        ).apply()
-
-                                        sharedPreferences.edit().putString(
-                                            Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
-                                            downloadedMauzaName
-                                        ).apply()
-
-                                        sharedPreferences.edit().putLong(
-                                            Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-                                            downloadedAreaId
-                                        ).apply()
-
-                                        sharedPreferences.edit().putString(
-                                            Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-                                            downloadedAreaName
-                                        ).apply()
-
-                                        //visible the selected mauza area header
-                                        binding.apply {
-                                            if (downloadedMauzaName != "" && downloadedAreaName != "") {
-                                                tvSelectedAbadiName.text =
-                                                    "$downloadedMauzaName\n($downloadedAreaName)"
-                                                llSelectedAbadi.visibility = View.VISIBLE
-                                            } else {
-                                                llSelectedAbadi.visibility = View.INVISIBLE
-                                            }
-                                        }
-                                        ToastUtil.showShort(
-                                            context,
-                                            "Data downloaded successfully"
-                                        )
-                                        dialog.dismiss()
-                                    }.setNegativeButton("No") { dialog, _ ->
-                                        ToastUtil.showShort(
-                                            context,
-                                            "Data downloaded successfully"
-                                        )
-                                        dialog.dismiss()
-                                    }
-
-                                val dialog = builder.create()
-                                dialog.show()
-
-                                val positiveButton =
-                                    dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                                val negativeButton =
-                                    dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                                positiveButton.textSize = 16f
-                                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-
-                                negativeButton.textSize = 16f
-                                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-                            }
-                            downloadComplete = true
-                        }
-
-                    } else {
-
-                        if (!(isFinishing || isDestroyed)) {
-                            progressAlertDialog.setMessage("Download Incomplete")
-                            progressAlertDialog.dismiss()
-                        }
-
-                        val filesDir = File(context.filesDir, "MapTiles/${areaId}")
-                        // Recursively delete all files and subdirectories within filesDir, then delete filesDir itself
-                        filesDir.deleteRecursively()
-
-                        downloadComplete = false
-
-//                        deleteUnSyncedData()
-
-                        ToastUtil.showShort(
-                            this@MenuActivity,
-                            "Data Incomplete"
-                        )
-                    }
-
+        override fun onPause() {
+            super.onPause()
+            if (::progressAlertDialog.isInitialized) {
+                if (progressAlertDialog.isShowing) {
+                    progressAlertDialog.dismiss()
                 }
             }
-        }
-    }
-
-    private fun calculateTilesToDownload(
-        bufferedExtent: Envelope,
-        minZoomLevel: Int,
-        maxZoomLevel: Int
-    ): Pair<Int, Int> { // Return type is Pair<Int, Int>
-        var tilesToDownload: Int
-        var currentMaxZoom = maxZoomLevel
-
-        do {
-            tilesToDownload = 0
-
-            // Calculate tiles for the current max zoom level
-            for (zoomLevel in minZoomLevel..currentMaxZoom) {
-                val x1: Int = getTileX(bufferedExtent.xMin, zoomLevel)
-                val y1: Int = getTileY(bufferedExtent.yMin, zoomLevel)
-                val x2: Int = getTileX(bufferedExtent.xMax, zoomLevel)
-                val y2: Int = getTileY(bufferedExtent.yMax, zoomLevel)
-
-                var minX = x1
-                var maxX = x2
-                var minY = y1
-                var maxY = y2 // Assume the min, max values
-
-                // Ensure min/max values are in correct order
-                if (minX > maxX) {
-                    val temp = minX
-                    minX = maxX
-                    maxX = temp
-                }
-                if (minY > maxY) {
-                    val temp = minY
-                    minY = maxY
-                    maxY = temp
-                }
-
-                // Calculate the number of tiles to download
-                tilesToDownload += (maxX - minX + 1) * (maxY - minY + 1)
-            }
-
-            // Check the number of tiles to download
-            if (tilesToDownload <= 2000 || currentMaxZoom <= 16) {
-                break // Exit if under the limit or at max zoom level
-            }
-
-            // Reduce max zoom level
-            currentMaxZoom--
-        } while (true)
-
-        return Pair(currentMaxZoom, tilesToDownload) // Return max zoom level and tile count
-    }
-
-    private fun copyFolder(sourceFolder: File, destinationFolder: File) {
-        // Create the destination folder if it doesn't exist
-        if (!destinationFolder.exists()) {
-            destinationFolder.mkdirs()
-        }
-
-        // Loop through each file and folder inside the source folder
-        sourceFolder.listFiles()?.forEach { file ->
-            val destinationFile = File(destinationFolder, file.name)
-            if (file.isDirectory) {
-                // Recursively copy sub-folders
-                copyFolder(file, destinationFile)
-            } else {
-                // Copy files using InputStream and OutputStream
-                file.inputStream().use { input ->
-                    destinationFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
+            if (::progressDialog.isInitialized) {
+                if (progressDialog.isShowing) {
+                    progressDialog.dismiss()
                 }
             }
-        }
-    }
-
-    private fun getTileX(lon: Double, zoom: Int): Int {
-        var xtile =
-            floor((lon + 180) / 360 * (1 shl zoom)).toInt()
-
-        if (xtile < 0) xtile = 0
-
-        if (xtile >= (1 shl zoom)) xtile = ((1 shl zoom) - 1)
-
-        return xtile
-    }
-
-    private fun getTileY(lat: Double, zoom: Int): Int {
-        var ytile =
-            floor((1 - ln(tan(Math.toRadians(lat)) + 1 / cos(Math.toRadians(lat))) / Math.PI) / 2 * (1 shl zoom))
-                .toInt()
-
-        if (ytile < 0) ytile = 0
-
-        if (ytile >= (1 shl zoom)) ytile = ((1 shl zoom) - 1)
-
-        return ytile
-    }
-
-
-
-    override fun onPause() {
-        super.onPause()
-        if (::progressAlertDialog.isInitialized) {
-            if (progressAlertDialog.isShowing) {
-                progressAlertDialog.dismiss()
-            }
-        }
-        if (::progressDialog.isInitialized) {
-            if (progressDialog.isShowing) {
-                progressDialog.dismiss()
-            }
-        }
-        stopLoadingParcels()
+            stopLoadingParcels()
 
 //        deleteUnSyncedData()
-    }
-
-    private fun stopLoadingParcels() {
-        job?.cancel()
-        job = null
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Call the function to check parcels and update UI
-        checkParcelsAndUpdateUI()
-    }
-
-    private fun checkParcelsAndUpdateUI() {
-        // Enable or disable the survey button based on database and file checks
-        lifecycleScope.launch {
-            try {
-                checkDatabaseAndFileStatus(1) // Retry up to 1 time
-            } catch (e: Exception) {
-                ToastUtil.showShort(
-                    context,
-                    "Resume Error: ${e.message}"
-                )
-            }
-        }
-    }
-
-    private suspend fun checkDatabaseAndFileStatus(retries: Int) {
-
-        // Retrieve all SharedPreferences values once
-        val loginStatus = sharedPreferences.getInt(
-            Constants.SHARED_PREF_LOGIN_STATUS, Constants.LOGIN_STATUS_INACTIVE
-        )
-
-        if (loginStatus == Constants.LOGIN_STATUS_INACTIVE) {
-            Intent(this@MenuActivity, AuthActivity::class.java).apply {
-                startActivity(this)
-                finish()
-            }
-            return
         }
 
-        val userName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_NAME, Constants.SHARED_PREF_DEFAULT_STRING
-        )
-
-        val mouzaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_ASSIGNED_MOUZA_NAME, Constants.SHARED_PREF_DEFAULT_STRING
-        )
-
-        val selectedAreaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
-
-        val downloadedMauzaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME, Constants.SHARED_PREF_DEFAULT_STRING
-        )
-
-        val downloadedAreaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, Constants.SHARED_PREF_DEFAULT_STRING
-        )
-
-
-        val mauzaId = sharedPreferences.getLong(
-            Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-        )
-
-        val areaName = sharedPreferences.getString(
-            Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-            Constants.SHARED_PREF_DEFAULT_STRING
-        ).orEmpty()
-
-
-        val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
-        val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
-
-
-        // Update UI
-        binding.apply {
-            tvUserName.text = userName
-
-            if (mouzaName.isNullOrEmpty()) {
-                tvMouzaCaption.visibility = View.GONE
-                tvMouzaName.visibility = View.GONE
-            } else {
-                tvMouzaCaption.visibility = View.VISIBLE
-                tvMouzaName.text = mouzaName
-                tvMouzaName.visibility = View.VISIBLE
-            }
-
-            if (selectedAreaId != Constants.SHARED_PREF_DEFAULT_INT.toLong() && !downloadedMauzaName.isNullOrEmpty() && !downloadedAreaName.isNullOrEmpty()) {
-                tvSelectedAbadiName.text = "$downloadedMauzaName\n($downloadedAreaName)"
-                llSelectedAbadi.visibility = View.VISIBLE
-            } else {
-                llSelectedAbadi.visibility = View.INVISIBLE
-            }
+        private fun stopLoadingParcels() {
+            job?.cancel()
+            job = null
         }
 
-
-        val parcelsCount =
-            withContext(Dispatchers.IO) {
-                database.activeParcelDao().getParcelsCountByMauzaAndArea(mauzaId, areaName)
-            }
-
-        val sdCardRoot = context.filesDir
-
-        val file = when (Constants.MAP_DOWNLOAD_TYPE) {
-            DownloadType.TPK -> {
-                val filesDir = File(sdCardRoot, "MapTpk/${folderKey}")
-                File(filesDir, "${folderKey}_${folderKey}.tpk")
-            }
-
-            DownloadType.TILES -> {
-                File(sdCardRoot, "MapTiles/${folderKey}")
-            }
+        override fun onResume() {
+            super.onResume()
+            // Call the function to check parcels and update UI
+            checkParcelsAndUpdateUI()
         }
 
-        if (parcelsCount > 0 && file.exists()) {
-            withContext(Dispatchers.Main) {
-                binding.apply {
-                    cvStartSurvey.isEnabled = true
-                    cvStartSurvey.isFocusable = true
-
-                    cvPropertyList.isEnabled = true
-                    cvPropertyList.isFocusable = true
-
-                    llStartSurvey.setBackgroundColor(Color.WHITE)
-                    llPropertyList.setBackgroundColor(Color.WHITE)
+        private fun checkParcelsAndUpdateUI() {
+            // Enable or disable the survey button based on database and file checks
+            lifecycleScope.launch {
+                try {
+                    checkDatabaseAndFileStatus(1) // Retry up to 1 time
+                } catch (e: Exception) {
+                    ToastUtil.showShort(
+                        context,
+                        "Resume Error: ${e.message}"
+                    )
                 }
             }
-        } else {
-            if (retries > 0) {
-                delay(100) // Delay for 1 second before retrying
-                checkDatabaseAndFileStatus(retries - 1)
-            } else {
+        }
+
+        private suspend fun checkDatabaseAndFileStatus(retries: Int) {
+
+            // Retrieve all SharedPreferences values once
+            val loginStatus = sharedPreferences.getInt(
+                Constants.SHARED_PREF_LOGIN_STATUS, Constants.LOGIN_STATUS_INACTIVE
+            )
+
+            if (loginStatus == Constants.LOGIN_STATUS_INACTIVE) {
+                Intent(this@MenuActivity, AuthActivity::class.java).apply {
+                    startActivity(this)
+                    finish()
+                }
+                return
+            }
+
+            val userName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_NAME, Constants.SHARED_PREF_DEFAULT_STRING
+            )
+
+            val mouzaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_ASSIGNED_MOUZA_NAME, Constants.SHARED_PREF_DEFAULT_STRING
+            )
+
+            val selectedAreaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
+
+            val downloadedMauzaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME, Constants.SHARED_PREF_DEFAULT_STRING
+            )
+
+            val downloadedAreaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, Constants.SHARED_PREF_DEFAULT_STRING
+            )
+
+
+            val mauzaId = sharedPreferences.getLong(
+                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
+                Constants.SHARED_PREF_DEFAULT_INT.toLong()
+            )
+
+            val areaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
+                Constants.SHARED_PREF_DEFAULT_STRING
+            ).orEmpty()
+
+
+            val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
+            val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
+
+
+            // Update UI
+            binding.apply {
+                tvUserName.text = userName
+
+                if (mouzaName.isNullOrEmpty()) {
+                    tvMouzaCaption.visibility = View.GONE
+                    tvMouzaName.visibility = View.GONE
+                } else {
+                    tvMouzaCaption.visibility = View.VISIBLE
+                    tvMouzaName.text = mouzaName
+                    tvMouzaName.visibility = View.VISIBLE
+                }
+
+                if (selectedAreaId != Constants.SHARED_PREF_DEFAULT_INT.toLong() && !downloadedMauzaName.isNullOrEmpty() && !downloadedAreaName.isNullOrEmpty()) {
+                    tvSelectedAbadiName.text = "$downloadedMauzaName\n($downloadedAreaName)"
+                    llSelectedAbadi.visibility = View.VISIBLE
+                } else {
+                    llSelectedAbadi.visibility = View.INVISIBLE
+                }
+            }
+
+
+            val parcelsCount =
+                withContext(Dispatchers.IO) {
+                    database.activeParcelDao().getParcelsCountByMauzaAndArea(mauzaId, areaName)
+                }
+
+            val sdCardRoot = context.filesDir
+
+            val file = when (Constants.MAP_DOWNLOAD_TYPE) {
+                DownloadType.TPK -> {
+                    val filesDir = File(sdCardRoot, "MapTpk/${folderKey}")
+                    File(filesDir, "${folderKey}_${folderKey}.tpk")
+                }
+
+                DownloadType.TILES -> {
+                    File(sdCardRoot, "MapTiles/${folderKey}")
+                }
+            }
+
+            if (parcelsCount > 0 && file.exists()) {
                 withContext(Dispatchers.Main) {
                     binding.apply {
-                        cvStartSurvey.isEnabled = false
-                        cvStartSurvey.isFocusable = false
+                        cvStartSurvey.isEnabled = true
+                        cvStartSurvey.isFocusable = true
 
-                        cvPropertyList.isEnabled = false
-                        cvPropertyList.isFocusable = false
+                        cvPropertyList.isEnabled = true
+                        cvPropertyList.isFocusable = true
 
-                        llStartSurvey.setBackgroundColor(Color.LTGRAY)
-                        llPropertyList.setBackgroundColor(Color.LTGRAY)
+                        llStartSurvey.setBackgroundColor(Color.WHITE)
+                        llPropertyList.setBackgroundColor(Color.WHITE)
                     }
                 }
-            }
-        }
-
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        return try {
-            val inflater = menuInflater
-            inflater.inflate(R.menu.item_options_menu, menu)
-            // Tint menu icons based on current theme
-            menu?.let { updateMenuIconColors(it) }
-            true
-        } catch (e: Exception) {
-            Log.e("MenuActivity", "Error creating options menu: ${e.message}")
-            super.onCreateOptionsMenu(menu)
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.action_settings -> {
-                Intent(this@MenuActivity, SettingsActivity::class.java).apply {
-                    startActivity(this)
-                }
-                return true
-            }
-
-            R.id.action_theme -> {
-                showThemeDialog()
-                return true
-            }
-
-            R.id.action_logout -> {
-                startLogout()
-                return true
-            }
-
-            else -> return super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun showThemeDialog() {
-        try {
-            val options = arrayOf("Light", "Dark", "System Default")
-            val currentMode = when (AppCompatDelegate.getDefaultNightMode()) {
-                AppCompatDelegate.MODE_NIGHT_NO -> 0
-                AppCompatDelegate.MODE_NIGHT_YES -> 1
-                else -> 2
-            }
-
-            AlertDialog.Builder(this)
-                .setTitle("Choose Theme")
-                .setSingleChoiceItems(options, currentMode) { dialog, which ->
-                    try {
-                        val newMode = when (which) {
-                            0 -> AppCompatDelegate.MODE_NIGHT_NO
-                            1 -> AppCompatDelegate.MODE_NIGHT_YES
-                            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-                        }
-
-                        // Use the Application helper method to update theme
-                        MyApplication.updateTheme(this, newMode)
-
-                        dialog.dismiss()
-
-                        // Recreate activity to apply theme immediately
-                        recreateWithDelay()
-                    } catch (e: Exception) {
-                        Log.e("MenuActivity", "Error applying theme: ${e.message}")
-                        dialog.dismiss()
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } catch (e: Exception) {
-            Log.e("MenuActivity", "Error showing theme dialog: ${e.message}")
-        }
-    }
-
-    private fun recreateWithDelay() {
-        // Small delay to ensure theme is applied
-        Handler(Looper.getMainLooper()).postDelayed({
-            recreate()
-        }, 100)
-    }
-
-    private fun applySavedTheme() {
-        val savedTheme =
-            sharedPreferences.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        AppCompatDelegate.setDefaultNightMode(savedTheme)
-    }
-
-    private fun setupActionBar() {
-        try {
-            supportActionBar?.apply {
-                setDisplayShowTitleEnabled(true)
-                elevation = 4f
-                // Set ActionBar title to uppercase
-                title = title?.toString()?.uppercase()
-            }
-
-            // Setup status bar
-            setupStatusBar()
-        } catch (e: Exception) {
-            Log.e("MenuActivity", "Error setting up action bar: ${e.message}")
-        }
-    }
-
-    private fun setupStatusBar() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-
-                val isDarkMode = isDarkModeActive()
-
-                // Set status bar color based on theme
-                window.statusBarColor = if (isDarkMode) {
-                    ContextCompat.getColor(this, R.color.dark_primary)
+            } else {
+                if (retries > 0) {
+                    delay(100) // Delay for 1 second before retrying
+                    checkDatabaseAndFileStatus(retries - 1)
                 } else {
-                    ContextCompat.getColor(this, R.color.forest_green)
+                    withContext(Dispatchers.Main) {
+                        binding.apply {
+                            cvStartSurvey.isEnabled = false
+                            cvStartSurvey.isFocusable = false
+
+                            cvPropertyList.isEnabled = false
+                            cvPropertyList.isFocusable = false
+
+                            llStartSurvey.setBackgroundColor(Color.LTGRAY)
+                            llPropertyList.setBackgroundColor(Color.LTGRAY)
+                        }
+                    }
+                }
+            }
+
+        }
+
+        override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+            return try {
+                val inflater = menuInflater
+                inflater.inflate(R.menu.item_options_menu, menu)
+                // Tint menu icons based on current theme
+                menu?.let { updateMenuIconColors(it) }
+                true
+            } catch (e: Exception) {
+                Log.e("MenuActivity", "Error creating options menu: ${e.message}")
+                super.onCreateOptionsMenu(menu)
+            }
+        }
+
+        override fun onOptionsItemSelected(item: MenuItem): Boolean {
+            when (item.itemId) {
+                R.id.action_settings -> {
+                    Intent(this@MenuActivity, SettingsActivity::class.java).apply {
+                        startActivity(this)
+                    }
+                    return true
                 }
 
-                // Set status bar icon color (always light for both themes)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val flags = window.decorView.systemUiVisibility
-                    window.decorView.systemUiVisibility =
-                        flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                R.id.action_theme -> {
+                    showThemeDialog()
+                    return true
+                }
+
+                R.id.action_logout -> {
+                    startLogout()
+                    return true
+                }
+
+                else -> return super.onOptionsItemSelected(item)
+            }
+        }
+
+        private fun showThemeDialog() {
+            try {
+                val options = arrayOf("Light", "Dark", "System Default")
+                val currentMode = when (AppCompatDelegate.getDefaultNightMode()) {
+                    AppCompatDelegate.MODE_NIGHT_NO -> 0
+                    AppCompatDelegate.MODE_NIGHT_YES -> 1
+                    else -> 2
+                }
+
+                AlertDialog.Builder(this)
+                    .setTitle("Choose Theme")
+                    .setSingleChoiceItems(options, currentMode) { dialog, which ->
+                        try {
+                            val newMode = when (which) {
+                                0 -> AppCompatDelegate.MODE_NIGHT_NO
+                                1 -> AppCompatDelegate.MODE_NIGHT_YES
+                                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                            }
+
+                            // Use the Application helper method to update theme
+                            MyApplication.updateTheme(this, newMode)
+
+                            dialog.dismiss()
+
+                            // Recreate activity to apply theme immediately
+                            recreateWithDelay()
+                        } catch (e: Exception) {
+                            Log.e("MenuActivity", "Error applying theme: ${e.message}")
+                            dialog.dismiss()
+                        }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            } catch (e: Exception) {
+                Log.e("MenuActivity", "Error showing theme dialog: ${e.message}")
+            }
+        }
+
+        private fun recreateWithDelay() {
+            // Small delay to ensure theme is applied
+            Handler(Looper.getMainLooper()).postDelayed({
+                recreate()
+            }, 100)
+        }
+
+        private fun applySavedTheme() {
+            val savedTheme =
+                sharedPreferences.getInt("theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            AppCompatDelegate.setDefaultNightMode(savedTheme)
+        }
+
+        private fun setupActionBar() {
+            try {
+                supportActionBar?.apply {
+                    setDisplayShowTitleEnabled(true)
+                    elevation = 4f
+                    // Set ActionBar title to uppercase
+                    title = title?.toString()?.uppercase()
+                }
+
+                // Setup status bar
+                setupStatusBar()
+            } catch (e: Exception) {
+                Log.e("MenuActivity", "Error setting up action bar: ${e.message}")
+            }
+        }
+
+        private fun setupStatusBar() {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+
+                    val isDarkMode = isDarkModeActive()
+
+                    // Set status bar color based on theme
+                    window.statusBarColor = if (isDarkMode) {
+                        ContextCompat.getColor(this, R.color.dark_primary)
+                    } else {
+                        ContextCompat.getColor(this, R.color.forest_green)
+                    }
+
+                    // Set status bar icon color (always light for both themes)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val flags = window.decorView.systemUiVisibility
+                        window.decorView.systemUiVisibility =
+                            flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MenuActivity", "Error setting up status bar: ${e.message}")
+            }
+        }
+
+        private fun isDarkModeActive(): Boolean {
+            return try {
+                when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
+                    Configuration.UI_MODE_NIGHT_YES -> true
+                    Configuration.UI_MODE_NIGHT_NO -> false
+                    else -> false
+                }
+            } catch (e: Exception) {
+                Log.e("MenuActivity", "Error checking dark mode: ${e.message}")
+                false
+            }
+        }
+
+
+        private fun updateMenuIconColors(menu: Menu) {
+            val isDarkMode = isDarkModeActive()
+            val iconColor = if (isDarkMode) {
+                ContextCompat.getColor(this, R.color.white)
+            } else {
+                ContextCompat.getColor(this, R.color.white)
+            }
+
+            for (i in 0 until menu.size()) {
+                val menuItem = menu.getItem(i)
+                menuItem.icon?.let { icon ->
+                    val wrappedIcon = DrawableCompat.wrap(icon)
+                    DrawableCompat.setTint(wrappedIcon, iconColor)
+                    menuItem.icon = wrappedIcon
                 }
             }
-        } catch (e: Exception) {
-            Log.e("MenuActivity", "Error setting up status bar: ${e.message}")
-        }
-    }
-
-    private fun isDarkModeActive(): Boolean {
-        return try {
-            when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-                Configuration.UI_MODE_NIGHT_YES -> true
-                Configuration.UI_MODE_NIGHT_NO -> false
-                else -> false
-            }
-        } catch (e: Exception) {
-            Log.e("MenuActivity", "Error checking dark mode: ${e.message}")
-            false
-        }
-    }
-
-
-    private fun updateMenuIconColors(menu: Menu) {
-        val isDarkMode = isDarkModeActive()
-        val iconColor = if (isDarkMode) {
-            ContextCompat.getColor(this, R.color.white)
-        } else {
-            ContextCompat.getColor(this, R.color.white)
         }
 
-        for (i in 0 until menu.size()) {
-            val menuItem = menu.getItem(i)
-            menuItem.icon?.let { icon ->
-                val wrappedIcon = DrawableCompat.wrap(icon)
-                DrawableCompat.setTint(wrappedIcon, iconColor)
-                menuItem.icon = wrappedIcon
-            }
+        override fun onConfigurationChanged(newConfig: Configuration) {
+            super.onConfigurationChanged(newConfig)
+            // Update UI elements when configuration changes (like system theme change)
+            setupStatusBar()
+            invalidateOptionsMenu() // This will call onCreateOptionsMenu again
         }
+
+
     }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        // Update UI elements when configuration changes (like system theme change)
-        setupStatusBar()
-        invalidateOptionsMenu() // This will call onCreateOptionsMenu again
-    }
-
-
-}

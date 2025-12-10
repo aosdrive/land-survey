@@ -19,6 +19,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -109,6 +112,7 @@ import pk.gop.pulse.katchiAbadi.databinding.FragmentMapBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelStatus
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.io.File
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -229,12 +233,21 @@ class FragmentMap : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Back button click listener
-        binding.ivBack.setOnClickListener {
-            val intent = Intent(requireContext(), MenuActivity::class.java)
-            startActivity(intent)
-            requireActivity().finish()
+        // Set up the action bar
+        (activity as? AppCompatActivity)?.supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowHomeEnabled(true)
         }
+
+//        binding.ivReset.visibility = View.GONE
+
+
+//        // Back button click listener
+//        binding.ivBack.setOnClickListener {
+//            val intent = Intent(requireContext(), MenuActivity::class.java)
+//            startActivity(intent)
+//            requireActivity().finish()
+//        }
 
         // Set header text
         setHeaderText()
@@ -359,9 +372,9 @@ class FragmentMap : Fragment() {
     }
 
     private fun setupSplitModeListeners() {
-        binding.fabSplitMode.setOnClickListener {
-            toggleSplitMode()
-        }
+//        binding.fabSplitMode.setOnClickListener {
+//            toggleSplitMode()
+//        }
 
         binding.btnApplySplit.setOnClickListener {
             applySplit()
@@ -372,18 +385,18 @@ class FragmentMap : Fragment() {
         }
     }
 
-    private fun toggleSplitMode() {
-        if (isSplitMode) {
-            exitSplitMode()
-        } else {
-            if (selectedParcelGraphics.isNotEmpty()) {
-                enterSplitMode(selectedParcelGraphics.first())
-            } else {
-                Toast.makeText(context, "Please select a parcel to split", Toast.LENGTH_SHORT)
-                    .show()
-            }
-        }
-    }
+//    private fun toggleSplitMode() {
+//        if (isSplitMode) {
+//            exitSplitMode()
+//        } else {
+//            if (selectedParcelGraphics.isNotEmpty()) {
+//                enterSplitMode(selectedParcelGraphics.first())
+//            } else {
+//                Toast.makeText(context, "Please select a parcel to split", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//        }
+//    }
 
     private fun enterSplitMode(graphic: Graphic) {
         if (isSplitMode) {
@@ -1003,7 +1016,7 @@ class FragmentMap : Fragment() {
                     }
                 }
 
-                kotlinx.coroutines.delay(200)
+                delay(200)
 
                 stopLoadingParcels()
 
@@ -1020,7 +1033,7 @@ class FragmentMap : Fragment() {
                     loadMap(ids, currentShowLabels)
 
                     viewLifecycleOwner.lifecycleScope.launch {
-                        kotlinx.coroutines.delay(1000)
+                        delay(1000)
                     }
                 }
 
@@ -1093,6 +1106,7 @@ class FragmentMap : Fragment() {
     }
 
     private fun setupMap() {
+        ToastUtil.showLong(context,"Please wait while parcels are being loaded...")
         with(binding) {
 
             setupSplitOverlay()
@@ -1105,81 +1119,81 @@ class FragmentMap : Fragment() {
                     this@FragmentMap.surveyParcelsGraphics
                 ).also { parcelMapview.onTouchListener = it }
             } catch (e: Exception) {
-                Toast.makeText(context, "Restart the map screen.", Toast.LENGTH_LONG).show()
+                ToastUtil.showShort(context,"Restart the map screen.")
             }
 
             fab.setOnClickListener {
                 handleFabClick()
             }
 
-            ivSearch.setOnClickListener {
-                closeCallOut()
-                val items: MutableList<SearchableItem> = ArrayList()
+//            ivSearch.setOnClickListener {
+//                closeCallOut()
+//                val items: MutableList<SearchableItem> = ArrayList()
+//
+//                viewLifecycleOwner.lifecycleScope.launch {
+//                    ids.clear()
+//                    val areaId = sharedPreferences.getLong(
+//                        Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
+//                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
+//                    )
+//
+//                    val mauzaId = sharedPreferences.getLong(
+//                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
+//                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
+//                    )
+//
+//                    val areaName = sharedPreferences.getString(
+//                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
+//                        Constants.SHARED_PREF_DEFAULT_STRING
+//                    ).orEmpty()
+//
+//                    val parcels =
+//                        database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
+//
+//                    for (parcel in parcels) {
+//                        if (viewModel.parcelNo != parcel.parcelNo)
+//                            items.add(SearchableItem("${parcel.parcelNo}", "${parcel.id}"))
+//                    }
+//
+//                    SearchableMultiSelectSpinner.show(
+//                        requireContext(),
+//                        "Select Parcels",
+//                        "Done",
+//                        items,
+//                        object :
+//                            SelectionCompleteListener {
+//                            override fun onCompleteSelection(selectedItems: ArrayList<SearchableItem>) {
+//                                if (selectedItems.size > 0) {
+//                                    enableNewPoint = false
+//
+//                                    viewLifecycleOwner.lifecycleScope.launch {
+//                                        ids.clear()
+//                                        for (item in selectedItems) {
+//                                            ids.add(item.text.toLong())
+//                                        }
+//
+//                                        loadMap(ids, true)
+//                                    }
+//                                } else {
+//                                    Toast.makeText(
+//                                        context,
+//                                        "Parcel not selected",
+//                                        Toast.LENGTH_SHORT
+//                                    ).show()
+//                                }
+//                            }
+//                        })
+//                }
+//            }
 
-                viewLifecycleOwner.lifecycleScope.launch {
-                    ids.clear()
-                    val areaId = sharedPreferences.getLong(
-                        Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
-                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                    )
-
-                    val mauzaId = sharedPreferences.getLong(
-                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
-                    )
-
-                    val areaName = sharedPreferences.getString(
-                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-                        Constants.SHARED_PREF_DEFAULT_STRING
-                    ).orEmpty()
-
-                    val parcels =
-                        database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
-
-                    for (parcel in parcels) {
-                        if (viewModel.parcelNo != parcel.parcelNo)
-                            items.add(SearchableItem("${parcel.parcelNo}", "${parcel.id}"))
-                    }
-
-                    SearchableMultiSelectSpinner.show(
-                        requireContext(),
-                        "Select Parcels",
-                        "Done",
-                        items,
-                        object :
-                            SelectionCompleteListener {
-                            override fun onCompleteSelection(selectedItems: ArrayList<SearchableItem>) {
-                                if (selectedItems.size > 0) {
-                                    enableNewPoint = false
-
-                                    viewLifecycleOwner.lifecycleScope.launch {
-                                        ids.clear()
-                                        for (item in selectedItems) {
-                                            ids.add(item.text.toLong())
-                                        }
-
-                                        loadMap(ids, true)
-                                    }
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Parcel not selected",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        })
-                }
-            }
-
-            ivReset.setOnClickListener {
-                closeCallOut()
-                viewLifecycleOwner.lifecycleScope.launch {
-                    ids.clear()
-                    enableNewPoint = true
-                    loadMap(ids, false)
-                }
-            }
+//            ivReset.setOnClickListener {
+//                closeCallOut()
+//                viewLifecycleOwner.lifecycleScope.launch {
+//                    ids.clear()
+//                    enableNewPoint = true
+//                    loadMap(ids, false)
+//                }
+//            }
         }
     }
 
@@ -1394,8 +1408,8 @@ class FragmentMap : Fragment() {
                     binding.tvParcelCount.text = "Parcel Count: $parcelsCount"
                     binding.tvSurveyedParcelCount.text = "($totalSurveyedCount)"
                     binding.tvUnsurveyedParcelCount.text = "($unSurveyedCount)"
-                    binding.tvLcckedParcelCount.text = "($lockedCount)"
-                    binding.tvRevisitParcelCount.text = "($rejectedCount)"
+//                    binding.tvLcckedParcelCount.text = "($lockedCount)"
+//                    binding.tvRevisitParcelCount.text = "($rejectedCount)"
 
                     val tileManager = TileManager(requireContext())
 
@@ -1479,8 +1493,8 @@ class FragmentMap : Fragment() {
                     layoutRejected.visibility = View.VISIBLE
                     fab.visibility = View.VISIBLE
                     parcelMapview.visibility = View.VISIBLE
-                    ivReset.visibility = View.VISIBLE
-                    ivSearch.visibility = View.GONE
+//                    ivReset.visibility = View.VISIBLE
+//                    ivSearch.visibility = View.GONE
 
                     Log.d("LoadMap", "Map setup completed successfully")
                 }
@@ -1574,37 +1588,68 @@ class FragmentMap : Fragment() {
         originalLabelGraphics[parcelId] = labelGraphic
 
         val attrLabel = labelGraphic.attributes
-        attr["parcel_id"] = parcel.id
+        attrLabel["parcel_id"] = parcel.id
         attrLabel["pkid"] = parcel.pkid
-        attr["parcel_no"] = parcel.parcelNo
-        attr["sub_parcel_no"] = parcel.subParcelNo
-        attr["khewatInfo"] = parcel.khewatInfo
-        attr["surveyStatusCode"] = parcel.surveyStatusCode
-        attr["area"] = area
-        attr["geomWKT"] = parcel.geomWKT
-        attr["centroid"] = parcel.centroid
-        attr["isRejected"] = isRejected
+        attrLabel["parcel_no"] = parcel.parcelNo
+        attrLabel["sub_parcel_no"] = parcel.subParcelNo
+        attrLabel["khewatInfo"] = parcel.khewatInfo
+        attrLabel["surveyStatusCode"] = parcel.surveyStatusCode
+        attrLabel["area"] = area
+        attrLabel["geomWKT"] = parcel.geomWKT
+        attrLabel["centroid"] = parcel.centroid
+        attrLabel["isRejected"] = isRejected
         attrLabel["unit_id"] = parcel.unitId ?: 0L
         attrLabel["group_id"] = parcel.groupId ?: 0L
 
-        surveyLabelGraphics.graphics.add(labelGraphic)
+        // Add graphics to overlays
         surveyParcelsGraphics.graphics.add(parcelGraphic)
+        surveyLabelGraphics.graphics.add(labelGraphic)
 
+        // FIXED: Load grower codes asynchronously and create NEW graphic
         if (parcel.surveyStatusCode == 2) {
             CoroutineScope(Dispatchers.IO).launch {
                 val codes = newSurveyRepository.getGrowerCodesForParcel(parcel.id)
                 val growerText = if (codes.isNotEmpty()) {
-                    "${codes.joinToString(", ")}"
+                    codes.joinToString(", ")
                 } else {
                     "N/A"
                 }
-                withContext(Dispatchers.Main) {
-                    val updatedLabelText =
-                        "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
-                    (labelGraphic.symbol as? TextSymbol)?.text = updatedLabelText
 
-                    surveyLabelGraphics.graphics.remove(labelGraphic)
-                    surveyLabelGraphics.graphics.add(labelGraphic)
+                withContext(Dispatchers.Main) {
+                    // Find the index of the old graphic
+                    val index = surveyLabelGraphics.graphics.indexOf(labelGraphic)
+
+                    if (index >= 0) {
+                        // Remove old graphic
+                        surveyLabelGraphics.graphics.remove(labelGraphic)
+
+                        // Create NEW graphic with updated text
+                        val updatedLabelText = "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
+
+                        val updatedPolyLabelSymbol = TextSymbol().apply {
+                            text = updatedLabelText
+                            size = 16f
+                            color = textColor
+                            horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
+                            verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                            haloWidth = 1f
+                            fontWeight = TextSymbol.FontWeight.BOLD
+                        }
+
+                        val updatedLabelGraphic = Graphic(myPolygonCenterLatLon, updatedPolyLabelSymbol)
+
+                        // Copy attributes to new graphic
+                        val updatedAttrLabel = updatedLabelGraphic.attributes
+                        attrLabel.forEach { (key, value) ->
+                            updatedAttrLabel[key] = value
+                        }
+
+                        // Add new graphic at the same index
+                        surveyLabelGraphics.graphics.add(index, updatedLabelGraphic)
+
+                        // Update the reference in originalLabelGraphics
+                        originalLabelGraphics[parcelId] = updatedLabelGraphic
+                    }
                 }
             }
         }
@@ -1722,7 +1767,7 @@ class FragmentMap : Fragment() {
         )
 
         if (areaName != null) {
-            binding.tvHeader.text = "$mauzaName ($areaName) Map"
+            binding.tvHeader.text = "Mauza: $mauzaName ($areaName)"
         } else {
             binding.tvHeader.text = "$mauzaName (Map)"
         }
@@ -3392,6 +3437,7 @@ class FragmentMap : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
 
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
@@ -3411,6 +3457,36 @@ class FragmentMap : Fragment() {
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_fragment_map, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                // Back button
+                val intent = Intent(requireContext(), MenuActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+                requireActivity().finish()
+                true
+            }
+            R.id.action_refresh_map -> {
+                // Refresh button (same as your iv_reset functionality)
+                closeCallOut()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    ids.clear()
+                    enableNewPoint = true
+                    loadMap(ids, false)
+                }
+                Toast.makeText(requireContext(), "Refreshing map...", Toast.LENGTH_SHORT).show()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun getCurrentLocation() {
