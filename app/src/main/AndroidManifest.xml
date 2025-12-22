@@ -34,6 +34,12 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:allowBackup">
         <activity
+            android:name=".ui.activities.DroneSprayActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.activities.SolarPanelActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.activities.TaskListActivity"
             android:exported="false" />
         <activity

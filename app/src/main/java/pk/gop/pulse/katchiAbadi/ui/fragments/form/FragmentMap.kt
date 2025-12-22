@@ -112,7 +112,10 @@ import pk.gop.pulse.katchiAbadi.databinding.FragmentMapBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelStatus
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
+import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
+import pk.gop.pulse.katchiAbadi.ui.activities.DroneSprayActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.SolarPanelActivity
 import java.io.File
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -2271,6 +2274,8 @@ class FragmentMap : Fragment() {
         val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
 
         val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
+        val btnSolar = dialogView.findViewById<Button>(R.id.btn_solar_panel)
+        val btnDrone = dialogView.findViewById<Button>(R.id.btn_drone_spray)
 
         val delete = dialogView.findViewById<ImageView>(R.id.delete)
         val mapLocation = dialogView.findViewById<ImageView>(R.id.mapLocaton)
@@ -2280,10 +2285,18 @@ class FragmentMap : Fragment() {
         val etSplitParcel = dialogView.findViewById<EditText>(R.id.et_split_parcel)
 
         val lMergeParcel = dialogView.findViewById<LinearLayout>(R.id.layout_merge_parcel)
-        tvMergeParcel = dialogView.findViewById<TextView>(R.id.tv_merge_parcel)
-        tvMergeParcelHi = dialogView.findViewById<TextView>(R.id.tv_merge_parcel_hi)
+        tvMergeParcel = dialogView.findViewById(R.id.tv_merge_parcel)
+        tvMergeParcelHi = dialogView.findViewById(R.id.tv_merge_parcel_hi)
 
         val rgParcel = dialogView.findViewById<RadioGroup>(R.id.rg_parcel)
+
+        btnSolar.setOnClickListener {
+            IntentUtil.startActivity(context,SolarPanelActivity::class.java)
+        }
+
+        btnDrone.setOnClickListener {
+            IntentUtil.startActivity(context,DroneSprayActivity::class.java)
+        }
 
         rgParcel.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
