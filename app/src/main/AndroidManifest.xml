@@ -34,10 +34,16 @@
         android:usesCleartextTraffic="true"
         tools:replace="android:allowBackup">
         <activity
+            android:name=".ui.activities.InputItemsActivity"
+            android:theme="@style/Theme.Survey"
+            android:exported="false" />
+        <activity
             android:name=".ui.activities.DroneSprayActivity"
+            android:theme="@style/Theme.Survey"
             android:exported="false" />
         <activity
             android:name=".ui.activities.SolarPanelActivity"
+            android:theme="@style/Theme.Survey"
             android:exported="false" />
         <activity
             android:name=".ui.activities.TaskListActivity"

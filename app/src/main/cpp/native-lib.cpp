@@ -2,6 +2,7 @@
 #include <string>
 
 static std::string apiBaseUrlPublic = "https://zdost.aoserv.com/"; // PUBLIC URL JDW and Ashraf
+//static std::string apiBaseUrlPublic = "http://192.125.0.59:5000/"; // Use HTTP for local testing
 //static std::string apiBaseUrlPublic = "https://zd.aoserv.com/"; // PUBLIC URL RYK
 static std::string API_LOGIN = "api/Account/login";
 static std::string API_LOGIN_SUR = "api/Account/LoginUser";

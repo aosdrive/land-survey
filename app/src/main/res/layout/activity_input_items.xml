@@ -49,7 +49,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Solar Information"
+                        android:text="Inputs Information"
                         android:textColor="@color/forest_green"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -135,13 +135,14 @@
                     android:paddingEnd="44dp"
                     android:spinnerMode="dropdown" />
 
-                <!-- No of plates Input -->
+
+                <!-- Date Input -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="No of plates"
+                    android:hint="Date"
                     app:boxBackgroundMode="outline"
                     app:boxCornerRadiusBottomEnd="8dp"
                     app:boxCornerRadiusBottomStart="8dp"
@@ -154,22 +155,25 @@
                     app:startIconTint="@color/forest_green">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etYear"
+                        android:id="@+id/etDate"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="number"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:inputType="none"
                         android:maxLines="1"
                         android:textColor="#333333"
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Capacity Input -->
+
+                <!-- Items Input -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:hint="Capacity"
+                    android:hint="Items"
                     app:boxBackgroundMode="outline"
                     app:boxCornerRadiusBottomEnd="8dp"
                     app:boxCornerRadiusBottomStart="8dp"
@@ -177,14 +181,40 @@
                     app:boxCornerRadiusTopStart="8dp"
                     app:boxStrokeColor="@color/forest_green"
                     app:boxStrokeErrorColor="#D32F2F"
-                    app:counterEnabled="false"
-                    app:helperTextTextColor="#999999"
                     app:hintTextColor="@color/forest_green"
-                    app:startIconDrawable="@android:drawable/ic_dialog_map"
+                    app:startIconDrawable="@android:drawable/ic_menu_agenda"
                     app:startIconTint="@color/forest_green">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etArea"
+                        android:id="@+id/etItems"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:textColor="#333333"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Quantity Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:hint="Quantity"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxStrokeColor="@color/forest_green"
+                    app:boxStrokeErrorColor="#D32F2F"
+                    app:hintTextColor="@color/forest_green"
+                    app:startIconDrawable="@android:drawable/ic_menu_sort_by_size"
+                    app:startIconTint="@color/forest_green">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etQuantity"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="numberDecimal"
@@ -193,125 +223,28 @@
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Size Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                <!-- Measurement Unit -->
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Size"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxStrokeColor="@color/forest_green"
-                    app:boxStrokeErrorColor="#D32F2F"
-                    app:counterEnabled="false"
-                    app:helperTextTextColor="#999999"
-                    app:hintTextColor="@color/forest_green"
-                    app:startIconDrawable="@android:drawable/ic_dialog_map"
-                    app:startIconTint="@color/forest_green">
+                    android:paddingBottom="6dp"
+                    android:text="Measurement Unit"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/Size"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="numberDecimal"
-                        android:maxLines="1"
-                        android:textColor="#333333"
-                        android:textSize="15sp" />
-                </com.google.android.material.textfield.TextInputLayout>
+                <Spinner
+                    android:id="@+id/spinnerMeasurementUnit"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/spinner_selector"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="44dp"
+                    android:spinnerMode="dropdown" />
+
 
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Owner Information Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
-
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="vertical"-->
-<!--                android:padding="16dp">-->
-
-<!--                <LinearLayout-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:gravity="center_vertical"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:paddingBottom="16dp">-->
-
-<!--                    <View-->
-<!--                        android:layout_width="4dp"-->
-<!--                        android:layout_height="24dp"-->
-<!--                        android:layout_marginEnd="8dp"-->
-<!--                        android:background="@color/forest_green" />-->
-
-<!--                    <TextView-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:text="Owner / Leasee Information"-->
-<!--                        android:textColor="@color/forest_green"-->
-<!--                        android:textSize="18sp"-->
-<!--                        android:textStyle="bold" />-->
-<!--                </LinearLayout>-->
-
-<!--                <LinearLayout-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:gravity="center"-->
-<!--                    android:orientation="horizontal"-->
-<!--                    android:weightSum="2">-->
-
-<!--                    <com.google.android.material.button.MaterialButton-->
-<!--                        android:id="@+id/btnSelectOwner"-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="56dp"-->
-<!--                        android:layout_marginEnd="8dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:text="Select from List"-->
-<!--                        android:textColor="@color/white"-->
-<!--                        android:textStyle="bold"-->
-<!--                        app:backgroundTint="@color/forest_green"-->
-<!--                        app:cornerRadius="8dp"-->
-<!--                        app:icon="@android:drawable/ic_menu_search"-->
-<!--                        app:iconGravity="textStart"-->
-<!--                        app:iconTint="@color/white" />-->
-
-<!--                    <com.google.android.material.button.MaterialButton-->
-<!--                        android:id="@+id/btnAddNewPerson"-->
-<!--                        android:layout_width="0dp"-->
-<!--                        android:layout_height="56dp"-->
-<!--                        android:layout_marginStart="8dp"-->
-<!--                        android:layout_weight="1"-->
-<!--                        android:text="Add New"-->
-<!--                        android:textColor="@color/white"-->
-<!--                        android:textStyle="bold"-->
-<!--                        app:backgroundTint="@color/dark_green"-->
-<!--                        app:cornerRadius="8dp"-->
-<!--                        app:icon="@android:drawable/ic_input_add"-->
-<!--                        app:iconGravity="textStart"-->
-<!--                        app:iconTint="@color/white" />-->
-<!--                </LinearLayout>-->
-
-<!--                <LinearLayout-->
-<!--                    android:id="@+id/layoutPersonEntries"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:orientation="vertical"-->
-<!--                    android:paddingTop="16dp" />-->
-
-<!--            </LinearLayout>-->
         </androidx.cardview.widget.CardView>
 
         <!-- Submit Button -->
@@ -320,6 +253,7 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="24dp"
             android:layout_marginEnd="16dp"
             android:text="Submit"
             android:textColor="@color/white"

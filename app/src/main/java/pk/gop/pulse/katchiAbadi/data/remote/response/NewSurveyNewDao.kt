@@ -23,12 +23,6 @@ interface NewSurveyNewDao {
 
     @Query("SELECT COUNT(pkId ) as totalCount FROM new_surveys WHERE statusBit = 0")
     suspend fun totalPendingCount(): Int
-//   @Query("SELECT COUNT(pkId ) as totalCount FROM new_surveys WHERE statusBit = 0")
-//   fun liveTotalPendingCount(): LiveData<Int>
-//@Query("SELECT * FROM new_surveys WHERE statusBit = 0")
-//   fun getAllPendingSurveysLiveData(): LiveData<NewSurveyNewEntity>
-
-
 
     @Query("SELECT COUNT(pkId) FROM new_surveys WHERE statusBit = 0")
     fun liveTotalPendingCount(): Flow<Int> // ✅ Use Flow instead of LiveData

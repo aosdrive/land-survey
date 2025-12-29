@@ -4,7 +4,7 @@
         <!-- Replace with your actual server domain -->
         <domain includeSubdomains="true">your-server-domain.com</domain>
         <!-- If using IP address -->
-        <domain includeSubdomains="true">192.168.1.100</domain>
+        <domain includeSubdomains="true">192.125.0.59</domain>
     </domain-config>
 
     <!-- For development only - REMOVE IN PRODUCTION -->

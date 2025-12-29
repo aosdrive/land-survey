@@ -134,7 +134,85 @@
 <!--                    android:paddingStart="16dp"-->
 <!--                    android:paddingEnd="44dp"-->
 <!--                    android:spinnerMode="dropdown" />-->
+                <!-- Unit List -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="6dp"
+                    android:text="Unit List"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
+                <Spinner
+                    android:id="@+id/etCrop"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/spinner_selector"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="44dp"
+                    android:spinnerMode="dropdown" />
+
+                <!-- Circle List -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="6dp"
+                    android:text="Circle List"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/etCropType"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/spinner_selector"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="44dp"
+                    android:spinnerMode="dropdown" />
+
+                <!-- Mauza List -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="6dp"
+                    android:text="Mauza List"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerPropertyStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/spinner_selector"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="44dp"
+                    android:spinnerMode="dropdown" />
+
+                <!-- Grower List -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="6dp"
+                    android:text="Grower List"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerOwnershipStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/spinner_selector"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="44dp"
+                    android:spinnerMode="dropdown" />
                 <!-- No of plates Input -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -237,81 +315,81 @@
             app:cardCornerRadius="12dp"
             app:cardElevation="3dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="16dp">-->
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingBottom="16dp">
+<!--                <LinearLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:gravity="center_vertical"-->
+<!--                    android:orientation="horizontal"-->
+<!--                    android:paddingBottom="16dp">-->
 
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@color/forest_green" />
+<!--                    <View-->
+<!--                        android:layout_width="4dp"-->
+<!--                        android:layout_height="24dp"-->
+<!--                        android:layout_marginEnd="8dp"-->
+<!--                        android:background="@color/forest_green" />-->
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Owner / Leasee Information"
-                        android:textColor="@color/forest_green"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+<!--                    <TextView-->
+<!--                        android:layout_width="0dp"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_weight="1"-->
+<!--                        android:text="Owner / Leasee Information"-->
+<!--                        android:textColor="@color/forest_green"-->
+<!--                        android:textSize="18sp"-->
+<!--                        android:textStyle="bold" />-->
+<!--                </LinearLayout>-->
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
+<!--                <LinearLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:gravity="center"-->
+<!--                    android:orientation="horizontal"-->
+<!--                    android:weightSum="2">-->
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSelectOwner"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        android:text="Select from List"
-                        android:textColor="@color/white"
-                        android:textStyle="bold"
-                        app:backgroundTint="@color/forest_green"
-                        app:cornerRadius="8dp"
-                        app:icon="@android:drawable/ic_menu_search"
-                        app:iconGravity="textStart"
-                        app:iconTint="@color/white" />
+<!--                    <com.google.android.material.button.MaterialButton-->
+<!--                        android:id="@+id/btnSelectOwner"-->
+<!--                        android:layout_width="0dp"-->
+<!--                        android:layout_height="56dp"-->
+<!--                        android:layout_marginEnd="8dp"-->
+<!--                        android:layout_weight="1"-->
+<!--                        android:text="Select from List"-->
+<!--                        android:textColor="@color/white"-->
+<!--                        android:textStyle="bold"-->
+<!--                        app:backgroundTint="@color/forest_green"-->
+<!--                        app:cornerRadius="8dp"-->
+<!--                        app:icon="@android:drawable/ic_menu_search"-->
+<!--                        app:iconGravity="textStart"-->
+<!--                        app:iconTint="@color/white" />-->
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnAddNewPerson"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        android:text="Add New"
-                        android:textColor="@color/white"
-                        android:textStyle="bold"
-                        app:backgroundTint="@color/dark_green"
-                        app:cornerRadius="8dp"
-                        app:icon="@android:drawable/ic_input_add"
-                        app:iconGravity="textStart"
-                        app:iconTint="@color/white" />
-                </LinearLayout>
+<!--                    <com.google.android.material.button.MaterialButton-->
+<!--                        android:id="@+id/btnAddNewPerson"-->
+<!--                        android:layout_width="0dp"-->
+<!--                        android:layout_height="56dp"-->
+<!--                        android:layout_marginStart="8dp"-->
+<!--                        android:layout_weight="1"-->
+<!--                        android:text="Add New"-->
+<!--                        android:textColor="@color/white"-->
+<!--                        android:textStyle="bold"-->
+<!--                        app:backgroundTint="@color/dark_green"-->
+<!--                        app:cornerRadius="8dp"-->
+<!--                        app:icon="@android:drawable/ic_input_add"-->
+<!--                        app:iconGravity="textStart"-->
+<!--                        app:iconTint="@color/white" />-->
+<!--                </LinearLayout>-->
 
-                <LinearLayout
-                    android:id="@+id/layoutPersonEntries"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingTop="16dp" />
+<!--                <LinearLayout-->
+<!--                    android:id="@+id/layoutPersonEntries"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:orientation="vertical"-->
+<!--                    android:paddingTop="16dp" />-->
 
-            </LinearLayout>
+<!--            </LinearLayout>-->
         </androidx.cardview.widget.CardView>
 
 

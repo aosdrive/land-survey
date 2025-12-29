@@ -7,27 +7,21 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.databinding.ActivityInputItemsBinding
-import pk.gop.pulse.katchiAbadi.databinding.ActivitySolarPanelBinding
 
-class SolarPanelActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivitySolarPanelBinding
+class InputItemsActivity : AppCompatActivity() {
+    private lateinit var binding:ActivityInputItemsBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding=ActivitySolarPanelBinding.inflate(layoutInflater)
+        binding=ActivityInputItemsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        // Apply window insets to handle edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        // Setup ActionBar
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
-        supportActionBar?.title = "Solar Panel Survey"
+        supportActionBar?.title = "Input Items"
     }
 
     override fun onSupportNavigateUp(): Boolean {

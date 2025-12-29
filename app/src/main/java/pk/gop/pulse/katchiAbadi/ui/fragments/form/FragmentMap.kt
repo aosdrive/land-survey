@@ -115,6 +115,7 @@ import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
 import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import pk.gop.pulse.katchiAbadi.ui.activities.DroneSprayActivity
+import pk.gop.pulse.katchiAbadi.ui.activities.InputItemsActivity
 import pk.gop.pulse.katchiAbadi.ui.activities.SolarPanelActivity
 import java.io.File
 import java.text.ParseException
@@ -2276,6 +2277,7 @@ class FragmentMap : Fragment() {
         val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
         val btnSolar = dialogView.findViewById<Button>(R.id.btn_solar_panel)
         val btnDrone = dialogView.findViewById<Button>(R.id.btn_drone_spray)
+        val btnInputs = dialogView.findViewById<Button>(R.id.btn_inputs)
 
         val delete = dialogView.findViewById<ImageView>(R.id.delete)
         val mapLocation = dialogView.findViewById<ImageView>(R.id.mapLocaton)
@@ -2296,6 +2298,10 @@ class FragmentMap : Fragment() {
 
         btnDrone.setOnClickListener {
             IntentUtil.startActivity(context,DroneSprayActivity::class.java)
+        }
+
+        btnInputs.setOnClickListener {
+            IntentUtil.startActivity(context,InputItemsActivity::class.java)
         }
 
         rgParcel.setOnCheckedChangeListener { _, checkedId ->

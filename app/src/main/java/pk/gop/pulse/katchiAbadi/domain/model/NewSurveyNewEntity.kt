@@ -28,12 +28,11 @@ data class NewSurveyNewEntity(
     val parcelOperation: String = "",
     val parcelOperationValue: String = "",
 
-
-
 //    var userId: Long,
 //    var surveyId: Long,
 
     val statusBit: Int = 0,
+
 
 
 
