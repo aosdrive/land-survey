@@ -1,11 +1,12 @@
 package pk.gop.pulse.katchiAbadi.common
 
+import com.devstune.searchablemultiselectspinner.BuildConfig
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 object Constants {
 
-    var VERSION_NAME = ""
+    var VERSION_NAME = BuildConfig.VERSION_NAME
 
     const val SAVE_NAH = true
 
@@ -23,6 +24,8 @@ object Constants {
     var POST_SURVEY_DATA_URL = ""
     var POST_SURVEY_DATA_REVISIT_URL = ""
     var POST_SURVEY_DATA_RETAKE_PICTURE_URL = ""
+    var CHECK_VERSION_URL = "" // Add this for version check
+
 
     const val DATABASE_NAME = "kachi_abadi_db"
 

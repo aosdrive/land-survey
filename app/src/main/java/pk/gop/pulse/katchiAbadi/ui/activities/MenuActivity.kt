@@ -61,6 +61,7 @@ import pk.gop.pulse.katchiAbadi.databinding.ActivityMenuBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.LogoutUseCase
+import pk.gop.pulse.katchiAbadi.presentation.base.BaseActivity
 import pk.gop.pulse.katchiAbadi.presentation.menu.MenuViewModel
 import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
@@ -73,7 +74,7 @@ import kotlin.math.tan
 
 @Suppress("DEPRECATION")
 @AndroidEntryPoint
-class MenuActivity : AppCompatActivity() {
+class MenuActivity : BaseActivity() {
 
     private lateinit var binding: ActivityMenuBinding
     private val viewModel: MenuViewModel by viewModels()

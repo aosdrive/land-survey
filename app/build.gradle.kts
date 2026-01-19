@@ -168,7 +168,6 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-
     // Import the BoM for the Firebase platform
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
 
@@ -182,6 +181,11 @@ dependencies {
 
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+
+    implementation ("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+
+//    // LeakCanary
+//    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
 
 
 }

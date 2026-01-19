@@ -6,4 +6,6 @@ data class ValidationUseCase(
     val forgotPasswordUseCase: ForgotPasswordUseCase,
     val otpVerificationUseCase: OtpVerificationUseCase,
     val updatePasswordUseCase: UpdatePasswordUseCase,
+    val checkAppVersionUseCase: CheckAppVersionUseCase // Add this
+
 )

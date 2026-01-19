@@ -25,6 +25,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
+import pk.gop.pulse.katchiAbadi.data.remote.response.VersionCheckResponse
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelCreationRequest
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
 import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
@@ -199,4 +200,11 @@ interface ServerApi {
         @Query("userId") userId: Long,
         @Query("Mode") mode: String = "Android",
     ): Response<LogoutResponse>
+
+    @GET
+    suspend fun checkAppVersion(
+        @Url url: String,
+        @Query("appVersion") appVersion: String
+    ): Response<VersionCheckResponse>
+
 }

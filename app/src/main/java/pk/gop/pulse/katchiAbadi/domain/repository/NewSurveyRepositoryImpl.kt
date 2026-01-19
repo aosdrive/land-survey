@@ -141,6 +141,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
     ): Resource<Unit> {
         return try {
             Log.d(TAG, "=== uploadSurvey START ===")
+            Log.d(TAG, "App Version: ${Constants.VERSION_NAME}")
             Log.d(TAG, "Survey object: parcelId=${survey.parcelId}, parcelOperation=${survey.parcelOperation}")
 
             val subparcels = withContext(Dispatchers.IO) {
@@ -439,29 +440,88 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "Response code: ${response.code()}")
             Log.d(TAG, "Response body present: ${response.body() != null}")
 
-            if (response.isSuccessful && response.body() != null) {
-                Log.i(TAG, "Survey upload successful - marking surveys as uploaded")
-                withContext(Dispatchers.IO) {
-                    // Mark all related surveys as uploaded
-                    subparcels.forEach { subSurvey ->
-                        dao.markAsUploaded(subSurvey.pkId)
-                        Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
+            when {
+                response.isSuccessful && response.body() != null -> {
+                    Log.i(TAG, "Survey upload successful - marking surveys as uploaded")
+                    withContext(Dispatchers.IO) {
+                        subparcels.forEach { subSurvey ->
+                            dao.markAsUploaded(subSurvey.pkId)
+                            Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
+                        }
+                        if (survey.parcelOperation == "Split") {
+                            deactivateOriginalParcel(survey.parcelId)
+                            Log.d(TAG, "Deactivated original parcel locally after successful upload")
+                        }
                     }
-                    // deactivate original parcel locally AFTER successful upload
-                    if (survey.parcelOperation == "Split") {
-                        deactivateOriginalParcel(survey.parcelId)
-                        Log.d(TAG, "Deactivated original parcel locally after successful upload")
-                    }
+                    Log.i(TAG, "=== UPLOAD COMPLETED SUCCESSFULLY ===")
+                    Resource.Success(Unit)
                 }
-                Log.i(TAG, "=== UPLOAD COMPLETED SUCCESSFULLY ===")
-                Resource.Success(Unit)
-            } else {
-                val errorBody = response.errorBody()?.string() ?: "Unknown"
-                val errorMessage = "Server error: $errorBody (code ${response.code()})"
-                Log.e(TAG, "Upload failed: $errorMessage")
-                Resource.Error(errorMessage)
+
+                response.code() == 401 -> {
+                    val errorBody = response.errorBody()?.string() ?: ""
+                    Log.e(TAG, "401 Unauthorized - Error body: $errorBody")
+
+                    try {
+                        val gson = com.google.gson.Gson()
+                        val errorMap = gson.fromJson(errorBody, Map::class.java)
+
+                        val isUpdateRequired = errorMap["isUpdateRequired"] as? Boolean ?: false
+                        val shouldLogout = errorMap["shouldLogout"] as? Boolean ?: false
+                        val message = errorMap["message"] as? String ?: ""
+
+                        if (isUpdateRequired || shouldLogout) {
+                            Log.e(TAG, "VERSION OUTDATED: $message")
+
+                            // Clear session
+                            sharedPreferences.edit().clear().apply()
+
+                            return Resource.Error("APP_VERSION_OUTDATED: $message")
+                        }
+                    } catch (parseError: Exception) {
+                        Log.e(TAG, "Error parsing 401 response: ${parseError.message}")
+                    }
+
+                    // Check message content if parsing fails
+                    if (errorBody.contains("outdated version", ignoreCase = true) ||
+                        errorBody.contains("isUpdateRequired", ignoreCase = true) ||
+                        errorBody.contains("shouldLogout", ignoreCase = true) ||
+                        errorBody.contains("App version header", ignoreCase = true)) {
+
+                        Log.e(TAG, "VERSION OUTDATED detected in error body")
+                        sharedPreferences.edit().clear().apply()
+                        return Resource.Error("APP_VERSION_OUTDATED: You are using an outdated version. Please contact admin to get the latest app.")
+                    }
+
+                    Resource.Error("Unauthorized: $errorBody")
+                }
+
+                else -> {
+                    val errorBody = response.errorBody()?.string() ?: "Unknown"
+                    val errorMessage = "Server error: $errorBody (code ${response.code()})"
+                    Log.e(TAG, "Upload failed: $errorMessage")
+                    Resource.Error(errorMessage)
+                }
             }
 
+        } catch (e: retrofit2.HttpException) {
+            Log.e(TAG, "HTTP Exception during survey upload: ${e.message}", e)
+
+            if (e.code() == 401) {
+                val errorBody = e.response()?.errorBody()?.string() ?: ""
+                Log.e(TAG, "HTTP 401 error body: $errorBody")
+
+                if (errorBody.contains("isUpdateRequired", ignoreCase = true) ||
+                    errorBody.contains("shouldLogout", ignoreCase = true) ||
+                    errorBody.contains("outdated version", ignoreCase = true) ||
+                    errorBody.contains("App version header", ignoreCase = true)) {
+
+                    Log.e(TAG, "VERSION OUTDATED in HTTP exception")
+                    sharedPreferences.edit().clear().apply()
+                    return Resource.Error("APP_VERSION_OUTDATED: You are using an outdated version. Please contact admin to get the latest app.")
+                }
+            }
+
+            Resource.Error(e.message ?: "HTTP error occurred")
         } catch (e: Exception) {
             Log.e(TAG, "Exception during survey upload", e)
             Resource.Error(e.message ?: "Unexpected error")

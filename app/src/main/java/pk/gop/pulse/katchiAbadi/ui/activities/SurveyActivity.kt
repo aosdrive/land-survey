@@ -71,6 +71,7 @@ class SurveyActivity : AppCompatActivity() {
 
     @Inject
     lateinit var serverApi: ServerApi
+
     @Inject
     lateinit var dropdownRepository: DropdownRepository
 
@@ -162,6 +163,7 @@ class SurveyActivity : AppCompatActivity() {
         onBackPressed()
         return true
     }
+
     private fun setupAreaInputRestrictions() {
         binding.etArea.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -328,7 +330,12 @@ class SurveyActivity : AppCompatActivity() {
 
     private fun setupVarietyListener() {
         binding.etVariety.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
                 if (isSettingSpinnerProgrammatically) return
 
                 val selected = parent.getItemAtPosition(position).toString()
@@ -346,7 +353,12 @@ class SurveyActivity : AppCompatActivity() {
 
     private fun setupCropTypeListener() {
         binding.etCropType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
                 if (isSettingSpinnerProgrammatically) return
 
                 val selected = parent.getItemAtPosition(position).toString()
@@ -459,6 +471,30 @@ class SurveyActivity : AppCompatActivity() {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
 
         binding.btnSelectOwner.setOnClickListener {
+            // Check current ownership status
+            val ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString()
+            val currentPersons = personEntryHelper.getAllPersons()
+            val currentPersonCount = currentPersons.size
+
+            // Validate based on ownership status
+            if (ownershipStatus == "Self" && currentPersonCount >= 1) {
+                AlertDialog.Builder(this)
+                    .setTitle("Limit Reached")
+                    .setMessage("You can only add 1 owner for 'Self' ownership status.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            if (ownershipStatus == "On Lease" && currentPersonCount >= 2) {
+                AlertDialog.Builder(this)
+                    .setTitle("Limit Reached")
+                    .setMessage("You can only add 1 owner and 1 lease holder for 'On Lease' status.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
             lifecycleScope.launch {
                 val mauzaId =
                     sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
@@ -479,6 +515,30 @@ class SurveyActivity : AppCompatActivity() {
         }
 
         binding.btnAddNewPerson.setOnClickListener {
+            // Check current ownership status
+            val ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString()
+            val currentPersons = personEntryHelper.getAllPersons()
+            val currentPersonCount = currentPersons.size
+
+            // Validate based on ownership status
+            if (ownershipStatus == "Self" && currentPersonCount >= 1) {
+                AlertDialog.Builder(this)
+                    .setTitle("Limit Reached")
+                    .setMessage("You can only add 1 owner for 'Self' ownership status.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            if (ownershipStatus == "On Lease" && currentPersonCount >= 2) {
+                AlertDialog.Builder(this)
+                    .setTitle("Limit Reached")
+                    .setMessage("You can only add 1 owner and 1 lease holder for 'On Lease' status.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
             personEntryHelper.addPersonView(null, editable = true)
         }
     }
@@ -774,7 +834,52 @@ class SurveyActivity : AppCompatActivity() {
 
                 AlertDialog.Builder(this)
                     .setTitle("Missing Required Fields")
-                    .setMessage("Please fill in the following required fields:\n\n${missingFields.joinToString("\n")}")
+                    .setMessage(
+                        "Please fill in the following required fields:\n\n${
+                            missingFields.joinToString(
+                                "\n"
+                            )
+                        }"
+                    )
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+// ===== VALIDATION: Check for valid Grower Code =====
+            val growerCodePattern = Regex("""^\d{2}-(\d{2}-\d{5}|\d{5})$""")
+
+            val personsWithoutGrowerCode = rawPersons.filter { person ->
+                val growerCode = person.growerCode?.trim()
+
+                Log.d("GrowerCodeValidation", "Person: ${person.firstName}")
+                Log.d("GrowerCodeValidation", "Raw code: '${person.growerCode}'")
+                Log.d("GrowerCodeValidation", "Cleaned code: '$growerCode'")
+                Log.d(
+                    "GrowerCodeValidation",
+                    "Pattern matches: ${growerCode?.let { growerCodePattern.matches(it) }}"
+                )
+
+                growerCode.isNullOrBlank() || !growerCodePattern.matches(growerCode)
+            }
+
+            if (personsWithoutGrowerCode.isNotEmpty()) {
+                val invalidCodes = mutableListOf<String>()
+                personsWithoutGrowerCode.forEachIndexed { index, person ->
+                    val name = person.firstName ?: "Person ${index + 1}"
+                    val code = person.growerCode?.trim() ?: "Empty"
+                    invalidCodes.add("$name: $code")
+                }
+
+                AlertDialog.Builder(this)
+                    .setTitle("Invalid Grower Code")
+                    .setMessage(
+                        "Please provide valid Grower Code with dashes (numbers only):\n• 12-34-56789 (11 digits)\n• 12-56789 (8 digits)\n\nInvalid codes:\n${
+                            invalidCodes.joinToString(
+                                "\n"
+                            )
+                        }"
+                    )
                     .setPositiveButton("OK", null)
                     .show()
                 return@setOnClickListener
@@ -826,12 +931,14 @@ class SurveyActivity : AppCompatActivity() {
                         // Check if this is an existing person (personId > 0) or a new person
                         if (person.personId != null && person.personId!! > 0) {
                             // EXISTING PERSON: Check if already in database
-                            val existingPerson = database.personDao().getPersonById(person.personId!!)
+                            val existingPerson =
+                                database.personDao().getPersonById(person.personId!!)
 
                             if (existingPerson != null) {
                                 // Person exists: Create a LINK/RELATIONSHIP record only
                                 // Option 1: Update the existing person with new surveyId
-                                database.personDao().updatePerson(personWithSurveyId.copy(id = existingPerson.id))
+                                database.personDao()
+                                    .updatePerson(personWithSurveyId.copy(id = existingPerson.id))
 
                                 // Option 2 (Better): If you have a separate junction table for many-to-many
                                 // database.surveyPersonDao().insert(SurveyPersonLink(surveyId, person.personId!!))
@@ -850,7 +957,10 @@ class SurveyActivity : AppCompatActivity() {
                             if (similarPerson != null) {
                                 // Similar person found, link to existing
                                 database.personDao().updatePerson(
-                                    personWithSurveyId.copy(id = similarPerson.id, personId = similarPerson.personId)
+                                    personWithSurveyId.copy(
+                                        id = similarPerson.id,
+                                        personId = similarPerson.personId
+                                    )
                                 )
                             } else {
                                 // Completely new person, insert
@@ -876,7 +986,11 @@ class SurveyActivity : AppCompatActivity() {
                     database.tempSurveyLogDao().insertLog(log)
 
                     // If operation is "Merge", mark the merged parcels as surveyed
-                    if (parcelOperation.equals("Merge", ignoreCase = true) && parcelOperationValue.isNotBlank()) {
+                    if (parcelOperation.equals(
+                            "Merge",
+                            ignoreCase = true
+                        ) && parcelOperationValue.isNotBlank()
+                    ) {
                         Log.d("SurveyActivity", "Merge operation detected.")
                         Log.d("SurveyActivity", "Raw merge parcel IDs: $parcelOperationValue")
 
@@ -887,7 +1001,10 @@ class SurveyActivity : AppCompatActivity() {
                         Log.d("SurveyActivity", "Parsed merge parcel IDs: $parcelIdList")
 
                         parcelIdList.forEach { id ->
-                            Log.d("SurveyActivity", "Marking parcelId=$id as surveyed with surveyId=$surveyId")
+                            Log.d(
+                                "SurveyActivity",
+                                "Marking parcelId=$id as surveyed with surveyId=$surveyId"
+                            )
                             database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
                         }
                     }

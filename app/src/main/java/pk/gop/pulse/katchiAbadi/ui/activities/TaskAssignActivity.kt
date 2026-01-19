@@ -171,10 +171,16 @@ class TaskAssignActivity : AppCompatActivity() {
         }
 
     private fun setupSpinners() {
-        val propertyTypeList =
-            listOf("Pest Attack", "Drone Spray", "Excess Water", "Water Shortage", "Other")
-        binding.spinnerPropertyStatus.adapter =
-            ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, propertyTypeList)
+        val propertyTypeList = listOf("Pest Attack", "Drone Spray", "Excess Water", "Water Shortage", "Other")
+
+        val adapter = ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_item,  // Layout for the closed spinner
+            propertyTypeList
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Layout for dropdown list
+
+        binding.spinnerPropertyStatus.adapter = adapter
     }
 
     private fun setupUserListSection() {

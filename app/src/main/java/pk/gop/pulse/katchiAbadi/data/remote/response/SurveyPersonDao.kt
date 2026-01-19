@@ -47,4 +47,7 @@ interface SurveyPersonDao {
 
     @Update
     suspend fun updatePerson(person: SurveyPersonEntity)
+
+    @Query("SELECT * FROM survey_persons WHERE surveyId = :surveyId")
+    suspend fun getPersonsBySurveyId(surveyId: Int): List<SurveyPersonEntity>
 }

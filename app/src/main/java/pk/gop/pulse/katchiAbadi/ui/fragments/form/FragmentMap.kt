@@ -1609,10 +1609,24 @@ class FragmentMap : Fragment() {
         surveyParcelsGraphics.graphics.add(parcelGraphic)
         surveyLabelGraphics.graphics.add(labelGraphic)
 
-        // FIXED: Load grower codes asynchronously and create NEW graphic
+        // Load grower codes for ALL surveyed parcels (not just parent in merge)
+        // Load grower codes for ALL surveyed parcels (including merged ones)
         if (parcel.surveyStatusCode == 2) {
             CoroutineScope(Dispatchers.IO).launch {
-                val codes = newSurveyRepository.getGrowerCodesForParcel(parcel.id)
+                val surveyId = parcel.surveyId
+
+                val codes = if (surveyId != null && surveyId > 0) {
+                    try {
+                        val persons = database.personDao().getPersonsBySurveyId(surveyId)
+                        persons.mapNotNull { it.growerCode?.takeIf { code -> code.isNotBlank() } }
+                    } catch (e: Exception) {
+                        Log.e("AddGraphics", "Error loading grower codes: ${e.message}")
+                        emptyList()
+                    }
+                } else {
+                    emptyList()
+                }
+
                 val growerText = if (codes.isNotEmpty()) {
                     codes.joinToString(", ")
                 } else {
@@ -1653,12 +1667,13 @@ class FragmentMap : Fragment() {
 
                         // Update the reference in originalLabelGraphics
                         originalLabelGraphics[parcelId] = updatedLabelGraphic
+
+                        Log.d("AddGraphics", "✅ Updated grower codes for parcel ${parcel.id}: $growerText")
                     }
                 }
             }
         }
     }
-
     private fun restoreOriginalGraphics() {
         Log.d("RESTORE_DEBUG", "Starting graphics restoration...")
 
@@ -1716,35 +1731,87 @@ class FragmentMap : Fragment() {
                     else -> Color.YELLOW
                 }
 
-                val polyLabelSymbol = TextSymbol().apply {
-                    text = "$displayText\n$khewatInfo"
-                    size = 10f
-                    color = textColor
-                    horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
-                    verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
-                    haloColor = highlightColor
-                    haloWidth = 1f
-                    fontWeight = TextSymbol.FontWeight.BOLD
-                }
+                // ============ FIX: Load grower codes for surveyed parcels ============
+                if (surveyStatus == 2) {
+                    // Load grower codes asynchronously
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val codes = newSurveyRepository.getGrowerCodesForParcel(parcelId)
+                        val growerText = if (codes.isNotEmpty()) {
+                            codes.joinToString(", ")
+                        } else {
+                            ""
+                        }
 
-                val geometry = graphic.geometry
-                val centerPoint = if (geometry is Polygon) {
-                    geometry.extent.center
+                        withContext(Dispatchers.Main) {
+                            val labelText = if (growerText.isNotEmpty()) {
+                                "$displayText\n$khewatInfo\n$growerText"
+                            } else {
+                                "$displayText\n$khewatInfo"
+                            }
+
+                            val polyLabelSymbol = TextSymbol().apply {
+                                text = labelText
+                                size = 10f
+                                color = textColor
+                                horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
+                                verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                                haloColor = highlightColor
+                                haloWidth = 1f
+                                fontWeight = TextSymbol.FontWeight.BOLD
+                            }
+
+                            val geometry = graphic.geometry
+                            val centerPoint = if (geometry is Polygon) {
+                                geometry.extent.center
+                            } else {
+                                geometry.extent.center
+                            }
+
+                            val newLabel = Graphic(centerPoint, polyLabelSymbol)
+
+                            val newLabelAttrs = newLabel.attributes
+                            graphic.attributes.forEach { (key, value) ->
+                                newLabelAttrs[key] = value
+                            }
+
+                            surveyLabelGraphics.graphics.add(newLabel)
+                            originalLabelGraphics[parcelId] = newLabel
+
+                            Log.d("RESTORE_DEBUG", "Created new label with grower codes for parcel_id: $parcelId")
+                        }
+                    }
                 } else {
-                    geometry.extent.center
+                    // For unsurveyed parcels, create label without grower codes
+                    val polyLabelSymbol = TextSymbol().apply {
+                        text = "$displayText\n$khewatInfo"
+                        size = 10f
+                        color = textColor
+                        horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
+                        verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                        haloColor = highlightColor
+                        haloWidth = 1f
+                        fontWeight = TextSymbol.FontWeight.BOLD
+                    }
+
+                    val geometry = graphic.geometry
+                    val centerPoint = if (geometry is Polygon) {
+                        geometry.extent.center
+                    } else {
+                        geometry.extent.center
+                    }
+
+                    val newLabel = Graphic(centerPoint, polyLabelSymbol)
+
+                    val newLabelAttrs = newLabel.attributes
+                    graphic.attributes.forEach { (key, value) ->
+                        newLabelAttrs[key] = value
+                    }
+
+                    surveyLabelGraphics.graphics.add(newLabel)
+                    originalLabelGraphics[parcelId] = newLabel
+
+                    Log.d("RESTORE_DEBUG", "Created new label for parcel_id: $parcelId")
                 }
-
-                val newLabel = Graphic(centerPoint, polyLabelSymbol)
-
-                val newLabelAttrs = newLabel.attributes
-                graphic.attributes.forEach { (key, value) ->
-                    newLabelAttrs[key] = value
-                }
-
-                surveyLabelGraphics.graphics.add(newLabel)
-                originalLabelGraphics[parcelId] = newLabel
-
-                Log.d("RESTORE_DEBUG", "Created new label for parcel_id: $parcelId")
             }
         }
 
@@ -2274,7 +2341,7 @@ class FragmentMap : Fragment() {
             dialogView.findViewById<Button>(R.id.btn_retake_pictures_survey)
         val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
 
-        val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
+//        val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
         val btnSolar = dialogView.findViewById<Button>(R.id.btn_solar_panel)
         val btnDrone = dialogView.findViewById<Button>(R.id.btn_drone_spray)
         val btnInputs = dialogView.findViewById<Button>(R.id.btn_inputs)
@@ -2311,10 +2378,10 @@ class FragmentMap : Fragment() {
                     lMergeParcel.visibility = View.GONE
                 }
 
-                R.id.rb_split -> {
-                    lSplitParcel.visibility = View.VISIBLE
-                    lMergeParcel.visibility = View.GONE
-                }
+//                R.id.rb_split -> {
+//                    lSplitParcel.visibility = View.VISIBLE
+//                    lMergeParcel.visibility = View.GONE
+//                }
 
                 R.id.rb_merge -> {
                     lSplitParcel.visibility = View.GONE
@@ -2326,8 +2393,8 @@ class FragmentMap : Fragment() {
         tvParcelNo.text = attr["parcel_no"].toString()
         tvParcelNoUni.text = attr["khewatInfo"].toString()
         val areaSqFt = attr["area"].toString().toDoubleOrNull() ?: 0.0
-        val areaAcre = areaSqFt / 43560.0
-        tvParcelArea.text = String.format(Locale.US, "%.2f Acres", areaAcre)
+        val areaKanal = areaSqFt / 5445.0
+        tvParcelArea.text = String.format(Locale.US, "%.2f Kanal", areaKanal)
 
         if (binding.parcelMapview.map == null) {
             Toast.makeText(context, "MapView does not have a valid map", Toast.LENGTH_LONG).show()
@@ -2378,104 +2445,104 @@ class FragmentMap : Fragment() {
 
         val parcelId = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L
 
-        fun handleHarvestedClick(parcelId: Long, attributes: Map<String, Any>) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val parcelNo = attributes["parcel_no"]?.toString() ?: ""
-                    val subParcelNo = attributes["sub_parcel_no"]?.toString() ?: ""
+//        fun handleHarvestedClick(parcelId: Long, attributes: Map<String, Any>) {
+//            viewLifecycleOwner.lifecycleScope.launch {
+//                try {
+//                    val parcelNo = attributes["parcel_no"]?.toString() ?: ""
+//                    val subParcelNo = attributes["sub_parcel_no"]?.toString() ?: ""
+//
+//                    val parcel = withContext(Dispatchers.IO) {
+//                        database.activeParcelDao().getParcelById(parcelId)
+//                    }
+//
+//                    if (parcel == null) {
+//                        Toast.makeText(context, "Parcel not found in database", Toast.LENGTH_SHORT)
+//                            .show()
+//                        return@launch
+//                    }
+//
+//                    if (parcel.surveyStatusCode != 2) {
+//                        Toast.makeText(
+//                            context,
+//                            "Only surveyed parcels can be harvested",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                        return@launch
+//                    }
+//
+//                    withContext(Dispatchers.Main) {
+//                        for (graphic in surveyParcelsGraphics.graphics) {
+//                            val graphicParcelId = graphic.attributes["parcel_id"] as? Long
+//
+//                            if (graphicParcelId == parcelId) {
+//                                val harvestedSymbol = SimpleFillSymbol(
+//                                    SimpleFillSymbol.Style.SOLID,
+//                                    Color.WHITE,
+//                                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
+//                                )
+//
+//                                graphic.symbol = harvestedSymbol
+//                                graphic.attributes["isHarvested"] = true
+//
+//                                for (labelGraphic in surveyLabelGraphics.graphics) {
+//                                    val labelParcelId =
+//                                        labelGraphic.attributes["parcel_id"] as? Long
+//
+//                                    if (labelParcelId == parcelId) {
+//                                        val textSymbol = labelGraphic.symbol as? TextSymbol
+//                                        textSymbol?.let {
+//                                            val updatedTextSymbol = TextSymbol().apply {
+//                                                text = it.text
+//                                                size = 10f
+//                                                color = Color.BLACK
+//                                                horizontalAlignment =
+//                                                    TextSymbol.HorizontalAlignment.CENTER
+//                                                verticalAlignment =
+//                                                    TextSymbol.VerticalAlignment.MIDDLE
+//                                                haloColor = Color.WHITE
+//                                                haloWidth = 1f
+//                                                fontWeight = TextSymbol.FontWeight.BOLD
+//                                            }
+//                                            labelGraphic.symbol = updatedTextSymbol
+//                                            labelGraphic.attributes["isHarvested"] = true
+//                                        }
+//                                        break
+//                                    }
+//                                }
+//                                break
+//                            }
+//                        }
+//
+//                        saveHarvestedStatusToPreferences(parcelId, true)
+//
+//                        closeCallOut()
+//
+//                        Toast.makeText(
+//                            context,
+//                            "Parcel $parcelNo marked as harvested",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//
+//                    Log.d(
+//                        "Harvested",
+//                        "Parcel $parcelNo (ID: $parcelId) marked as harvested and saved"
+//                    )
+//
+//                } catch (e: Exception) {
+//                    Log.e("Harvested", "Error in harvested action: ${e.message}", e)
+//                    Toast.makeText(
+//                        context,
+//                        "Error processing harvested action: ${e.message}",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+//            }
+//        }
 
-                    val parcel = withContext(Dispatchers.IO) {
-                        database.activeParcelDao().getParcelById(parcelId)
-                    }
-
-                    if (parcel == null) {
-                        Toast.makeText(context, "Parcel not found in database", Toast.LENGTH_SHORT)
-                            .show()
-                        return@launch
-                    }
-
-                    if (parcel.surveyStatusCode != 2) {
-                        Toast.makeText(
-                            context,
-                            "Only surveyed parcels can be harvested",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return@launch
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        for (graphic in surveyParcelsGraphics.graphics) {
-                            val graphicParcelId = graphic.attributes["parcel_id"] as? Long
-
-                            if (graphicParcelId == parcelId) {
-                                val harvestedSymbol = SimpleFillSymbol(
-                                    SimpleFillSymbol.Style.SOLID,
-                                    Color.WHITE,
-                                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
-                                )
-
-                                graphic.symbol = harvestedSymbol
-                                graphic.attributes["isHarvested"] = true
-
-                                for (labelGraphic in surveyLabelGraphics.graphics) {
-                                    val labelParcelId =
-                                        labelGraphic.attributes["parcel_id"] as? Long
-
-                                    if (labelParcelId == parcelId) {
-                                        val textSymbol = labelGraphic.symbol as? TextSymbol
-                                        textSymbol?.let {
-                                            val updatedTextSymbol = TextSymbol().apply {
-                                                text = it.text
-                                                size = 10f
-                                                color = Color.BLACK
-                                                horizontalAlignment =
-                                                    TextSymbol.HorizontalAlignment.CENTER
-                                                verticalAlignment =
-                                                    TextSymbol.VerticalAlignment.MIDDLE
-                                                haloColor = Color.WHITE
-                                                haloWidth = 1f
-                                                fontWeight = TextSymbol.FontWeight.BOLD
-                                            }
-                                            labelGraphic.symbol = updatedTextSymbol
-                                            labelGraphic.attributes["isHarvested"] = true
-                                        }
-                                        break
-                                    }
-                                }
-                                break
-                            }
-                        }
-
-                        saveHarvestedStatusToPreferences(parcelId, true)
-
-                        closeCallOut()
-
-                        Toast.makeText(
-                            context,
-                            "Parcel $parcelNo marked as harvested",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-
-                    Log.d(
-                        "Harvested",
-                        "Parcel $parcelNo (ID: $parcelId) marked as harvested and saved"
-                    )
-
-                } catch (e: Exception) {
-                    Log.e("Harvested", "Error in harvested action: ${e.message}", e)
-                    Toast.makeText(
-                        context,
-                        "Error processing harvested action: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-
-        btnHarvested.setOnClickListener {
-            handleHarvestedClick(parcelId, attr)
-        }
+//        btnHarvested.setOnClickListener {
+//            handleHarvestedClick(parcelId, attr)
+//        }
 
         tvMergeParcel.setOnClickListener {
             Toast.makeText(
@@ -2719,59 +2786,59 @@ class FragmentMap : Fragment() {
                     Log.d("TaskAssign", "=== RB_SAME OPERATION COMPLETED ===")
                 }
 
-                R.id.rb_split -> {
-                    if (etSplitParcel.text.toString().trim().isEmpty()) {
-                        etSplitParcel.apply {
-                            setText("")
-                            error = "Field cannot be empty"
-                            requestFocus()
-                        }
-                        return@setOnClickListener
-                    }
-
-                    if (etSplitParcel.text.toString().trim().toInt() < 2) {
-                        etSplitParcel.apply {
-                            setText("")
-                            error = "Enter valid number of parcels"
-                            requestFocus()
-                        }
-                        return@setOnClickListener
-                    }
-
-                    viewModel.parcelOperationValue = etSplitParcel.text.toString().trim()
-                    viewModel.subParcelList.clear()
-
-                    if (viewModel.subParcelList.isEmpty()) {
-                        val totalParts: Int = viewModel.parcelOperationValue.toInt()
-                        val subParcels = ArrayList<SubParcel>()
-                        for (i in 1..totalParts) {
-                            subParcels.add(SubParcel(id = i))
-                        }
-                        viewModel.subParcelList = subParcels
-                    }
-
-                    val bundle = Bundle().apply {
-                        putLong("parcelId", attr["parcel_id"].toString().toLong())
-                        putString("parcelNo", attr["parcel_no"].toString())
-                        putString("subParcelNo", attr["sub_parcel_no"].toString())
-                        putString("parcelArea", attr["area"].toString())
-                        putString("khewatInfo", attr["khewatInfo"].toString())
-                        putString("parcelOperation", viewModel.parcelOperation)
-                        putString("parcelOperationValue", viewModel.parcelOperationValue)
-                        putString(
-                            "parcelOperationValueHi",
-                            tvMergeParcelHi.text.toString().trim()
-                        )
-                        putLong("unitId", attr["unit_id"].toString().toLong())
-                        putLong("groupId", attr["group_id"].toString().toLong())
-                    }
-
-                    findNavController().navigate(
-                        R.id.action_fragmentMap_to_fragmentSubParcelList,
-                        bundle
-                    )
-//                    dialog.dismiss()
-                }
+//                R.id.rb_split -> {
+//                    if (etSplitParcel.text.toString().trim().isEmpty()) {
+//                        etSplitParcel.apply {
+//                            setText("")
+//                            error = "Field cannot be empty"
+//                            requestFocus()
+//                        }
+//                        return@setOnClickListener
+//                    }
+//
+//                    if (etSplitParcel.text.toString().trim().toInt() < 2) {
+//                        etSplitParcel.apply {
+//                            setText("")
+//                            error = "Enter valid number of parcels"
+//                            requestFocus()
+//                        }
+//                        return@setOnClickListener
+//                    }
+//
+//                    viewModel.parcelOperationValue = etSplitParcel.text.toString().trim()
+//                    viewModel.subParcelList.clear()
+//
+//                    if (viewModel.subParcelList.isEmpty()) {
+//                        val totalParts: Int = viewModel.parcelOperationValue.toInt()
+//                        val subParcels = ArrayList<SubParcel>()
+//                        for (i in 1..totalParts) {
+//                            subParcels.add(SubParcel(id = i))
+//                        }
+//                        viewModel.subParcelList = subParcels
+//                    }
+//
+//                    val bundle = Bundle().apply {
+//                        putLong("parcelId", attr["parcel_id"].toString().toLong())
+//                        putString("parcelNo", attr["parcel_no"].toString())
+//                        putString("subParcelNo", attr["sub_parcel_no"].toString())
+//                        putString("parcelArea", attr["area"].toString())
+//                        putString("khewatInfo", attr["khewatInfo"].toString())
+//                        putString("parcelOperation", viewModel.parcelOperation)
+//                        putString("parcelOperationValue", viewModel.parcelOperationValue)
+//                        putString(
+//                            "parcelOperationValueHi",
+//                            tvMergeParcelHi.text.toString().trim()
+//                        )
+//                        putLong("unitId", attr["unit_id"].toString().toLong())
+//                        putLong("groupId", attr["group_id"].toString().toLong())
+//                    }
+//
+//                    findNavController().navigate(
+//                        R.id.action_fragmentMap_to_fragmentSubParcelList,
+//                        bundle
+//                    )
+////                    dialog.dismiss()
+//                }
 
                 R.id.rb_merge -> {
                     if (tvMergeParcel.text.toString().trim().isEmpty()) {

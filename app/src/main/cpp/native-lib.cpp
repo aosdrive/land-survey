@@ -6,6 +6,7 @@ static std::string apiBaseUrlPublic = "https://zdost.aoserv.com/"; // PUBLIC URL
 //static std::string apiBaseUrlPublic = "https://zd.aoserv.com/"; // PUBLIC URL RYK
 static std::string API_LOGIN = "api/Account/login";
 static std::string API_LOGIN_SUR = "api/Account/LoginUser";
+static std::string API_CHECK_VERSION = "api/Account/CheckAppVersion"; // Add this
 static std::string API_FORGOT_PASSWORD = "api/Account/forgetpassword";
 static std::string API_OTP_VERIFICATION = "api/Account/VerifyTotp";
 static std::string API_UPDATE_PASSWORD = "api/Account/updatepassword";
@@ -22,6 +23,11 @@ static std::string API_POST_SURVEY_DATA_RETAKE_PICTURES = "/api/FieldRecord/Save
 extern "C" JNIEXPORT jstring JNICALL
 Java_pk_gop_pulse_katchiAbadi_MyApplication_getApiBaseUrlPublic(JNIEnv *env, jobject /* this */) {
     return env->NewStringUTF(apiBaseUrlPublic.c_str());
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_pk_gop_pulse_katchiAbadi_MyApplication_getApiCheckVersion(JNIEnv *env, jobject /* this */) {
+    return env->NewStringUTF(API_CHECK_VERSION.c_str());
 }
 
 extern "C" JNIEXPORT jstring JNICALL

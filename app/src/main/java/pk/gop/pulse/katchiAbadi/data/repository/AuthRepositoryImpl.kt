@@ -19,6 +19,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.LoginSurveyorResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.OtpVerificationDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.UpdatePasswordDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.VersionCheckResponse
 import pk.gop.pulse.katchiAbadi.domain.repository.AuthRepository
 import retrofit2.HttpException
 import java.io.IOException
@@ -29,6 +30,68 @@ class AuthRepositoryImpl @Inject constructor(
     private val api: ServerApi,
     private val sharedPreferences: SharedPreferences
 ) : AuthRepository {
+
+    /**
+     * Check app version against backend requirements
+     */
+    override suspend fun checkAppVersion(appVersion: String): Resource<VersionCheckResponse> {
+        return try {
+            val url = "${Constants.BASE_URL}${Constants.CHECK_VERSION_URL}"
+
+            Log.d("AuthRepository", "Checking version: $appVersion at $url")
+
+            val response = api.checkAppVersion(
+                url = url,
+                appVersion = appVersion
+            )
+
+            if (response.isSuccessful) {
+                response.body()?.let { versionData ->
+                    Log.d("AuthRepository", "Version check response: success=${versionData.success}, isUpdateRequired=${versionData.isUpdateRequired}")
+
+                    if (versionData.isUpdateRequired) {
+                        // Return error with data so we can access version info
+                        Resource.Error(
+                            message = versionData.message,
+//                            data = versionData
+                        )
+                    } else {
+                        Resource.Success(versionData)
+                    }
+                } ?: run {
+                    Log.e("AuthRepository", "Version check body is null")
+                    Resource.Error("Version check response is empty")
+                }
+            } else {
+                val errorMessage = when (response.code()) {
+                    400 -> "Invalid app version format"
+                    401 -> "Unauthorized version check"
+                    404 -> "Version check endpoint not found"
+                    500 -> "Server error during version check"
+                    else -> "Version check failed: ${response.message()}"
+                }
+                Log.e("AuthRepository", "Version check failed: $errorMessage (code: ${response.code()})")
+                Resource.Error(errorMessage)
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Version check exception: ${e.message}", e)
+            when (e) {
+                is HttpException -> {
+                    val errorMessage = parseHttpError(e)
+                    Resource.Error("Version check failed: $errorMessage")
+                }
+                is IOException -> {
+                    Resource.Error("Connection error: Please check your internet connection")
+                }
+                is TimeoutException -> {
+                    Resource.Error("Request timed out. Please try again.")
+                }
+                else -> {
+                    Resource.Error(e.message ?: "Version check failed")
+                }
+            }
+        }
+    }
 
     override suspend fun login(cnic: String, password: String): Resource<LoginDto> {
         val body = LoginRequest(cnic, password)
@@ -79,20 +142,49 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun loginSurveyor(
         cnic: String,
-        password: String
+        password: String,
+        appVersion: String?
     ): Resource<LoginSurveyorResponse> {
-        val body = LoginRequest(cnic, password)
+        val body = LoginRequest(cnic, password, appVersion = appVersion)
 
         return try {
+            Log.d("AuthRepository", "Login attempt for CNIC: $cnic with version: $appVersion")
+
             val response = api.loginSurveyor(Constants.LOGIN_URL_SUR, body)
-            Resource.Success(response)
+
+            Log.d("AuthRepository", "Login response received: $response")
+
+            if (response.userId > 0) {
+                Resource.Success(response)
+            } else {
+                val errorMessage = response.message ?: "Login failed"
+
+                // Check if error is version-related
+                if (errorMessage.contains("outdated version", ignoreCase = true) ||
+                    errorMessage.contains("update required", ignoreCase = true) ||
+                    errorMessage.contains("old version", ignoreCase = true) ||
+                    errorMessage.contains("old mobile app", ignoreCase = true) ||
+                    errorMessage.contains("contact admin", ignoreCase = true)) {
+                    Resource.Error("APP_VERSION_OUTDATED: $errorMessage")
+                } else {
+                    Resource.Error(errorMessage)
+                }
+            }
 
         } catch (e: Exception) {
             Log.e("AuthRepository", "Surveyor login error: ${e.message}", e)
             when (e) {
                 is HttpException -> {
                     val errorMessage = parseHttpError(e)
-                    Resource.Error(errorMessage)
+
+                    // Check if the HTTP error is version-related
+                    if (errorMessage.contains("outdated version", ignoreCase = true) ||
+                        errorMessage.contains("update required", ignoreCase = true) ||
+                        errorMessage.contains("old version", ignoreCase = true)) {
+                        Resource.Error("APP_VERSION_OUTDATED: $errorMessage")
+                    } else {
+                        Resource.Error(errorMessage)
+                    }
                 }
 
                 is IOException -> Resource.Error("Try again! Couldn't reach the server.\n${e.message}.")
@@ -280,6 +372,16 @@ class AuthRepositoryImpl @Inject constructor(
             val title = errorResponse.title ?: ""
 
             when {
+                // Check if version related
+                errorMsg.contains("outdated version", ignoreCase = true) ||
+                        errorMsg.contains("update required", ignoreCase = true) ||
+                        errorMsg.contains("old version", ignoreCase = true) ||
+                        errorMsg.contains("old mobile app", ignoreCase = true) ||
+                        title.contains("update", ignoreCase = true) ||
+                        errorResponse.errorCode == "VERSION_OUTDATED" -> {
+                    errorMsg // Return the actual version error message
+                }
+
                 // Check if already logged in
                 errorMsg.contains("already logged in", ignoreCase = true) ||
                         errorMsg.contains("already loggedin", ignoreCase = true) ||

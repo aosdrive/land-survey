@@ -23,6 +23,10 @@ class MyApplication : Application() {
     private external fun getApiPostSurveyData(): String
     private external fun getApiPostSurveyDataRevisit(): String
     private external fun getApiPostSurveyDataRetakePictures(): String
+    private external fun getApiCheckVersion(): String // Add this
+
+
+
 
     companion object {
         init {
@@ -68,6 +72,8 @@ class MyApplication : Application() {
         Constants.POST_SURVEY_DATA_URL = getApiPostSurveyData()
         Constants.POST_SURVEY_DATA_REVISIT_URL = getApiPostSurveyDataRevisit()
         Constants.POST_SURVEY_DATA_RETAKE_PICTURE_URL = getApiPostSurveyDataRetakePictures()
+        Constants.CHECK_VERSION_URL = getApiCheckVersion() // Add this
+
 
         AndroidThreeTen.init(this)
 

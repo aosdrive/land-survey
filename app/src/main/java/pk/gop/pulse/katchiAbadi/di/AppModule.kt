@@ -40,6 +40,7 @@ import pk.gop.pulse.katchiAbadi.domain.repository.SurveyFormRepository
 import pk.gop.pulse.katchiAbadi.domain.repository.SurveyRepository
 import pk.gop.pulse.katchiAbadi.domain.use_case.*
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.AuthenticateUseCase
+import pk.gop.pulse.katchiAbadi.domain.use_case.auth.CheckAppVersionUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.ForgotPasswordUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.LogoutUseCase
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.OtpVerificationUseCase
@@ -106,9 +107,17 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(sharedPreferences: SharedPreferences): OkHttpClient {
+    fun provideOkHttpClient(
+        @ApplicationContext context: Context,
+        sharedPreferences: SharedPreferences
+    ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .protocols(listOf(Protocol.HTTP_1_1))
+
+            // Add Version Check Interceptor FIRST
+            .addInterceptor(VersionCheckInterceptor(context, sharedPreferences))
+
+            // Add Authorization Interceptor
             .addInterceptor { chain ->
                 val requestBuilder = chain.request().newBuilder()
                 val original = chain.request()
@@ -124,6 +133,8 @@ object AppModule {
                 }
                 chain.proceed(requestBuilder.build())
             }
+
+            // Add Logging Interceptor
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
@@ -392,13 +403,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideValidationUseCase(repository: AuthRepository): ValidationUseCase {
+    fun provideValidationUseCase(repository: AuthRepository,  checkAppVersionUseCase: CheckAppVersionUseCase): ValidationUseCase {
         return ValidationUseCase(
             validateCredentials = ValidateCredentials(repository),
             validateCredentialsSur = ValidateCredentialsSur(repository),
             forgotPasswordUseCase = ForgotPasswordUseCase(repository),
             otpVerificationUseCase = OtpVerificationUseCase(repository),
             updatePasswordUseCase = UpdatePasswordUseCase(repository),
+            checkAppVersionUseCase = checkAppVersionUseCase  // Add this
         )
     }
 
