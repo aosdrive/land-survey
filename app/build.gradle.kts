@@ -184,8 +184,6 @@ dependencies {
 
     implementation ("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
 
-//    // LeakCanary
-//    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
-
+    implementation ("com.google.android.gms:play-services-location:21.1.0")
 
 }

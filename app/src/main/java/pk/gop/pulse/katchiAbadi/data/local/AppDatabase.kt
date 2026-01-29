@@ -31,7 +31,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class],
-    version = 10,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -71,6 +71,9 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration6to7)
                     .addMigrations(migration7to8)
                     .addMigrations(migration8to9)
+                    .addMigrations(migration9to10)
+                    .addMigrations(migration10to11)
+                    .addMigrations(migration11to12)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -165,5 +168,27 @@ val migration7to8 = object : Migration(7, 8) {
 val migration8to9 = object : Migration(8, 9) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("ALTER TABLE tasks ADD COLUMN daysToComplete INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val migration9to10 = object : Migration(9, 10) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add any migration that was supposed to be in version 10
+        // If version 10 doesn't have changes, you can leave this empty
+    }
+}
+
+val migration10to11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE survey_images ADD COLUMN latitude REAL")
+        database.execSQL("ALTER TABLE survey_images ADD COLUMN longitude REAL")
+        database.execSQL("ALTER TABLE survey_images ADD COLUMN timestamp INTEGER")
+        database.execSQL("ALTER TABLE survey_images ADD COLUMN locationAddress TEXT")
+    }
+}
+
+val migration11to12 = object : Migration(11, 12) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE survey_images ADD COLUMN bearing REAL")
     }
 }

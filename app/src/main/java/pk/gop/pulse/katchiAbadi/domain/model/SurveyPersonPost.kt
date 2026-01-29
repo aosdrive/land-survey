@@ -45,7 +45,7 @@ data class SurveyPostNew(
     val centriod: String? = null, //  Add centroid data
     val khewatInfo: String? = null, // Add this field
     val parcelAreaKMF: String?= null,
-    val distance: Int = 100, // ✅ ADD THIS with default value 100
+    val distance: Int = 100,
     val pictures: List<Pictures>,
     val persons: List<SurveyPersonPost>,
 )

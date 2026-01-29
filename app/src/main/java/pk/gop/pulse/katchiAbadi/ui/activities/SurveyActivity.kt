@@ -2,11 +2,18 @@
 package pk.gop.pulse.katchiAbadi.ui.activities
 
 import OwnerSelectionDialog
+import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Typeface
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -29,6 +36,11 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.location.FusedLocationProviderClient
+import android.location.Location
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,9 +61,15 @@ import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
 import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
+import com.google.android.gms.location.Priority
+import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 
 @AndroidEntryPoint
-class SurveyActivity : AppCompatActivity() {
+class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var binding: ActivitySurveyNewBinding
     private lateinit var context: Context
@@ -84,6 +102,16 @@ class SurveyActivity : AppCompatActivity() {
     private var selectedVariety: String? = null
     private var isSettingSpinnerProgrammatically = false
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var currentLocation: Location? = null
+    private val LOCATION_PERMISSION_REQUEST_CODE = 100
+
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var magnetometer: Sensor? = null
+    private val accelerometerReading = FloatArray(3)
+    private val magnetometerReading = FloatArray(3)
+    private var currentBearing: Float = 0f
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("tempImagePath", tempImagePath)
@@ -101,22 +129,19 @@ class SurveyActivity : AppCompatActivity() {
         binding = ActivitySurveyNewBinding.inflate(layoutInflater)
         setContentView(binding.root)
         context = this@SurveyActivity
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        setupSensors()
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
         // Set default year
         binding.etYear.setText("2025")
-        setupAreaInputRestrictions()
+//        setupAreaInputRestrictions()
 
 
         if (!sharedPreferences.getBoolean("sample_persons_inserted", false)) {
             //  insertSamplePersonsOnce()
-        }
-
-
-        binding.btnTakePhoto.setOnClickListener {
-            currentImageType = binding.spinnerImageType.selectedItem.toString()
-            requestCameraPermissionAndCapture()
         }
 
 
@@ -158,46 +183,194 @@ class SurveyActivity : AppCompatActivity() {
         syncUnsyncedData()
     }
 
+    private fun setupSensors() {
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.also { acc ->
+            sensorManager.registerListener(this, acc, SensorManager.SENSOR_DELAY_UI)
+        }
+        magnetometer?.also { mag ->
+            sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
     }
 
-    private fun setupAreaInputRestrictions() {
-        binding.etArea.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-
-            override fun afterTextChanged(s: android.text.Editable?) {
-                val text = s.toString()
-                if (text.isNotEmpty()) {
-                    val value = text.toDoubleOrNull()
-                    if (value != null && value > 8) {
-                        binding.etArea.error = "Maximum area is 8"
-                    } else {
-                        binding.etArea.error = null
-                    }
-                }
-            }
-        })
-    }
+//    private fun setupAreaInputRestrictions() {
+//        binding.etArea.addTextChangedListener(object : android.text.TextWatcher {
+//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+//
+//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+//
+//            override fun afterTextChanged(s: android.text.Editable?) {
+//                val text = s.toString()
+//                if (text.isNotEmpty()) {
+//                    val value = text.toDoubleOrNull()
+//                    if (value != null && value > 100) {
+//                        binding.etArea.error = "Maximum area is 100"
+//                    } else {
+//                        binding.etArea.error = null
+//                    }
+//                }
+//            }
+//        })
+//    }
 
     private fun requestCameraPermissionAndCapture() {
-        if (checkSelfPermission(android.Manifest.permission.CAMERA) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED
+        val cameraPermissionGranted = checkSelfPermission(Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
+
+        val locationPermissionGranted =
+            checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+
+        when {
+            cameraPermissionGranted && locationPermissionGranted -> {
+                getCurrentLocationAndCaptureImage()
+            }
+
+            cameraPermissionGranted && !locationPermissionGranted -> {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            }
+
+            !cameraPermissionGranted && locationPermissionGranted -> {
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+
+            else -> {
+                // Request both permissions
+                requestPermissions(
+                    arrayOf(
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ),
+                    LOCATION_PERMISSION_REQUEST_CODE
+                )
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            val cameraGranted = grantResults.getOrNull(0) == PackageManager.PERMISSION_GRANTED
+            if (cameraGranted) {
+                getCurrentLocationAndCaptureImage()
+            } else {
+                ToastUtil.showShort(this, "Camera permission is required")
+            }
+        }
+    }
+
+    private val locationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            val coarseLocationGranted =
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+
+            if (fineLocationGranted || coarseLocationGranted) {
+                Log.d("Location", "Location permission granted, getting location...")
+                getCurrentLocationAndCaptureImage()
+            } else {
+                Log.w("Location", "Location permission denied")
+                ToastUtil.showShort(
+                    this,
+                    "Location permission is required to tag images with location"
+                )
+                // Still allow photo capture without location
+                captureImage()
+            }
+        }
+
+    private fun getCurrentLocationAndCaptureImage() {
+        Log.d("Locations", "getCurrentLocationAndCaptureImage() called")
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
+            Log.w("Location", "Location permission not granted, capturing without location")
             captureImage()
-        } else {
-            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+            return
+        }
+        Log.d("Location", "Location permission granted, requesting location...")
+
+        try {
+            val cancellationTokenSource = CancellationTokenSource()
+
+            fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                cancellationTokenSource.token
+            ).addOnSuccessListener { location ->
+                Log.d("Location", "Location success callback received")
+                currentLocation = location
+                if (location != null) {
+                    Log.d(
+                        "Location",
+                        "✅ Location obtained - Lat: ${location.latitude}, Lng: ${location.longitude}"
+                    )
+                } else {
+                    Log.w("Location", "⚠️ Location is null from provider")
+                }
+                captureImage()
+            }.addOnFailureListener { e ->
+                Log.e("Location", "Failed to get location: ${e.message}")
+                ToastUtil.showShort(this, "Could not get location")
+                captureImage() // Still capture image without location
+            }
+        } catch (e: Exception) {
+            Log.e("Location", "Error getting location: ${e.message}")
+            captureImage()
         }
     }
 
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
-                captureImage()
+                Log.d("Camera", "Camera permission granted")
+                // Check if we also have location permission
+                val hasLocationPermission =
+                    checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+                            PackageManager.PERMISSION_GRANTED ||
+                            checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                            PackageManager.PERMISSION_GRANTED
+
+                if (hasLocationPermission) {
+                    getCurrentLocationAndCaptureImage()  // ← FIXED
+                } else {
+                    captureImage()  // No location permission, capture without location
+                }
             } else {
                 ToastUtil.showShort(this, "Camera permission is required")
             }
@@ -562,7 +735,7 @@ class SurveyActivity : AppCompatActivity() {
 
         binding.btnTakePhoto.setOnClickListener {
             currentImageType = binding.spinnerImageType.selectedItem.toString()
-            captureImage()
+            requestCameraPermissionAndCapture()
         }
 
         // Initial UI state
@@ -658,10 +831,7 @@ class SurveyActivity : AppCompatActivity() {
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            Log.d(
-                "Camera",
-                "Camera result: success=$success, path=$tempImagePath, uri=$tempImageUri"
-            )
+            Log.d("Camera", "Camera result: success=$success, path=$tempImagePath, uri=$tempImageUri")
 
             if (!success) {
                 ToastUtil.showShort(context, "Photo capture was cancelled")
@@ -690,15 +860,11 @@ class SurveyActivity : AppCompatActivity() {
                     if (finalFile == null && tempImageUri != null) {
                         val input = contentResolver.openInputStream(tempImageUri!!)
                         if (input != null) {
-                            val fallbackFile =
-                                File(filesDir, "fallback_${System.currentTimeMillis()}.jpg")
+                            val fallbackFile = File(filesDir, "fallback_${System.currentTimeMillis()}.jpg")
                             fallbackFile.outputStream().use { output -> input.copyTo(output) }
                             if (fallbackFile.exists() && fallbackFile.length() > 0) {
                                 finalFile = fallbackFile
-                                Log.d(
-                                    "Camera",
-                                    "Recovered image from Uri to: ${fallbackFile.absolutePath}"
-                                )
+                                Log.d("Camera", "Recovered image from Uri to: ${fallbackFile.absolutePath}")
                             }
                         }
                     }
@@ -714,14 +880,57 @@ class SurveyActivity : AppCompatActivity() {
                     // Compress image
                     val compressedFile = compressImageFile(finalFile, 300) ?: finalFile
 
+                    // Get current timestamp
+                    val timestamp = System.currentTimeMillis()
+
+                    // ===== MODIFIED: Don't get location address, just use coordinates =====
+                    val image = SurveyImage(
+                        uri = compressedFile.absolutePath,
+                        type = currentImageType,
+                        latitude = currentLocation?.latitude,
+                        longitude = currentLocation?.longitude,
+                        timestamp = timestamp,
+                        locationAddress = null,
+                        bearing = currentBearing
+                    )
+
+                    // Log the image data for debugging
+                    Log.d("Camera", "Image created with:")
+                    Log.d("Camera", "  timestamp: ${image.timestamp}")
+                    Log.d("Camera", "  latitude: ${image.latitude}")
+                    Log.d("Camera", "  longitude: ${image.longitude}")
+                    Log.d("Camera", "  bearing: ${image.bearing}")
+
                     withContext(Dispatchers.Main) {
-                        val image =
-                            SurveyImage(uri = compressedFile.absolutePath, type = currentImageType)
                         viewModel.addImage(image)
                         database.imageDao().insertImage(image)
                         imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
                         hideImageLoading()
-                        ToastUtil.showShort(context, "Photo added successfully")
+
+                        // ===== MODIFIED: Show Date, Time, and Coordinates instead of address =====
+                        val dateTime = SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault()).format(
+                            Date(timestamp)
+                        )
+
+                        val locationInfo = if (currentLocation != null) {
+                            val lat = String.format("%.6f", currentLocation!!.latitude)
+                            val lng = String.format("%.6f", currentLocation!!.longitude)
+                            "\nCoordinates: $lat, $lng"
+                        } else {
+                            "\nLocation: Not available"
+                        }
+
+                        val directionInfo = if (currentBearing != 0f) {
+                            val direction = getDirectionFromBearing(currentBearing)
+                            "\nDirection: $direction (${currentBearing.toInt()}°)"
+                        } else {
+                            ""
+                        }
+
+                        ToastUtil.showShort(context, "Photo added\n$dateTime$locationInfo$directionInfo")
+
+                        // Reset current location for next image
+                        currentLocation = null
                     }
                 } catch (e: Exception) {
                     Log.e("Camera", "Error handling image: ${e.message}", e)
@@ -732,6 +941,23 @@ class SurveyActivity : AppCompatActivity() {
                 }
             }
         }
+
+
+//    private fun getAddressFromLocation(latitude: Double, longitude: Double): String? {
+//        return try {
+//            val geocoder = Geocoder(this, Locale.getDefault())
+//            val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+//            if (!addresses.isNullOrEmpty()) {
+//                val address = addresses[0]
+//                "${address.getAddressLine(0)}"
+//            } else {
+//                "Lat: $latitude, Lng: $longitude"
+//            }
+//        } catch (e: Exception) {
+//            Log.e("Geocoder", "Error getting address: ${e.message}")
+//            "Lat: $latitude, Lng: $longitude"
+//        }
+//    }
 
     // Compress file function compressing bitmap until <= targetKB size
     private fun compressImageFile(inputFile: File, targetKB: Int = 300): File? {
@@ -768,47 +994,49 @@ class SurveyActivity : AppCompatActivity() {
     private fun setupSubmit(parcelId: Long, parcelNo: String, subParcelNo: String) {
         binding.btnSubmitSurvey.setOnClickListener {
             // ===== VALIDATION: Check if survey area is filled =====
-            val surveyArea = binding.etArea.text.toString().trim()
-            if (surveyArea.isBlank()) {
-                AlertDialog.Builder(this)
-                    .setTitle("Area Required")
-                    .setMessage("Please enter the survey area before submitting.")
-                    .setPositiveButton("OK", null)
-                    .show()
-                return@setOnClickListener
-            }
+//            val surveyArea = binding.etArea.text.toString().trim()
+//            if (surveyArea.isBlank()) {
+//                AlertDialog.Builder(this)
+//                    .setTitle("Area Required")
+//                    .setMessage("Please enter the survey area before submitting.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//            }
 
-            // ===== NEW VALIDATION: Check if area exceeds maximum value of 8 =====
-            val areaValue = surveyArea.toDoubleOrNull()
-            if (areaValue == null) {
-                AlertDialog.Builder(this)
-                    .setTitle("Invalid Area")
-                    .setMessage("Please enter a valid numeric value for area.")
-                    .setPositiveButton("OK", null)
-                    .show()
-                return@setOnClickListener
-            }
+            // ===== NEW VALIDATION: Check if area exceeds maximum value of 100 =====
+//            val areaValue = surveyArea.toDoubleOrNull()
+//            if (areaValue == null) {
+//                AlertDialog.Builder(this)
+//                    .setTitle("Invalid Area")
+//                    .setMessage("Please enter a valid numeric value for area.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//            }
 
-            if (areaValue > 8) {
-                AlertDialog.Builder(this)
-                    .setTitle("Area Limit Exceeded")
-                    .setMessage("Survey area cannot exceed 8. Please enter a value between 0 and 8.")
-                    .setPositiveButton("OK", null)
-                    .show()
-                return@setOnClickListener
-            }
+//            if (areaValue > 100) {
+//                AlertDialog.Builder(this)
+//                    .setTitle("Area Limit Exceeded")
+//                    .setMessage("Survey area cannot exceed 100. Please enter a value between 0 and 100.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//            }
+//
+//            if (areaValue <= 0) {
+//                AlertDialog.Builder(this)
+//                    .setTitle("Invalid Area")
+//                    .setMessage("Survey area must be greater than 0.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//            }
 
-            if (areaValue <= 0) {
-                AlertDialog.Builder(this)
-                    .setTitle("Invalid Area")
-                    .setMessage("Survey area must be greater than 0.")
-                    .setPositiveButton("OK", null)
-                    .show()
-                return@setOnClickListener
-            }
+            // ===== GET PERSONS FROM HELPER =====
+            val rawPersons = personEntryHelper.getAllPersons()
 
             // ===== VALIDATION: Check if at least one owner/person has been added =====
-            val rawPersons = personEntryHelper.getAllPersons()
             if (rawPersons.isEmpty()) {
                 AlertDialog.Builder(this)
                     .setTitle("Owner Required")
@@ -818,35 +1046,21 @@ class SurveyActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // ===== VALIDATION: Check that each owner has first name and area filled =====
+            // ===== VALIDATION: Check that each owner has first name filled =====
             val invalidPersons = rawPersons.filter { person ->
-                person.firstName.isNullOrBlank() || person.personArea.isNullOrBlank()
+                person.firstName.isNullOrBlank()
             }
 
             if (invalidPersons.isNotEmpty()) {
-                val missingFields = mutableListOf<String>()
-                invalidPersons.forEachIndexed { index, person ->
-                    val issues = mutableListOf<String>()
-                    if (person.firstName.isNullOrBlank()) issues.add("First Name")
-                    if (person.personArea.isNullOrBlank()) issues.add("Area")
-                    missingFields.add("Owner ${index + 1}: ${issues.joinToString(", ")}")
-                }
-
                 AlertDialog.Builder(this)
                     .setTitle("Missing Required Fields")
-                    .setMessage(
-                        "Please fill in the following required fields:\n\n${
-                            missingFields.joinToString(
-                                "\n"
-                            )
-                        }"
-                    )
+                    .setMessage("Please enter the first name for all owners.")
                     .setPositiveButton("OK", null)
                     .show()
                 return@setOnClickListener
             }
 
-// ===== VALIDATION: Check for valid Grower Code =====
+            // ===== VALIDATION: Check for valid Grower Code =====
             val growerCodePattern = Regex("""^\d{2}-(\d{2}-\d{5}|\d{5})$""")
 
             val personsWithoutGrowerCode = rawPersons.filter { person ->
@@ -875,11 +1089,19 @@ class SurveyActivity : AppCompatActivity() {
                     .setTitle("Invalid Grower Code")
                     .setMessage(
                         "Please provide valid Grower Code with dashes (numbers only):\n• 12-34-56789 (11 digits)\n• 12-56789 (8 digits)\n\nInvalid codes:\n${
-                            invalidCodes.joinToString(
-                                "\n"
-                            )
+                            invalidCodes.joinToString("\n")
                         }"
                     )
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            // ===== VALIDATION: Check if at least one image has been added =====
+            if (viewModel.surveyImages.value.isEmpty()) {
+                AlertDialog.Builder(this)
+                    .setTitle("Image Required")
+                    .setMessage("Please add at least one image before submitting the survey. Use 'Add Image' or 'Take Photo' button.")
                     .setPositiveButton("OK", null)
                     .show()
                 return@setOnClickListener
@@ -902,7 +1124,7 @@ class SurveyActivity : AppCompatActivity() {
                 crop = binding.etCrop.selectedItem.toString(),
                 cropType = selectedCropType ?: binding.etCropType.selectedItem.toString(),
                 year = binding.etYear.text.toString(),
-                area = binding.etArea.text.toString(),
+//                area = binding.etArea.text.toString(),
                 isGeometryCorrect = binding.cbGeometryCorrect.isChecked,
                 remarks = binding.etRemarks.text.toString(),
                 parcelOperation = parcelOperation,
@@ -923,52 +1145,98 @@ class SurveyActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     val surveyId = database.newSurveyNewDao().insertSurvey(survey)
+                    Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId ===")
 
-                    // ========== FIXED: Handle existing vs new persons ==========
+                    // ========== SMART PERSON HANDLING: Reuse unchanged, create new if modified ==========
                     rawPersons.forEach { person ->
-                        val personWithSurveyId = person.copy(surveyId = surveyId, mauzaId = mauzaId)
+                        Log.d("SurveyActivity", "Processing person: ${person.firstName} ${person.lastName}")
+                        Log.d("SurveyActivity", "  Current personId: ${person.personId}")
+                        Log.d("SurveyActivity", "  Database ID: ${person.id}")
+                        Log.d("SurveyActivity", "  Grower Code: ${person.growerCode}")
 
-                        // Check if this is an existing person (personId > 0) or a new person
-                        if (person.personId != null && person.personId!! > 0) {
-                            // EXISTING PERSON: Check if already in database
-                            val existingPerson =
-                                database.personDao().getPersonById(person.personId!!)
+                        // Check if this is an existing person from the database
+                        if (person.personId != null && person.personId > 0) {
+                            // This person was selected from existing list
+                            val originalPerson = database.personDao().getPersonById(person.personId)
 
-                            if (existingPerson != null) {
-                                // Person exists: Create a LINK/RELATIONSHIP record only
-                                // Option 1: Update the existing person with new surveyId
-                                database.personDao()
-                                    .updatePerson(personWithSurveyId.copy(id = existingPerson.id))
+                            if (originalPerson != null) {
+                                // Compare if any data was changed
+                                val hasChanges = hasPersonDataChanged(originalPerson, person)
 
-                                // Option 2 (Better): If you have a separate junction table for many-to-many
-                                // database.surveyPersonDao().insert(SurveyPersonLink(surveyId, person.personId!!))
+                                if (hasChanges) {
+                                    // ✅ DATA WAS MODIFIED: Create a new person record
+                                    Log.d("SurveyActivity", "  ⚠️ Person data was modified - creating new record")
+
+                                    val newPerson = person.copy(
+                                        id = 0, // ← Force new database ID (0 for auto-generate)
+                                        personId = 0, // ← Clear old personId to create completely new
+                                        surveyId = surveyId,
+                                        mauzaId = mauzaId
+                                    )
+
+                                    val insertedId = database.personDao().insertPerson(newPerson)
+                                    Log.d("SurveyActivity", "  ✅ Created NEW person record with ID: $insertedId")
+
+                                } else {
+                                    // ✅ NO CHANGES: Create a link to existing person for this survey
+                                    Log.d("SurveyActivity", "  ✓ No changes - linking existing person to survey")
+
+                                    val personLink = person.copy(
+                                        id = 0, // ← New link record (0 for auto-generate)
+                                        personId = originalPerson.personId, // ← Keep reference to original
+                                        surveyId = surveyId,
+                                        mauzaId = mauzaId
+                                    )
+
+                                    val linkId = database.personDao().insertPerson(personLink)
+                                    Log.d("SurveyActivity", "  ✅ Created link record with ID: $linkId (points to personId: ${originalPerson.personId})")
+                                }
                             } else {
-                                // Person ID exists but not in DB (shouldn't happen), insert as new
-                                database.personDao().insertPerson(personWithSurveyId)
+                                // Person ID exists but not found in DB (shouldn't happen)
+                                Log.w("SurveyActivity", "  ⚠️ PersonId ${person.personId} not found in DB - creating new")
+
+                                val newPerson = person.copy(
+                                    id = 0,
+                                    surveyId = surveyId,
+                                    mauzaId = mauzaId
+                                )
+                                database.personDao().insertPerson(newPerson)
                             }
                         } else {
-                            // NEW PERSON: Check if similar person exists by CNIC
+                            // ✅ COMPLETELY NEW PERSON: User clicked "Add New Person"
+                            Log.d("SurveyActivity", "  ➕ New person being added")
+
+                            // Check if similar person exists by CNIC to avoid duplicates
                             val similarPerson = if (!person.nic.isNullOrBlank()) {
-                                database.personDao().getPersonByCnic(person.nic!!)
+                                database.personDao().getPersonByCnic(person.nic)
                             } else {
                                 null
                             }
 
                             if (similarPerson != null) {
-                                // Similar person found, link to existing
-                                database.personDao().updatePerson(
-                                    personWithSurveyId.copy(
-                                        id = similarPerson.id,
-                                        personId = similarPerson.personId
-                                    )
+                                // Similar person found by CNIC, link to existing
+                                Log.d("SurveyActivity", "  ⚠️ Found similar person by CNIC - linking")
+                                val personLink = person.copy(
+                                    id = 0,
+                                    personId = similarPerson.personId,
+                                    surveyId = surveyId,
+                                    mauzaId = mauzaId
                                 )
+                                database.personDao().insertPerson(personLink)
                             } else {
                                 // Completely new person, insert
-                                database.personDao().insertPerson(personWithSurveyId)
+                                val newPerson = person.copy(
+                                    id = 0,
+                                    surveyId = surveyId,
+                                    mauzaId = mauzaId
+                                )
+
+                                val insertedId = database.personDao().insertPerson(newPerson)
+                                Log.d("SurveyActivity", "  ✅ Created new person with ID: $insertedId")
                             }
                         }
                     }
-                    // ========== END FIX ==========
+                    // ========== END SMART PERSON HANDLING ==========
 
                     images.forEach {
                         it.surveyId = surveyId
@@ -1015,11 +1283,79 @@ class SurveyActivity : AppCompatActivity() {
         }
     }
 
+    private fun hasPersonDataChanged(original: SurveyPersonEntity, current: SurveyPersonEntity): Boolean {
+        // Compare all important fields
+        return original.firstName.trim() != current.firstName.trim() ||
+                original.lastName.trim() != current.lastName.trim() ||
+                original.gender.trim() != current.gender.trim() ||
+                original.relation.trim() != current.relation.trim() ||
+                original.religion.trim() != current.religion.trim() ||
+                original.mobile.trim() != current.mobile.trim() ||
+                original.nic.trim() != current.nic.trim() ||
+                original.growerCode.trim() != current.growerCode.trim() ||
+                original.ownershipType.trim() != current.ownershipType.trim() ||
+                original.extra1.trim() != current.extra1.trim() ||
+                original.extra2.trim() != current.extra2.trim()
+    }
+
     private fun loadSharedMouzaData() {
         val mauzaName = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
         val areaName =
             sharedPreferences.getString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, "")
         ToastUtil.showShort(context, "MauzaID: $mauzaName ($areaName)")
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        event?.let {
+            when (it.sensor.type) {
+                Sensor.TYPE_ACCELEROMETER -> {
+                    System.arraycopy(it.values, 0, accelerometerReading, 0, accelerometerReading.size)
+                }
+                Sensor.TYPE_MAGNETIC_FIELD -> {
+                    System.arraycopy(it.values, 0, magnetometerReading, 0, magnetometerReading.size)
+                }
+            }
+            updateBearing()
+        }
+    }
+
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+    }
+
+
+    private fun updateBearing() {
+        val rotationMatrix = FloatArray(9)
+        val orientationAngles = FloatArray(3)
+
+        if (SensorManager.getRotationMatrix(
+                rotationMatrix,
+                null,
+                accelerometerReading,
+                magnetometerReading
+            )) {
+            SensorManager.getOrientation(rotationMatrix, orientationAngles)
+
+            // Convert radians to degrees and normalize to 0-360
+            var degrees = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+            if (degrees < 0) {
+                degrees += 360f
+            }
+            currentBearing = degrees
+        }
+    }
+
+    private fun getDirectionFromBearing(bearing: Float): String {
+        return when {
+            bearing >= 337.5 || bearing < 22.5 -> "North"
+            bearing >= 22.5 && bearing < 67.5 -> "North-East"
+            bearing >= 67.5 && bearing < 112.5 -> "East"
+            bearing >= 112.5 && bearing < 157.5 -> "South-East"
+            bearing >= 157.5 && bearing < 202.5 -> "South"
+            bearing >= 202.5 && bearing < 247.5 -> "South-West"
+            bearing >= 247.5 && bearing < 292.5 -> "West"
+            bearing >= 292.5 && bearing < 337.5 -> "North-West"
+            else -> "Unknown"
+        }
     }
 
 

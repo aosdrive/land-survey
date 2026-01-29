@@ -31,7 +31,7 @@ class PersonEntryHelper(
         binding.etLastName.setText(data?.lastName.orEmpty())
         binding.etMobile.setText(data?.mobile.orEmpty())
         binding.etNic.setText(data?.nic.orEmpty())
-        binding.etPersonArea.setText(data?.personArea.orEmpty())
+//        binding.etPersonArea.setText(data?.personArea.orEmpty())
         binding.etReligion.setText(data?.religion.orEmpty())
 
         // New fields
@@ -148,7 +148,7 @@ class PersonEntryHelper(
                 nic = binding.etNic.text.toString().trim(),
 
                 growerCode = binding.etGrowerCode?.text?.toString()?.trim()?.uppercase().orEmpty(),
-                personArea = binding.etPersonArea.text.toString().trim(),
+//                personArea = binding.etPersonArea.text.toString().trim(),
 
                 extra1 = binding.etExtra1?.text?.toString()?.trim().orEmpty(),
                 extra2 = binding.etExtra2?.text?.toString()?.trim().orEmpty(),
@@ -179,7 +179,7 @@ class PersonEntryHelper(
                 nic = binding.etNic.text.toString().trim(),
 
                 growerCode = binding.etGrowerCode?.text?.toString()?.trim().orEmpty(),
-                personArea = binding.etPersonArea.text.toString().trim(),
+//                personArea = binding.etPersonArea.text.toString().trim(),
 
                 extra1 = binding.etExtra1?.text?.toString()?.trim().orEmpty(),
                 extra2 = binding.etExtra2?.text?.toString()?.trim().orEmpty(),

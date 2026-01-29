@@ -168,6 +168,8 @@ class FragmentMap : Fragment() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
+    private var currentLocationGraphic: Graphic? = null
+
     private var enableZoom: Boolean = true
     private lateinit var graphicCentoid: Graphic
     private lateinit var viewpointChangedListener: ViewpointChangedListener
@@ -242,6 +244,28 @@ class FragmentMap : Fragment() {
             setDisplayHomeAsUpEnabled(true)
             setDisplayShowHomeEnabled(true)
         }
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    handleLocationUpdate(location)
+                }
+            }
+        }
+
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                Intent(context, MenuActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(this)
+                    requireActivity().finish()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+
 
 //        binding.ivReset.visibility = View.GONE
 
@@ -341,6 +365,8 @@ class FragmentMap : Fragment() {
         setupSplitOverlay()
         setupSplitModeListeners()
     }
+
+
 
     private fun exitTaskAssignMode() {
         isTaskAssignMode = false
@@ -1010,47 +1036,52 @@ class FragmentMap : Fragment() {
             try {
                 Log.d("MapRefresh", "Starting map refresh...")
 
+                // Store grower codes before clearing
+                val growerCodesMap = mutableMapOf<Long, String>()
+                for (graphic in surveyLabelGraphics.graphics) {
+                    val parcelId = graphic.attributes["parcel_id"] as? Long
+                    val growerCodes = graphic.attributes["growerCodes"]?.toString()
+                    if (parcelId != null && !growerCodes.isNullOrEmpty()) {
+                        growerCodesMap[parcelId] = growerCodes
+                    }
+                }
+
                 withContext(Dispatchers.Main) {
                     surveyParcelsGraphics.graphics.clear()
                     surveyLabelGraphics.graphics.clear()
                     selectedParcelGraphics.clear()
-
                     if (::splitOverlay.isInitialized) {
                         splitOverlay.graphics.clear()
                     }
                 }
 
                 delay(200)
-
                 stopLoadingParcels()
 
                 withContext(Dispatchers.Main) {
-                    val currentShowLabels =
-                        binding.parcelMapview.graphicsOverlays.contains(surveyLabelGraphics)
-
+                    val currentShowLabels = binding.parcelMapview.graphicsOverlays.contains(surveyLabelGraphics)
                     Log.d("MapRefresh", "Reloading map with current filter")
-                    Log.d("MapRefresh", "Current IDs: ${ids.size}, ShowLabels: $currentShowLabels")
 
-                    val originalIds = ArrayList(ids)
-
-                    ids.clear()
                     loadMap(ids, currentShowLabels)
 
                     viewLifecycleOwner.lifecycleScope.launch {
                         delay(1000)
+
+                        // Restore grower codes after map loads
+                        for (graphic in surveyLabelGraphics.graphics) {
+                            val parcelId = graphic.attributes["parcel_id"] as? Long
+                            if (parcelId != null && growerCodesMap.containsKey(parcelId)) {
+                                graphic.attributes["growerCodes"] = growerCodesMap[parcelId]
+                            }
+                        }
                     }
                 }
 
                 Log.d("MapRefresh", "Map refresh completed")
-
             } catch (e: Exception) {
                 Log.e("MapRefresh", "Error refreshing map display: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        "Error refreshing map: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(context, "Error refreshing map: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -1074,6 +1105,7 @@ class FragmentMap : Fragment() {
             .registerReceiver(refreshReceiver, filter)
 
         requireActivity().let { activity -> Utility.closeKeyBoard(activity) }
+
         try {
             binding.apply {
                 viewpointChangedListener = ViewpointChangedListener {
@@ -1100,6 +1132,10 @@ class FragmentMap : Fragment() {
                 Toast.makeText(context, "Internal Storage not accessible", Toast.LENGTH_LONG).show()
             }
             _binding?.parcelMapview?.resume()
+
+            // Start continuous location updates
+            startContinuousLocationUpdates()
+
         } catch (e: Exception) {
             Toast.makeText(
                 context,
@@ -1108,6 +1144,7 @@ class FragmentMap : Fragment() {
             ).show()
         }
     }
+
 
     private fun setupMap() {
         ToastUtil.showLong(context,"Please wait while parcels are being loaded...")
@@ -1275,7 +1312,19 @@ class FragmentMap : Fragment() {
                     database.activeParcelDao().getActiveParcelsByMauzaAndArea(mauzaId, areaName)
                 }
 
-                Log.d("LoadMap", "Found ${parcels.size} parcels to display")
+                Log.d("LoadMap", "=== PARCEL LOADING DEBUG ===")
+                Log.d("LoadMap", "Total parcels from DB: ${parcels.size}")
+
+                val allParcels = database.activeParcelDao().getParcelsByMauzaAndArea(mauzaId, areaName)
+                Log.d("LoadMap", "Total ALL parcels (including inactive): ${allParcels.size}")
+
+                val inactiveParcels = allParcels.filter { !it.isActivate }
+                Log.d("LoadMap", "Inactive parcels: ${inactiveParcels.size}")
+
+                inactiveParcels.forEach { parcel ->
+                    Log.d("LoadMap", "Inactive: ID=${parcel.id}, ParcelNo=${parcel.parcelNo}, SubParcel=${parcel.subParcelNo}")
+                }
+
                 val polygonsList = mutableListOf<Polygon>()
                 val gson = Gson()
 
@@ -1512,26 +1561,18 @@ class FragmentMap : Fragment() {
             AreaUnit(AreaUnitId.SQUARE_FEET),
             GeodeticCurveType.NORMAL_SECTION
         ).roundToInt()
-
         val myPolygonCenterLatLon = polygon.extent.center
-
         var isRejected = 0
         val symbol: SimpleFillSymbol
         val highlightColor: Int
         val textColor: Int
-
         val isHarvested = isParcelHarvested(parcel.id)
-        Log.d(
-            "AddGraphics",
-            "Parcel ${parcel.id}: surveyStatus=${parcel.surveyStatusCode}, isHarvested=$isHarvested"
-        )
 
         when (parcel.surveyStatusCode) {
             1 -> {
                 symbol = unSurveyedBlocks
                 textColor = ContextCompat.getColor(context, R.color.parcel_red)
             }
-
             2 -> {
                 if (isHarvested) {
                     symbol = SimpleFillSymbol(
@@ -1541,15 +1582,12 @@ class FragmentMap : Fragment() {
                     )
                     highlightColor = Color.WHITE
                     textColor = Color.BLACK
-                    Log.d("AddGraphics", "✅ Parcel ${parcel.id} - HARVESTED (WHITE)")
                 } else {
                     symbol = surveyedBlocks
                     highlightColor = Color.BLACK
                     textColor = ContextCompat.getColor(context, R.color.parcel_green)
-                    Log.d("AddGraphics", "✅ Parcel ${parcel.id} - SURVEYED (GREEN)")
                 }
             }
-
             else -> {
                 symbol = unSurveyedBlocks
                 highlightColor = Color.YELLOW
@@ -1558,7 +1596,6 @@ class FragmentMap : Fragment() {
         }
 
         val parcelGraphic = Graphic(polygon, symbol)
-
         val attr = parcelGraphic.attributes
         attr["parcel_id"] = parcel.id
         attr["pkid"] = parcel.pkid
@@ -1573,7 +1610,6 @@ class FragmentMap : Fragment() {
         attr["group_id"] = parcel.groupId ?: 0L
 
         val labelText = "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}"
-
         val polyLabelSymbol = TextSymbol().apply {
             text = labelText
             size = 16f
@@ -1585,11 +1621,10 @@ class FragmentMap : Fragment() {
         }
 
         val labelGraphic = Graphic(myPolygonCenterLatLon, polyLabelSymbol)
-
         val parcelId = parcel.pkid
 
+        // Store initial symbol and label
         originalGraphicSymbols[parcelId] = symbol
-        originalLabelGraphics[parcelId] = labelGraphic
 
         val attrLabel = labelGraphic.attributes
         attrLabel["parcel_id"] = parcel.id
@@ -1604,17 +1639,16 @@ class FragmentMap : Fragment() {
         attrLabel["isRejected"] = isRejected
         attrLabel["unit_id"] = parcel.unitId ?: 0L
         attrLabel["group_id"] = parcel.groupId ?: 0L
+        attrLabel["growerCodes"] = ""
 
-        // Add graphics to overlays
+        // Add graphics to overlays first
         surveyParcelsGraphics.graphics.add(parcelGraphic)
         surveyLabelGraphics.graphics.add(labelGraphic)
 
-        // Load grower codes for ALL surveyed parcels (not just parent in merge)
-        // Load grower codes for ALL surveyed parcels (including merged ones)
+        // Load grower codes for surveyed parcels
         if (parcel.surveyStatusCode == 2) {
             CoroutineScope(Dispatchers.IO).launch {
                 val surveyId = parcel.surveyId
-
                 val codes = if (surveyId != null && surveyId > 0) {
                     try {
                         val persons = database.personDao().getPersonsBySurveyId(surveyId)
@@ -1630,56 +1664,77 @@ class FragmentMap : Fragment() {
                 val growerText = if (codes.isNotEmpty()) {
                     codes.joinToString(", ")
                 } else {
-                    "N/A"
+                    ""
                 }
 
                 withContext(Dispatchers.Main) {
-                    // Find the index of the old graphic
-                    val index = surveyLabelGraphics.graphics.indexOf(labelGraphic)
+                    // ✅ SAFE: Use find instead of indexOfFirst to avoid index issues
+                    val existingLabel = surveyLabelGraphics.graphics.firstOrNull {
+                        it.attributes["parcel_id"] == parcel.id
+                    }
 
-                    if (index >= 0) {
-                        // Remove old graphic
-                        surveyLabelGraphics.graphics.remove(labelGraphic)
+                    if (existingLabel != null) {
+                        try {
+                            // ✅ Store grower codes in attributes
+                            existingLabel.attributes["growerCodes"] = growerText
 
-                        // Create NEW graphic with updated text
-                        val updatedLabelText = "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
+                            // Create updated label text
+                            val updatedLabelText = if (growerText.isNotEmpty()) {
+                                "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
+                            } else {
+                                "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}"
+                            }
 
-                        val updatedPolyLabelSymbol = TextSymbol().apply {
-                            text = updatedLabelText
-                            size = 16f
-                            color = textColor
-                            horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
-                            verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
-                            haloWidth = 1f
-                            fontWeight = TextSymbol.FontWeight.BOLD
+                            val updatedPolyLabelSymbol = TextSymbol().apply {
+                                text = updatedLabelText
+                                size = 16f
+                                color = textColor
+                                horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
+                                verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                                haloWidth = 1f
+                                fontWeight = TextSymbol.FontWeight.BOLD
+                            }
+
+                            val myPolygonCenterLatLon = polygon.extent.center
+                            val updatedLabelGraphic = Graphic(myPolygonCenterLatLon, updatedPolyLabelSymbol)
+
+                            // Copy all attributes including grower codes
+                            existingLabel.attributes.forEach { (key, value) ->
+                                updatedLabelGraphic.attributes[key] = value
+                            }
+
+                            // ✅ SAFE: Remove and add only if label still exists in the list
+                            val currentIndex = surveyLabelGraphics.graphics.indexOf(existingLabel)
+                            if (currentIndex >= 0 && currentIndex < surveyLabelGraphics.graphics.size) {
+                                surveyLabelGraphics.graphics.remove(existingLabel)
+                                surveyLabelGraphics.graphics.add(currentIndex, updatedLabelGraphic)
+
+                                // ✅ Update the stored original label
+                                originalLabelGraphics[parcelId] = updatedLabelGraphic
+
+                                Log.d("AddGraphics", "✅ Updated grower codes for parcel ${parcel.id}: $growerText")
+                            } else {
+                                Log.w("AddGraphics", "Label index out of bounds, skipping update for parcel ${parcel.id}")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("AddGraphics", "Error updating label for parcel ${parcel.id}: ${e.message}", e)
                         }
-
-                        val updatedLabelGraphic = Graphic(myPolygonCenterLatLon, updatedPolyLabelSymbol)
-
-                        // Copy attributes to new graphic
-                        val updatedAttrLabel = updatedLabelGraphic.attributes
-                        attrLabel.forEach { (key, value) ->
-                            updatedAttrLabel[key] = value
-                        }
-
-                        // Add new graphic at the same index
-                        surveyLabelGraphics.graphics.add(index, updatedLabelGraphic)
-
-                        // Update the reference in originalLabelGraphics
-                        originalLabelGraphics[parcelId] = updatedLabelGraphic
-
-                        Log.d("AddGraphics", "✅ Updated grower codes for parcel ${parcel.id}: $growerText")
+                    } else {
+                        Log.w("AddGraphics", "Label not found for parcel ${parcel.id}")
                     }
                 }
             }
+        } else {
+            // ✅ For unsurveyed parcels, store the label immediately
+            originalLabelGraphics[parcelId] = labelGraphic
         }
     }
     private fun restoreOriginalGraphics() {
         Log.d("RESTORE_DEBUG", "Starting graphics restoration...")
 
+        // Restore polygon symbols
         for (graphic in surveyParcelsGraphics.graphics) {
             val parcelId = graphic.attributes["parcel_id"] as? Long ?: continue
-
             Log.d("RESTORE_DEBUG", "Processing graphic with parcel_id: $parcelId")
 
             val originalSymbol = originalGraphicSymbols[parcelId]
@@ -1690,30 +1745,32 @@ class FragmentMap : Fragment() {
                 val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
                 val correctSymbol = getSymbolForSurveyStatus(surveyStatus)
                 graphic.symbol = correctSymbol
-
                 originalGraphicSymbols[parcelId] = correctSymbol
-
-                Log.d(
-                    "RESTORE_DEBUG",
-                    "Generated new symbol for parcel_id: $parcelId, status: $surveyStatus"
-                )
+                Log.d("RESTORE_DEBUG", "Generated new symbol for parcel_id: $parcelId, status: $surveyStatus")
             }
         }
 
+        // Clear and restore labels
         surveyLabelGraphics.graphics.clear()
 
         for (graphic in surveyParcelsGraphics.graphics) {
             val parcelId = graphic.attributes["parcel_id"] as? Long ?: continue
+
+            // ✅ Try to get the stored original label first
             val originalLabel = originalLabelGraphics[parcelId]
 
             if (originalLabel != null) {
+                // ✅ Use the stored label which already has grower codes
                 surveyLabelGraphics.graphics.add(originalLabel)
-                Log.d("RESTORE_DEBUG", "Restored label for parcel_id: $parcelId")
+                Log.d("RESTORE_DEBUG", "Restored original label for parcel_id: $parcelId")
             } else {
+                // Create new label if no original exists
                 val parcelNo = graphic.attributes["parcel_no"]?.toString() ?: ""
                 val subParcelNo = graphic.attributes["sub_parcel_no"]?.toString() ?: ""
                 val khewatInfo = graphic.attributes["khewatInfo"]?.toString() ?: ""
                 val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
+                // ✅ Try to get stored grower codes from attributes
+                val storedGrowerCodes = graphic.attributes["growerCodes"]?.toString() ?: ""
 
                 val displayText = if (subParcelNo.isBlank() || subParcelNo == "0") {
                     parcelNo
@@ -1731,87 +1788,42 @@ class FragmentMap : Fragment() {
                     else -> Color.YELLOW
                 }
 
-                // ============ FIX: Load grower codes for surveyed parcels ============
-                if (surveyStatus == 2) {
-                    // Load grower codes asynchronously
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val codes = newSurveyRepository.getGrowerCodesForParcel(parcelId)
-                        val growerText = if (codes.isNotEmpty()) {
-                            codes.joinToString(", ")
-                        } else {
-                            ""
-                        }
-
-                        withContext(Dispatchers.Main) {
-                            val labelText = if (growerText.isNotEmpty()) {
-                                "$displayText\n$khewatInfo\n$growerText"
-                            } else {
-                                "$displayText\n$khewatInfo"
-                            }
-
-                            val polyLabelSymbol = TextSymbol().apply {
-                                text = labelText
-                                size = 10f
-                                color = textColor
-                                horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
-                                verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
-                                haloColor = highlightColor
-                                haloWidth = 1f
-                                fontWeight = TextSymbol.FontWeight.BOLD
-                            }
-
-                            val geometry = graphic.geometry
-                            val centerPoint = if (geometry is Polygon) {
-                                geometry.extent.center
-                            } else {
-                                geometry.extent.center
-                            }
-
-                            val newLabel = Graphic(centerPoint, polyLabelSymbol)
-
-                            val newLabelAttrs = newLabel.attributes
-                            graphic.attributes.forEach { (key, value) ->
-                                newLabelAttrs[key] = value
-                            }
-
-                            surveyLabelGraphics.graphics.add(newLabel)
-                            originalLabelGraphics[parcelId] = newLabel
-
-                            Log.d("RESTORE_DEBUG", "Created new label with grower codes for parcel_id: $parcelId")
-                        }
-                    }
+                // ✅ Include stored grower codes if available
+                val labelText = if (storedGrowerCodes.isNotEmpty()) {
+                    "$displayText\n$khewatInfo\n$storedGrowerCodes"
                 } else {
-                    // For unsurveyed parcels, create label without grower codes
-                    val polyLabelSymbol = TextSymbol().apply {
-                        text = "$displayText\n$khewatInfo"
-                        size = 10f
-                        color = textColor
-                        horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
-                        verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
-                        haloColor = highlightColor
-                        haloWidth = 1f
-                        fontWeight = TextSymbol.FontWeight.BOLD
-                    }
-
-                    val geometry = graphic.geometry
-                    val centerPoint = if (geometry is Polygon) {
-                        geometry.extent.center
-                    } else {
-                        geometry.extent.center
-                    }
-
-                    val newLabel = Graphic(centerPoint, polyLabelSymbol)
-
-                    val newLabelAttrs = newLabel.attributes
-                    graphic.attributes.forEach { (key, value) ->
-                        newLabelAttrs[key] = value
-                    }
-
-                    surveyLabelGraphics.graphics.add(newLabel)
-                    originalLabelGraphics[parcelId] = newLabel
-
-                    Log.d("RESTORE_DEBUG", "Created new label for parcel_id: $parcelId")
+                    "$displayText\n$khewatInfo"
                 }
+
+                val polyLabelSymbol = TextSymbol().apply {
+                    text = labelText
+                    size = 10f
+                    color = textColor
+                    horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
+                    verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
+                    haloColor = highlightColor
+                    haloWidth = 1f
+                    fontWeight = TextSymbol.FontWeight.BOLD
+                }
+
+                val geometry = graphic.geometry
+                val centerPoint = if (geometry is Polygon) {
+                    geometry.extent.center
+                } else {
+                    geometry.extent.center
+                }
+
+                val newLabel = Graphic(centerPoint, polyLabelSymbol)
+
+                // Copy all attributes including grower codes
+                graphic.attributes.forEach { (key, value) ->
+                    newLabel.attributes[key] = value
+                }
+
+                surveyLabelGraphics.graphics.add(newLabel)
+                originalLabelGraphics[parcelId] = newLabel
+
+                Log.d("RESTORE_DEBUG", "Created new label for parcel_id: $parcelId with grower codes: $storedGrowerCodes")
             }
         }
 
@@ -1820,11 +1832,280 @@ class FragmentMap : Fragment() {
 
     private fun handleFabClick() {
         if (checkPermission()) {
-            startLocationProcess(true)
+            getInitialLocation(true)
         } else {
             requestPermission()
         }
     }
+
+    private fun getInitialLocation(enableZoom: Boolean = true) {
+        if (!checkPermission()) {
+            requestPermission()
+            return
+        }
+
+        if (!Utility.checkGPS(requireActivity())) {
+            Utility.buildAlertMessageNoGps(requireActivity())
+            return
+        }
+
+        try {
+            Utility.showProgressAlertDialog(requireContext(), "Getting location...")
+
+            // Try to get last known location first
+            if (ActivityCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermission()
+                return
+            }
+
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null && isLocationValid(location)) {
+                    Utility.dismissProgressAlertDialog()
+                    handleInitialLocation(location, enableZoom)
+                } else {
+                    // Request fresh location
+                    requestFreshLocation(enableZoom)
+                }
+            }.addOnFailureListener {
+                requestFreshLocation(enableZoom)
+            }
+
+        } catch (e: SecurityException) {
+            Utility.dismissProgressAlertDialog()
+            requestPermission()
+        }
+    }
+    private fun requestFreshLocation(enableZoom: Boolean) {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            2000L
+        ).apply {
+            setMinUpdateIntervalMillis(1000L)
+            setMaxUpdateDelayMillis(3000L)
+            setWaitForAccurateLocation(false)
+            setMinUpdateDistanceMeters(5f)
+        }.build()
+
+        val freshLocationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val meterAccuracy = sharedPreferences.getInt(
+                        Constants.SHARED_PREF_METER_ACCURACY,
+                        Constants.SHARED_PREF_DEFAULT_ACCURACY
+                    )
+
+                    if (location.accuracy < meterAccuracy && isLocationValid(location) && !isMockLocation(location)) {
+                        Utility.dismissProgressAlertDialog()
+                        fusedLocationClient.removeLocationUpdates(this)
+                        handleInitialLocation(location, enableZoom)
+                    }
+                }
+            }
+        }
+
+        if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            freshLocationCallback,
+            Looper.getMainLooper()
+        )
+
+        // Timeout after 10 seconds
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(10000)
+            fusedLocationClient.removeLocationUpdates(freshLocationCallback)
+            Utility.dismissProgressAlertDialog()
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    requireContext(),
+                    "Unable to get accurate location. Please try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun handleInitialLocation(location: Location, enableZoom: Boolean) {
+        updateLocationOnMap(location)
+
+        if (enableZoom) {
+            val point = Point(
+                location.longitude,
+                location.latitude,
+                SpatialReferences.getWgs84()
+            )
+            binding.parcelMapview.setViewpointAsync(Viewpoint(point, 1000.0))
+        }
+
+        // Start continuous updates after getting initial location
+        startContinuousLocationUpdates()
+    }
+
+    private fun startContinuousLocationUpdates() {
+        if (!checkPermission()) {
+            return
+        }
+
+        if (!Utility.checkGPS(requireActivity())) {
+            return
+        }
+
+        try {
+            val locationRequest = LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                2000L // Update every 2 seconds
+            ).apply {
+                setMinUpdateIntervalMillis(1000L) // At least 1 second between updates
+                setMaxUpdateDelayMillis(3000L)
+                setWaitForAccurateLocation(false)
+                setMinUpdateDistanceMeters(5f) // Update when moved 5 meters
+            }.build()
+
+            if (ActivityCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+
+            Log.d("Location", "Started continuous location updates")
+
+        } catch (e: Exception) {
+            Log.e("Location", "Error starting location updates: ${e.message}", e)
+        }
+    }
+
+    private fun handleLocationUpdate(location: Location) {
+        try {
+            // Validate location
+            if (!isLocationValid(location)) {
+                Log.w("Location", "Invalid location received")
+                return
+            }
+
+            // Check for mock location
+            if (isMockLocation(location)) {
+                stopLocationUpdates()
+                Utility.exitApplication(
+                    "Warning!",
+                    "Please disable mock/fake location. The application will exit now.",
+                    requireActivity()
+                )
+                return
+            }
+
+            // Update location on map
+            updateLocationOnMap(location)
+
+            // Store current location
+            viewModel.currentLocation = Utility.convertGpsTimeToString(location.time)
+
+            Log.d("Location", "Location updated: ${location.latitude}, ${location.longitude}, Accuracy: ${location.accuracy}m")
+
+        } catch (e: Exception) {
+            Log.e("Location", "Error handling location update: ${e.message}", e)
+        }
+    }
+
+    // Check if location is valid
+    private fun isLocationValid(location: Location): Boolean {
+        return location.latitude in -90.0..90.0 &&
+                location.longitude in -180.0..180.0 &&
+                location.accuracy < 100f // Reject very inaccurate locations
+    }
+
+    private fun isMockLocation(location: Location): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            location.isMock
+        } else {
+            @Suppress("DEPRECATION")
+            location.isFromMockProvider
+        }
+    }
+
+    // Update marker on map with smooth animation
+    private fun updateLocationOnMap(location: Location) {
+        try {
+            val point = Point(
+                location.longitude,
+                location.latitude,
+                SpatialReferences.getWgs84()
+            )
+
+            // Remove old marker
+            currentLocationGraphic?.let {
+                currentLocationGraphicOverlay.graphics.remove(it)
+            }
+
+            // Create marker symbol
+            val markerSymbol = SimpleMarkerSymbol(
+                SimpleMarkerSymbol.Style.CIRCLE,
+                ContextCompat.getColor(requireContext(), R.color.current_location),
+                22f
+            ).apply {
+                outline = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2f)
+            }
+
+            // Add new marker
+            currentLocationGraphic = Graphic(point, markerSymbol)
+
+            if (!binding.parcelMapview.graphicsOverlays.contains(currentLocationGraphicOverlay)) {
+                binding.parcelMapview.graphicsOverlays.add(currentLocationGraphicOverlay)
+            }
+
+            currentLocationGraphicOverlay.graphics.add(currentLocationGraphic)
+
+            Log.d("Location", "Marker updated at: ${location.latitude}, ${location.longitude}")
+
+        } catch (e: Exception) {
+            Log.e("Location", "Error updating location marker: ${e.message}", e)
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        if (::fusedLocationClient.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+            Log.d("Location", "Stopped location updates")
+        }
+    }
+
+    private fun startLocationProcess(enableZoom: Boolean) {
+        try {
+            if (Utility.checkGPS(requireActivity())) {
+                Utility.showProgressAlertDialog(context, "Please wait, fetching location...")
+                getInitialLocation(enableZoom)
+            } else {
+                Utility.buildAlertMessageNoGps(requireActivity())
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Location Exception: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+
+
+
+
 
     private fun setHeaderText() {
         val mauzaName = sharedPreferences.getString(
@@ -1923,111 +2204,111 @@ class FragmentMap : Fragment() {
         negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
     }
 
-    private fun startLocationProcess(enableZoom: Boolean) {
-        try {
-            if (Utility.checkGPS(requireActivity())) {
-                Utility.showProgressAlertDialog(context, "Please wait, fetching location...")
-                getCurrentLocationFromFusedProvider(enableZoom)
-            } else {
-                Utility.buildAlertMessageNoGps(requireActivity())
-            }
-        } catch (e: Exception) {
-            Toast.makeText(context, "Location Exception :${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
+//    private fun startLocationProcess(enableZoom: Boolean) {
+//        try {
+//            if (Utility.checkGPS(requireActivity())) {
+//                Utility.showProgressAlertDialog(context, "Please wait, fetching location...")
+//                getCurrentLocationFromFusedProvider(enableZoom)
+//            } else {
+//                Utility.buildAlertMessageNoGps(requireActivity())
+//            }
+//        } catch (e: Exception) {
+//            Toast.makeText(context, "Location Exception :${e.message}", Toast.LENGTH_SHORT).show()
+//        }
+//    }
 
-    private fun getCurrentLocationFromFusedProvider(zoom: Boolean) {
-        try {
-            enableZoom = zoom
+//    private fun getCurrentLocationFromFusedProvider(zoom: Boolean) {
+//        try {
+//            enableZoom = zoom
+//
+//            locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
+//                .setWaitForAccurateLocation(false)
+//                .setMinUpdateIntervalMillis(1500)
+//                .setMaxUpdateDelayMillis(3000)
+//                .build()
+//
+//            if (ActivityCompat.checkSelfPermission(
+//                    requireContext(),
+//                    Manifest.permission.ACCESS_FINE_LOCATION
+//                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+//                    requireContext(),
+//                    Manifest.permission.ACCESS_COARSE_LOCATION
+//                ) != PackageManager.PERMISSION_GRANTED
+//            ) {
+//                return
+//            }
+//
+//            fusedLocationClient.requestLocationUpdates(
+//                locationRequest,
+//                locationCallback,
+//                Looper.getMainLooper()
+//            )
+//
+//        } catch (e: Exception) {
+//            Toast.makeText(
+//                requireContext(),
+//                "Current Location Exception :${e.message}",
+//                Toast.LENGTH_SHORT
+//            ).show()
+//        }
+//    }
 
-            locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
-                .setWaitForAccurateLocation(false)
-                .setMinUpdateIntervalMillis(1500)
-                .setMaxUpdateDelayMillis(3000)
-                .build()
-
-            if (ActivityCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
-
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
-
-        } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "Current Location Exception :${e.message}",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    private fun handleLocationResult(locationResult: LocationResult) {
-        for (location in locationResult.locations) {
-            val locationAccuracy = location.accuracy.roundToInt()
-
-            val meterAccuracy = sharedPreferences.getInt(
-                Constants.SHARED_PREF_METER_ACCURACY,
-                Constants.SHARED_PREF_DEFAULT_ACCURACY
-            )
-
-            val accuracy = if (enableZoom) {
-                meterAccuracy
-            } else {
-                Constants.locationMediumAccuracy
-            }
-
-            Log.d("TAG", locationAccuracy.toString())
-            Log.d("TAG", location.provider.toString())
-
-            if (locationAccuracy < accuracy) {
-                if (Build.VERSION.SDK_INT < 31) {
-                    @Suppress("DEPRECATION")
-                    if (!location.isFromMockProvider) {
-                        Utility.dismissProgressAlertDialog()
-                        if (!enableZoom) {
-                            fusedLocationClient.removeLocationUpdates(locationCallback)
-                        }
-                        setLocation(location, enableZoom)
-                    } else {
-                        Utility.dismissProgressAlertDialog()
-                        fusedLocationClient.removeLocationUpdates(locationCallback)
-                        Utility.exitApplication(
-                            "Warning!",
-                            "Please disable mock/fake location. The application will exit now.",
-                            requireActivity()
-                        )
-                    }
-                } else {
-                    if (!location.isMock) {
-                        Utility.dismissProgressAlertDialog()
-                        if (!enableZoom) {
-                            fusedLocationClient.removeLocationUpdates(locationCallback)
-                        }
-                        setLocation(location, enableZoom)
-                    } else {
-                        Utility.dismissProgressAlertDialog()
-                        fusedLocationClient.removeLocationUpdates(locationCallback)
-                        Utility.exitApplication(
-                            "Warning!",
-                            "Please disable mock/fake location. The application will exit now.",
-                            requireActivity()
-                        )
-                    }
-                }
-            }
-        }
-    }
+//    private fun handleLocationResult(locationResult: LocationResult) {
+//        for (location in locationResult.locations) {
+//            val locationAccuracy = location.accuracy.roundToInt()
+//
+//            val meterAccuracy = sharedPreferences.getInt(
+//                Constants.SHARED_PREF_METER_ACCURACY,
+//                Constants.SHARED_PREF_DEFAULT_ACCURACY
+//            )
+//
+//            val accuracy = if (enableZoom) {
+//                meterAccuracy
+//            } else {
+//                Constants.locationMediumAccuracy
+//            }
+//
+//            Log.d("TAG", locationAccuracy.toString())
+//            Log.d("TAG", location.provider.toString())
+//
+//            if (locationAccuracy < accuracy) {
+//                if (Build.VERSION.SDK_INT < 31) {
+//                    @Suppress("DEPRECATION")
+//                    if (!location.isFromMockProvider) {
+//                        Utility.dismissProgressAlertDialog()
+//                        if (!enableZoom) {
+//                            fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        }
+//                        setLocation(location, enableZoom)
+//                    } else {
+//                        Utility.dismissProgressAlertDialog()
+//                        fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        Utility.exitApplication(
+//                            "Warning!",
+//                            "Please disable mock/fake location. The application will exit now.",
+//                            requireActivity()
+//                        )
+//                    }
+//                } else {
+//                    if (!location.isMock) {
+//                        Utility.dismissProgressAlertDialog()
+//                        if (!enableZoom) {
+//                            fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        }
+//                        setLocation(location, enableZoom)
+//                    } else {
+//                        Utility.dismissProgressAlertDialog()
+//                        fusedLocationClient.removeLocationUpdates(locationCallback)
+//                        Utility.exitApplication(
+//                            "Warning!",
+//                            "Please disable mock/fake location. The application will exit now.",
+//                            requireActivity()
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     override fun onPause() {
         _binding?.parcelMapview?.pause()
@@ -2052,63 +2333,57 @@ class FragmentMap : Fragment() {
         }
     }
 
-    private fun stopLocationUpdates() {
-        if (this::fusedLocationClient.isInitialized) {
-            fusedLocationClient.removeLocationUpdates(locationCallback)
-        }
 
-        ls?.let { lm?.removeUpdates(it) }
-    }
 
-    private fun setLocation(location: Location, enableZoom: Boolean) {
-        stopLocationUpdates()
+//    private fun setLocation(location: Location, enableZoom: Boolean) {
+//        stopLocationUpdates()
+//
+//        drawMarker(
+//            location.latitude.toString(),
+//            location.longitude.toString(),
+//            enableZoom
+//        )
+//    }
 
-        drawMarker(
-            location.latitude.toString(),
-            location.longitude.toString(),
-            enableZoom
-        )
-    }
-
-    private fun drawMarker(lat: String, lng: String, enableZoom: Boolean) {
-        try {
-            val latitude = lat.toDoubleOrNull()
-            val longitude = lng.toDoubleOrNull()
-
-            if (latitude == null || longitude == null ||
-                latitude !in -90.0..90.0 || longitude !in -180.0..180.0
-            ) {
-                Log.e("TAG", "Invalid coordinates: lat=$latitude, lng=$longitude")
-                return
-            }
-
-            val location = Point(longitude, latitude, SpatialReferences.getWgs84())
-
-            val markerSymbol = SimpleMarkerSymbol(
-                SimpleMarkerSymbol.Style.CIRCLE,
-                ContextCompat.getColor(context, R.color.current_location),
-                22f
-            ).apply {
-                outline = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2f)
-            }
-
-            if (!binding.parcelMapview.graphicsOverlays.contains(currentLocationGraphicOverlay)) {
-                binding.parcelMapview.graphicsOverlays.add(currentLocationGraphicOverlay)
-            }
-
-            currentLocationGraphicOverlay.graphics.clear()
-            currentLocationGraphicOverlay.graphics.add(Graphic(location, markerSymbol))
-
-            if (enableZoom) {
-                binding.parcelMapview.setViewpointAsync(Viewpoint(location, 1000.0))
-            }
-
-            Log.d("TAG", "Marker drawn at lat=$latitude, lng=$longitude")
-
-        } catch (e: Exception) {
-            Log.e("TAG", "drawMarker error: ${e.message}", e)
-        }
-    }
+//    private fun drawMarker(lat: String, lng: String, enableZoom: Boolean) {
+//        try {
+//            val latitude = lat.toDoubleOrNull()
+//            val longitude = lng.toDoubleOrNull()
+//
+//            if (latitude == null || longitude == null ||
+//                latitude !in -90.0..90.0 || longitude !in -180.0..180.0
+//            ) {
+//                Log.e("TAG", "Invalid coordinates: lat=$latitude, lng=$longitude")
+//                return
+//            }
+//
+//            val location = Point(longitude, latitude, SpatialReferences.getWgs84())
+//
+//            val markerSymbol = SimpleMarkerSymbol(
+//                SimpleMarkerSymbol.Style.CIRCLE,
+//                ContextCompat.getColor(context, R.color.current_location),
+//                22f
+//            ).apply {
+//                outline = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2f)
+//            }
+//
+//            if (!binding.parcelMapview.graphicsOverlays.contains(currentLocationGraphicOverlay)) {
+//                binding.parcelMapview.graphicsOverlays.add(currentLocationGraphicOverlay)
+//            }
+//
+//            currentLocationGraphicOverlay.graphics.clear()
+//            currentLocationGraphicOverlay.graphics.add(Graphic(location, markerSymbol))
+//
+//            if (enableZoom) {
+//                binding.parcelMapview.setViewpointAsync(Viewpoint(location, 1000.0))
+//            }
+//
+//            Log.d("TAG", "Marker drawn at lat=$latitude, lng=$longitude")
+//
+//        } catch (e: Exception) {
+//            Log.e("TAG", "drawMarker error: ${e.message}", e)
+//        }
+//    }
 
     private fun loadMapFile() {
         val mauzaId = sharedPreferences.getLong(
@@ -2195,6 +2470,18 @@ class FragmentMap : Fragment() {
                     val result = identifyFuture.get()
                     if (result.graphics.isNotEmpty()) {
                         val graphic = result.graphics[0]
+
+                        val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
+
+                        if (surveyStatus == 2) {
+                            // Parcel is surveyed - don't allow splitting
+                            Toast.makeText(
+                                context,
+                                "Surveyed parcels cannot be split",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@addDoneListener
+                        }
 
                         mCallOut.dismiss()
 
@@ -2883,7 +3170,7 @@ class FragmentMap : Fragment() {
                         context,
                         "Please wait, fetching location..."
                     )
-                    getCurrentLocation()
+//                    getCurrentLocation()
                 } else {
                     Utility.buildAlertMessageNoGps(requireActivity())
                 }
@@ -3527,11 +3814,11 @@ class FragmentMap : Fragment() {
 
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                handleLocationResult(locationResult)
-            }
-        }
+//        locationCallback = object : LocationCallback() {
+//            override fun onLocationResult(locationResult: LocationResult) {
+//                handleLocationResult(locationResult)
+//            }
+//        }
 
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -3575,74 +3862,74 @@ class FragmentMap : Fragment() {
         }
     }
 
-    private fun getCurrentLocation() {
-        try {
-            ls = object : LocationListener {
-                override fun onProviderEnabled(provider: String) {}
-                override fun onProviderDisabled(provider: String) {}
-
-                @Deprecated("Deprecated in Java")
-                override fun onStatusChanged(
-                    provider: String?,
-                    status: Int,
-                    extras: Bundle?
-                ) {
-                }
-
-                override fun onLocationChanged(location: Location) {
-
-                    viewModel.currentLocation =
-                        Utility.convertGpsTimeToString(location.time)
-
-                    if (Build.VERSION.SDK_INT < 31) {
-                        if (!location.isFromMockProvider) {
-                            Utility.dismissProgressAlertDialog()
-                            ls?.let { lm?.removeUpdates(it) }
-                            reVisitValidation(location)
-                        } else {
-                            Utility.dismissProgressAlertDialog()
-                            ls?.let { lm?.removeUpdates(it) }
-                            Utility.exitApplication(
-                                "Warning!",
-                                "Please disable mock/fake location. The application will exit now.",
-                                requireActivity()
-                            )
-                        }
-                    } else {
-                        if (!location.isMock) {
-                            Utility.dismissProgressAlertDialog()
-                            ls?.let { lm?.removeUpdates(it) }
-                            reVisitValidation(location)
-                        } else {
-                            Utility.dismissProgressAlertDialog()
-                            ls?.let { lm?.removeUpdates(it) }
-                            Utility.exitApplication(
-                                "Warning!",
-                                "Please disable mock/fake location. The application will exit now.",
-                                requireActivity()
-                            )
-                        }
-                    }
-                }
-            }
-            if (ActivityCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                    context, Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
-            ls?.let {
-                lm?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0f, it)
-            }
-        } catch (e: Exception) {
-            Toast.makeText(
-                context,
-                "Current Location Exception :${e.message}",
-                Toast.LENGTH_SHORT
-            )
-                .show()
-        }
-    }
+//    private fun getCurrentLocation() {
+//        try {
+//            ls = object : LocationListener {
+//                override fun onProviderEnabled(provider: String) {}
+//                override fun onProviderDisabled(provider: String) {}
+//
+//                @Deprecated("Deprecated in Java")
+//                override fun onStatusChanged(
+//                    provider: String?,
+//                    status: Int,
+//                    extras: Bundle?
+//                ) {
+//                }
+//
+//                override fun onLocationChanged(location: Location) {
+//
+//                    viewModel.currentLocation =
+//                        Utility.convertGpsTimeToString(location.time)
+//
+//                    if (Build.VERSION.SDK_INT < 31) {
+//                        if (!location.isFromMockProvider) {
+//                            Utility.dismissProgressAlertDialog()
+//                            ls?.let { lm?.removeUpdates(it) }
+//                            reVisitValidation(location)
+//                        } else {
+//                            Utility.dismissProgressAlertDialog()
+//                            ls?.let { lm?.removeUpdates(it) }
+//                            Utility.exitApplication(
+//                                "Warning!",
+//                                "Please disable mock/fake location. The application will exit now.",
+//                                requireActivity()
+//                            )
+//                        }
+//                    } else {
+//                        if (!location.isMock) {
+//                            Utility.dismissProgressAlertDialog()
+//                            ls?.let { lm?.removeUpdates(it) }
+//                            reVisitValidation(location)
+//                        } else {
+//                            Utility.dismissProgressAlertDialog()
+//                            ls?.let { lm?.removeUpdates(it) }
+//                            Utility.exitApplication(
+//                                "Warning!",
+//                                "Please disable mock/fake location. The application will exit now.",
+//                                requireActivity()
+//                            )
+//                        }
+//                    }
+//                }
+//            }
+//            if (ActivityCompat.checkSelfPermission(
+//                    context, Manifest.permission.ACCESS_FINE_LOCATION
+//                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+//                    context, Manifest.permission.ACCESS_COARSE_LOCATION
+//                ) != PackageManager.PERMISSION_GRANTED
+//            ) {
+//                return
+//            }
+//            ls?.let {
+//                lm?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 0f, it)
+//            }
+//        } catch (e: Exception) {
+//            Toast.makeText(
+//                context,
+//                "Current Location Exception :${e.message}",
+//                Toast.LENGTH_SHORT
+//            )
+//                .show()
+//        }
+//    }
 }
