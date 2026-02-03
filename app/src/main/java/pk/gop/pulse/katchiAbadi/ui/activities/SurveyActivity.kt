@@ -380,7 +380,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private fun setupSpinners() {
         val ownershipStatusList = listOf("Self", "On Lease")
         val propertyTypeList = listOf("Farm Survey", "Other")
-        val imageTypeList = listOf("CNIC", "Property", "Other Document", "Discrepancy Pic")
+        val imageTypeList = listOf("Property", "CNIC", "Other Document", "Discrepancy Pic")
 
         // Static spinners - FIXED
         val ownershipAdapter = ArrayAdapter(

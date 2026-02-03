@@ -799,10 +799,8 @@ class FragmentMap : Fragment() {
                     try {
                         val originalParcelId =
                             originalAttributes["parcel_id"] as? Long ?: return@withContext
-                        if (originalParcelId != null) {
-                            cleanupOriginalGraphicsAfterSplit(originalParcelId)
-                        }
 
+                        Log.d("SPLIT_DEBUG", "=== SPLIT OPERATION STARTED ===")
                         Log.d("SPLIT_DEBUG", "Original parcel ID from graphic: $originalParcelId")
 
                         val originalParcel =
@@ -811,7 +809,7 @@ class FragmentMap : Fragment() {
                         if (originalParcel == null) {
                             Log.e(
                                 "SPLIT_DEBUG",
-                                "Original parcel not found in database with ID: $originalParcelId"
+                                "❌ Original parcel not found in database with ID: $originalParcelId"
                             )
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(
@@ -823,19 +821,32 @@ class FragmentMap : Fragment() {
                             return@withContext
                         }
 
-                        Log.d(
-                            "SPLIT_DEBUG",
-                            "Found original parcel: ID=${originalParcel.id}, PKID=${originalParcel.pkid}, ParcelNo=${originalParcel.parcelNo}"
-                        )
+                        Log.d("SPLIT_DEBUG", "✅ Found original parcel:")
+                        Log.d("SPLIT_DEBUG", "   ID: ${originalParcel.id}")
+                        Log.d("SPLIT_DEBUG", "   PKID: ${originalParcel.pkid}")
+                        Log.d("SPLIT_DEBUG", "   ParcelNo: ${originalParcel.parcelNo}")
+                        Log.d("SPLIT_DEBUG", "   SubParcelNo: ${originalParcel.subParcelNo}")
+                        Log.d("SPLIT_DEBUG", "   isActivate (before): ${originalParcel.isActivate}")
 
+                        // ✅ STEP 1: Deactivate the original parcel BEFORE creating new ones
                         database.activeParcelDao()
                             .updateParcelActivationStatus(originalParcel.id, false)
-                        Log.d("ParcelSplit", "Deactivated original parcel ID: ${originalParcel.id}")
 
+                        // Verify deactivation
+                        val verifyDeactivated = database.activeParcelDao().getParcelById(originalParcel.id)
+                        Log.d("SPLIT_DEBUG", "✅ Deactivated original parcel ID: ${originalParcel.id}")
+                        Log.d("SPLIT_DEBUG", "   isActivate (after): ${verifyDeactivated?.isActivate}")
+
+                        // Clean up graphics references
+                        cleanupOriginalGraphicsAfterSplit(originalParcelId)
+
+                        // ✅ STEP 2: Get max ID for new parcels
                         val maxId = database.activeParcelDao().getMaxParcelId() ?: 0L
+                        Log.d("SPLIT_DEBUG", "Current max parcel ID in database: $maxId")
 
                         val newParcels = mutableListOf<ActiveParcelEntity>()
 
+                        // ✅ STEP 3: Create split parcels
                         for (i in splitPolygons.indices) {
                             val newSubParcelNo =
                                 if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
@@ -846,6 +857,7 @@ class FragmentMap : Fragment() {
 
                             val newGeomWKT = convertPolygonToWkt(splitPolygons[i])
                             if (!validateWkt(newGeomWKT)) {
+                                Log.e("SPLIT_DEBUG", "❌ Invalid geometry for split parcel ${i + 1}")
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(
                                         context,
@@ -871,38 +883,47 @@ class FragmentMap : Fragment() {
                                 centroid = centroidWKT,
                                 surveyStatusCode = 1,
                                 surveyId = null,
-                                isActivate = true,
+                                isActivate = true, // ✅ Split parcels are active
                                 unitId = originalUnitId,
                                 groupId = originalGroupId
                             )
 
                             newParcels.add(newParcel)
-                            Log.d(
-                                "SPLIT_DEBUG",
-                                "Created split parcel: ID=${newUniqueId}, ParcelNo=$originalParcelNo, SubParcel=$newSubParcelNo"
-                            )
+
+                            Log.d("SPLIT_DEBUG", "✅ Created split parcel ${i + 1}:")
+                            Log.d("SPLIT_DEBUG", "   New ID: $newUniqueId")
+                            Log.d("SPLIT_DEBUG", "   ParcelNo: $originalParcelNo")
+                            Log.d("SPLIT_DEBUG", "   SubParcelNo: $newSubParcelNo")
+                            Log.d("SPLIT_DEBUG", "   isActivate: ${newParcel.isActivate}")
                         }
 
+                        // ✅ STEP 4: Insert new split parcels
                         database.activeParcelDao().insertActiveParcels(newParcels)
+                        Log.d("SPLIT_DEBUG", "✅ Inserted ${newParcels.size} new split parcels into database")
 
-                        val verificationCount =
-                            database.activeParcelDao().countActiveParcelsByNumber(
-                                originalParcelNo,
-                                originalParcel.mauzaId,
-                                originalParcel.areaAssigned
-                            )
-                        Log.d(
-                            "ParcelSplit",
-                            "After split - Active parcels with number $originalParcelNo: $verificationCount"
+                        // ✅ STEP 5: Verification
+                        val activeCount = database.activeParcelDao().countActiveParcelsByNumber(
+                            originalParcelNo,
+                            originalParcel.mauzaId,
+                            originalParcel.areaAssigned
                         )
 
-                        Log.d(
-                            "ParcelSplit",
-                            "Successfully split parcel $originalParcelNo into ${splitPolygons.size} parts with unique IDs"
-                        )
+                        Log.d("SPLIT_DEBUG", "=== VERIFICATION ===")
+                        Log.d("SPLIT_DEBUG", "Active parcels with number $originalParcelNo: $activeCount")
+                        Log.d("SPLIT_DEBUG", "Expected active count: ${splitPolygons.size}")
+
+                        // Verify each new parcel
+                        newParcels.forEach { newParcel ->
+                            val verifyParcel = database.activeParcelDao().getParcelById(newParcel.id)
+                            Log.d("SPLIT_DEBUG", "Verify parcel ID ${newParcel.id}:")
+                            Log.d("SPLIT_DEBUG", "   Exists: ${verifyParcel != null}")
+                            Log.d("SPLIT_DEBUG", "   isActivate: ${verifyParcel?.isActivate}")
+                        }
+
+                        Log.d("SPLIT_DEBUG", "=== SPLIT OPERATION COMPLETED SUCCESSFULLY ===")
 
                     } catch (e: Exception) {
-                        Log.e("ParcelSplit", "Database error: ${e.message}", e)
+                        Log.e("SPLIT_DEBUG", "❌ Database error: ${e.message}", e)
                         withContext(Dispatchers.Main) {
                             Toast.makeText(
                                 context,
@@ -916,6 +937,7 @@ class FragmentMap : Fragment() {
 
                 withContext(Dispatchers.Main) {
                     try {
+                        // Remove original graphic from map
                         surveyParcelsGraphics.graphics.remove(originalGraphic)
                         selectedParcelGraphics.remove(originalGraphic)
 
@@ -925,15 +947,16 @@ class FragmentMap : Fragment() {
                             Toast.LENGTH_SHORT
                         ).show()
 
+                        // Refresh map to show new split parcels
                         refreshMapDisplay()
 
                     } catch (e: Exception) {
-                        Log.e("ParcelSplit", "UI update error: ${e.message}", e)
+                        Log.e("SPLIT_DEBUG", "❌ UI update error: ${e.message}", e)
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e("ParcelSplit", "Error in createSplitParcels: ${e.message}", e)
+            Log.e("SPLIT_DEBUG", "❌ Error in createSplitParcels: ${e.message}", e)
         }
     }
 
