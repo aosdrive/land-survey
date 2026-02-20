@@ -12,6 +12,7 @@ import pk.gop.pulse.katchiAbadi.data.local.TaskUpdateResponse
 import pk.gop.pulse.katchiAbadi.data.remote.post.RetakePicturesPost
 import pk.gop.pulse.katchiAbadi.data.remote.post.SurveyPost
 import pk.gop.pulse.katchiAbadi.data.remote.request.LoginRequest
+import pk.gop.pulse.katchiAbadi.data.remote.request.OnboardingResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.BasicApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.BasicInfoDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.Info
@@ -22,13 +23,12 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.LoginSurveyorResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
+import pk.gop.pulse.katchiAbadi.data.remote.request.OnboardingUploadDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.VersionCheckResponse
-import pk.gop.pulse.katchiAbadi.domain.model.ParcelCreationRequest
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
-import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TaskResponse
 import pk.gop.pulse.katchiAbadi.domain.model.UserResponse
 import retrofit2.Response
@@ -206,5 +206,10 @@ interface ServerApi {
         @Url url: String,
         @Query("appVersion") appVersion: String
     ): Response<VersionCheckResponse>
+
+    @POST("api/MobileData/UploadOnboarding")
+    suspend fun uploadOnboarding(
+        @Body data: OnboardingUploadDto
+    ): Response<OnboardingResponse>
 
 }

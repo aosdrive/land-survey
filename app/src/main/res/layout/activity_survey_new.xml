@@ -185,6 +185,38 @@
 
 
                 <!-- Year Input - Full Width -->
+<!--                <com.google.android.material.textfield.TextInputLayout-->
+<!--                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_marginBottom="16dp"-->
+<!--                    android:hint="Address"-->
+<!--                    app:boxBackgroundMode="outline"-->
+<!--                    app:boxCornerRadiusBottomEnd="8dp"-->
+<!--                    app:boxCornerRadiusBottomStart="8dp"-->
+<!--                    app:boxCornerRadiusTopEnd="8dp"-->
+<!--                    app:boxCornerRadiusTopStart="8dp"-->
+<!--                    app:boxStrokeColor="@color/forest_green"-->
+<!--                    app:boxStrokeErrorColor="#D32F2F"-->
+<!--                    app:helperText="Enter complete address"-->
+<!--                    app:helperTextTextColor="#999999"-->
+<!--                    app:hintTextColor="@color/forest_green"-->
+<!--                    app:startIconDrawable="@android:drawable/ic_menu_mylocation"-->
+<!--                    app:startIconTint="@color/forest_green">-->
+
+<!--                    <com.google.android.material.textfield.TextInputEditText-->
+<!--                        android:id="@+id/etAddress"-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:inputType="textPostalAddress|textCapSentences"-->
+<!--                        android:maxLength="200"-->
+<!--                        android:minLines="2"-->
+<!--                        android:maxLines="4"-->
+<!--                        android:gravity="start|top"-->
+<!--                        android:textColor="#333333"-->
+<!--                        android:textSize="15sp" />-->
+<!--                </com.google.android.material.textfield.TextInputLayout>-->
+
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"

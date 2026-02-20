@@ -208,6 +208,12 @@ class MenuActivity : BaseActivity() {
             }
         }
 
+        binding.farmers.setOnClickListener {
+            Intent(this@MenuActivity, FarmerActivity::class.java).apply {
+                startActivity(this)
+            }
+        }
+
         binding.apply {
 
             tvFooter.text =

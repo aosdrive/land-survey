@@ -789,7 +789,6 @@ class FragmentMap : Fragment() {
         val originalAttributes = originalGraphic.attributes
         val originalParcelNo = originalAttributes["parcel_no"]?.toString()?.toLongOrNull() ?: return
         val originalSubParcelNo = originalAttributes["sub_parcel_no"]?.toString() ?: ""
-
         val originalUnitId = originalAttributes["unit_id"]?.toString()?.toLongOrNull() ?: 0L
         val originalGroupId = originalAttributes["group_id"]?.toString()?.toLongOrNull() ?: 0L
 
@@ -797,67 +796,47 @@ class FragmentMap : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     try {
-                        val originalParcelId =
-                            originalAttributes["parcel_id"] as? Long ?: return@withContext
+                        val originalParcelId = originalAttributes["parcel_id"] as? Long ?: return@withContext
 
                         Log.d("SPLIT_DEBUG", "=== SPLIT OPERATION STARTED ===")
-                        Log.d("SPLIT_DEBUG", "Original parcel ID from graphic: $originalParcelId")
+                        Log.d("SPLIT_DEBUG", "Original parcel ID: $originalParcelId")
 
-                        val originalParcel =
-                            database.activeParcelDao().getParcelById(originalParcelId)
+                        val originalParcel = database.activeParcelDao().getParcelById(originalParcelId)
 
                         if (originalParcel == null) {
-                            Log.e(
-                                "SPLIT_DEBUG",
-                                "❌ Original parcel not found in database with ID: $originalParcelId"
-                            )
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(
-                                    context,
-                                    "Original parcel not found",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
+                            Log.e("SPLIT_DEBUG", "❌ Original parcel not found")
                             return@withContext
                         }
 
-                        Log.d("SPLIT_DEBUG", "✅ Found original parcel:")
-                        Log.d("SPLIT_DEBUG", "   ID: ${originalParcel.id}")
-                        Log.d("SPLIT_DEBUG", "   PKID: ${originalParcel.pkid}")
-                        Log.d("SPLIT_DEBUG", "   ParcelNo: ${originalParcel.parcelNo}")
-                        Log.d("SPLIT_DEBUG", "   SubParcelNo: ${originalParcel.subParcelNo}")
-                        Log.d("SPLIT_DEBUG", "   isActivate (before): ${originalParcel.isActivate}")
+                        Log.d("SPLIT_DEBUG", "✅ Found original parcel: ${originalParcel.id}")
 
-                        // ✅ STEP 1: Deactivate the original parcel BEFORE creating new ones
-                        database.activeParcelDao()
-                            .updateParcelActivationStatus(originalParcel.id, false)
+                        // ✅ Deactivate original parcel
+                        database.activeParcelDao().updateParcelActivationStatus(originalParcel.id, false)
+                        Log.d("SPLIT_DEBUG", "✅ Deactivated original parcel")
 
-                        // Verify deactivation
-                        val verifyDeactivated = database.activeParcelDao().getParcelById(originalParcel.id)
-                        Log.d("SPLIT_DEBUG", "✅ Deactivated original parcel ID: ${originalParcel.id}")
-                        Log.d("SPLIT_DEBUG", "   isActivate (after): ${verifyDeactivated?.isActivate}")
-
-                        // Clean up graphics references
                         cleanupOriginalGraphicsAfterSplit(originalParcelId)
 
-                        // ✅ STEP 2: Get max ID for new parcels
+                        // ✅ Get max ID for new parcels
                         val maxId = database.activeParcelDao().getMaxParcelId() ?: 0L
-                        Log.d("SPLIT_DEBUG", "Current max parcel ID in database: $maxId")
+                        Log.d("SPLIT_DEBUG", "Current max parcel ID: $maxId")
 
                         val newParcels = mutableListOf<ActiveParcelEntity>()
 
-                        // ✅ STEP 3: Create split parcels
+                        // ✅ Create split parcels with geometry
                         for (i in splitPolygons.indices) {
-                            val newSubParcelNo =
-                                if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
-                                    (i + 1).toString()
-                                } else {
-                                    "${originalSubParcelNo}_${i + 1}"
-                                }
+                            val newSubParcelNo = if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
+                                (i + 1).toString()
+                            } else {
+                                "${originalSubParcelNo}_${i + 1}"
+                            }
 
+                            // ✅ CRITICAL: Convert polygon to WKT
                             val newGeomWKT = convertPolygonToWkt(splitPolygons[i])
+
+                            // ✅ VALIDATION: Check geometry
                             if (!validateWkt(newGeomWKT)) {
                                 Log.e("SPLIT_DEBUG", "❌ Invalid geometry for split parcel ${i + 1}")
+                                Log.e("SPLIT_DEBUG", "   GeomWKT: $newGeomWKT")
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(
                                         context,
@@ -868,9 +847,12 @@ class FragmentMap : Fragment() {
                                 return@withContext
                             }
 
+                            Log.d("SPLIT_DEBUG", "✅ Valid geometry for split parcel ${i + 1}:")
+                            Log.d("SPLIT_DEBUG", "   GeomWKT length: ${newGeomWKT.length}")
+                            Log.d("SPLIT_DEBUG", "   GeomWKT preview: ${newGeomWKT.take(100)}...")
+
                             val newCentroid = splitPolygons[i].extent.center
-                            val centroidWKT =
-                                String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
+                            val centroidWKT = String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
 
                             val newUniqueId = maxId + i + 1
 
@@ -879,11 +861,11 @@ class FragmentMap : Fragment() {
                                 id = newUniqueId,
                                 parcelNo = originalParcelNo,
                                 subParcelNo = newSubParcelNo,
-                                geomWKT = newGeomWKT,
-                                centroid = centroidWKT,
+                                geomWKT = newGeomWKT, // ✅ Set geometry
+                                centroid = centroidWKT, // ✅ Set centroid
                                 surveyStatusCode = 1,
                                 surveyId = null,
-                                isActivate = true, // ✅ Split parcels are active
+                                isActivate = true,
                                 unitId = originalUnitId,
                                 groupId = originalGroupId
                             )
@@ -894,33 +876,33 @@ class FragmentMap : Fragment() {
                             Log.d("SPLIT_DEBUG", "   New ID: $newUniqueId")
                             Log.d("SPLIT_DEBUG", "   ParcelNo: $originalParcelNo")
                             Log.d("SPLIT_DEBUG", "   SubParcelNo: $newSubParcelNo")
-                            Log.d("SPLIT_DEBUG", "   isActivate: ${newParcel.isActivate}")
+                            Log.d("SPLIT_DEBUG", "   GeomWKT: ${if (newParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY" else "✅ Present (${newParcel.geomWKT?.length} chars)"}")
+                            Log.d("SPLIT_DEBUG", "   Centroid: ${newParcel.centroid}")
                         }
 
-                        // ✅ STEP 4: Insert new split parcels
+                        // ✅ Insert new split parcels
                         database.activeParcelDao().insertActiveParcels(newParcels)
-                        Log.d("SPLIT_DEBUG", "✅ Inserted ${newParcels.size} new split parcels into database")
+                        Log.d("SPLIT_DEBUG", "✅ Inserted ${newParcels.size} split parcels")
 
-                        // ✅ STEP 5: Verification
-                        val activeCount = database.activeParcelDao().countActiveParcelsByNumber(
-                            originalParcelNo,
-                            originalParcel.mauzaId,
-                            originalParcel.areaAssigned
-                        )
-
-                        Log.d("SPLIT_DEBUG", "=== VERIFICATION ===")
-                        Log.d("SPLIT_DEBUG", "Active parcels with number $originalParcelNo: $activeCount")
-                        Log.d("SPLIT_DEBUG", "Expected active count: ${splitPolygons.size}")
-
-                        // Verify each new parcel
+                        // ✅ VERIFICATION: Check that parcels were inserted with geometry
                         newParcels.forEach { newParcel ->
                             val verifyParcel = database.activeParcelDao().getParcelById(newParcel.id)
-                            Log.d("SPLIT_DEBUG", "Verify parcel ID ${newParcel.id}:")
-                            Log.d("SPLIT_DEBUG", "   Exists: ${verifyParcel != null}")
-                            Log.d("SPLIT_DEBUG", "   isActivate: ${verifyParcel?.isActivate}")
+                            if (verifyParcel != null) {
+                                Log.d("SPLIT_DEBUG", "✅ Verify parcel ID ${newParcel.id}:")
+                                Log.d("SPLIT_DEBUG", "   Exists: true")
+                                Log.d("SPLIT_DEBUG", "   isActivate: ${verifyParcel.isActivate}")
+                                Log.d("SPLIT_DEBUG", "   GeomWKT: ${if (verifyParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY/NULL" else "✅ Present (${verifyParcel.geomWKT?.length} chars)"}")
+                                Log.d("SPLIT_DEBUG", "   Centroid: ${verifyParcel.centroid ?: "❌ NULL"}")
+
+                                if (verifyParcel.geomWKT.isNullOrEmpty()) {
+                                    Log.e("SPLIT_DEBUG", "❌❌ CRITICAL: Split parcel ${verifyParcel.id} has NO geometry in database!")
+                                }
+                            } else {
+                                Log.e("SPLIT_DEBUG", "❌ Parcel ID ${newParcel.id} NOT FOUND after insert!")
+                            }
                         }
 
-                        Log.d("SPLIT_DEBUG", "=== SPLIT OPERATION COMPLETED SUCCESSFULLY ===")
+                        Log.d("SPLIT_DEBUG", "=== SPLIT OPERATION COMPLETED ===")
 
                     } catch (e: Exception) {
                         Log.e("SPLIT_DEBUG", "❌ Database error: ${e.message}", e)
@@ -931,13 +913,11 @@ class FragmentMap : Fragment() {
                                 Toast.LENGTH_LONG
                             ).show()
                         }
-                        return@withContext
                     }
                 }
 
                 withContext(Dispatchers.Main) {
                     try {
-                        // Remove original graphic from map
                         surveyParcelsGraphics.graphics.remove(originalGraphic)
                         selectedParcelGraphics.remove(originalGraphic)
 
@@ -947,9 +927,7 @@ class FragmentMap : Fragment() {
                             Toast.LENGTH_SHORT
                         ).show()
 
-                        // Refresh map to show new split parcels
                         refreshMapDisplay()
-
                     } catch (e: Exception) {
                         Log.e("SPLIT_DEBUG", "❌ UI update error: ${e.message}", e)
                     }
@@ -1579,11 +1557,12 @@ class FragmentMap : Fragment() {
     }
 
     private fun addGraphics(parcel: ActiveParcelEntity, polygon: Polygon, gson: Gson) {
-        val area = GeometryEngine.areaGeodetic(
+        val areaSqFt  = GeometryEngine.areaGeodetic(
             polygon,
             AreaUnit(AreaUnitId.SQUARE_FEET),
             GeodeticCurveType.NORMAL_SECTION
         ).roundToInt()
+        val areaAcres = areaSqFt / 43560.0
         val myPolygonCenterLatLon = polygon.extent.center
         var isRejected = 0
         val symbol: SimpleFillSymbol
@@ -1625,7 +1604,7 @@ class FragmentMap : Fragment() {
         attr["parcel_no"] = parcel.parcelNo
         attr["sub_parcel_no"] = parcel.subParcelNo
         attr["surveyStatusCode"] = parcel.surveyStatusCode
-        attr["area"] = area
+        attr["area"] = areaSqFt
         attr["geomWKT"] = parcel.geomWKT
         attr["centroid"] = parcel.centroid
         attr["isRejected"] = isRejected
@@ -1656,7 +1635,7 @@ class FragmentMap : Fragment() {
         attrLabel["sub_parcel_no"] = parcel.subParcelNo
         attrLabel["khewatInfo"] = parcel.khewatInfo
         attrLabel["surveyStatusCode"] = parcel.surveyStatusCode
-        attrLabel["area"] = area
+        attrLabel["area"] = areaSqFt
         attrLabel["geomWKT"] = parcel.geomWKT
         attrLabel["centroid"] = parcel.centroid
         attrLabel["isRejected"] = isRejected

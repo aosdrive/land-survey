@@ -46,5 +46,6 @@ data class SurveyPersonEntity(
     var extra2: String = "",
 
     var mauzaId: Long = 0,
-    var mauzaName: String = ""
+    var mauzaName: String = "",
+    val address: String = "",
 )

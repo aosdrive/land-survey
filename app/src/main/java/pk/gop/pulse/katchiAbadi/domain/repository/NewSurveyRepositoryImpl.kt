@@ -7,11 +7,17 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
+import com.esri.arcgisruntime.geometry.AreaUnit
+import com.esri.arcgisruntime.geometry.AreaUnitId
+import com.esri.arcgisruntime.geometry.GeodeticCurveType
+import com.esri.arcgisruntime.geometry.GeometryEngine
+import com.esri.arcgisruntime.geometry.SpatialReferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Resource
+import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.post.Pictures
@@ -27,7 +33,9 @@ import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
 import pk.gop.pulse.katchiAbadi.domain.repository.NewSurveyRepository
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 private const val TAG = "SurveyRepository"
 
@@ -36,7 +44,8 @@ private data class ParcelData(
     val geomWKT: String,
     val centroid: String,
     val khewatInfo: String,
-    val parcelAreaKMF: String
+    val parcelAreaKMF: String,
+    val calculatedArea: String
 )
 
 class NewSurveyRepositoryImpl @Inject constructor(
@@ -47,6 +56,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
     private val sharedPreferences: SharedPreferences,
     private val activeParcelDao: ActiveParcelDao
 ) : NewSurveyRepository {
+
+    private val wgs84 by lazy {
+        SpatialReferences.getWgs84()
+    }
 
     override suspend fun getAllSurveys(): List<NewSurveyNewEntity> {
         return dao.getAllSurveys()
@@ -378,8 +391,6 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
     }
 
-    // ===== PROCESS SPLIT PARCELS =====
-// ===== PROCESS SPLIT PARCELS =====
     private suspend fun processSplitParcels(survey: NewSurveyNewEntity): List<NewSurveyNewEntity> {
         Log.d(TAG, "=== PROCESSING SPLIT PARCELS FOR UPLOAD ===")
         Log.d(TAG, "Processing split parcel upload for parcelId=${survey.parcelId}")
@@ -419,75 +430,334 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "   SubParcelNo: ${parcel.subParcelNo}")
             Log.d(TAG, "   SurveyStatus: ${parcel.surveyStatusCode}")
             Log.d(TAG, "   isActivate: ${parcel.isActivate}")
+            Log.d(TAG, "   GeomWKT: ${if (parcel.geomWKT.isNullOrEmpty()) "❌ NULL/EMPTY" else "✅ Present (${parcel.geomWKT.length} chars)"}")
         }
 
         val splitSurveys = mutableListOf<NewSurveyNewEntity>()
 
-        // ✅ NEW: Upload ALL split parcels (surveyed and unsurveyed)
+        // ✅ Upload ALL split parcels (surveyed and unsurveyed)
         splitParcels.forEach { splitParcel ->
+            // ✅ CRITICAL FIX: Use splitParcel.id so geometry lookup works
             val splitSurvey = survey.copy(
                 pkId = 0,
-                parcelId = 0L, // ✅ Server will create new parcel
-                parcelNo = splitParcel.parcelNo.toString(),
-                subParcelNo = splitParcel.subParcelNo,
-                parcelOperation = "New", // ✅ Tell server this is a new parcel
+                parcelId = splitParcel.id,                   // ✅ Use split parcel's local ID
+                parcelNo = splitParcel.parcelNo.toString(),  // ✅ Use split parcel number
+                subParcelNo = splitParcel.subParcelNo,       // ✅ Use split parcel's subParcelNo
+                parcelOperation = "New",
                 parcelOperationValue = survey.parcelId.toString() // ✅ Original parcel ID for server to deactivate
             )
             splitSurveys.add(splitSurvey)
-            Log.d(TAG, "✅ Created survey record: SubParcel=${splitParcel.subParcelNo}, Operation=New, OriginalParcelID=${survey.parcelId}")
+            Log.d(TAG, "✅ Created survey record:")
+            Log.d(TAG, "   ParcelId: ${splitParcel.id}")
+            Log.d(TAG, "   SubParcel: ${splitParcel.subParcelNo}")
+            Log.d(TAG, "   Operation: New")
+            Log.d(TAG, "   OriginalParcelID: ${survey.parcelId}")
         }
 
         Log.d(TAG, "=== SPLIT PARCEL PROCESSING COMPLETE ===")
         Log.d(TAG, "Created ${splitSurveys.size} survey records (including unsurveyed split parcels)")
         return splitSurveys
     }
-
     // ===== PROCESS MERGE PARCELS =====
+// ===== PROCESS MERGE PARCELS (FINAL CORRECT FIX) =====
+    //
+    // SCENARIO: Merging a split parcel (e.g. ParcelNo=775, SubParcel=2) with normal parcels
+    //
+    // RULES:
+    //   1. Split parcel (SubParcel != "" && != "0") → send as "New"
+    //      - If original parent is still ACTIVE locally  → ParcelOperationValue = originalParentId
+    //        (first split parcel being uploaded, server needs to deactivate original)
+    //      - If original parent is already INACTIVE locally → ParcelOperationValue = ""
+    //        (original already deactivated when first split was uploaded, don't deactivate again)
+    //   2. Normal merged parcels → always send as "Merge" with empty ParcelOperationValue
+    //
+// ===== PROCESS MERGE PARCELS (FINAL CORRECT FIX - includes unsurveyed sibling) =====
+    //
+    // FULL FLOW for split parcel in merge:
+    //   1. Unsurveyed sibling split parcel(s) → send as "New" with empty persons/pictures
+    //      (same as pure split upload — server creates unsurveyed record)
+    //   2. Surveyed split parcel (main) → send as "New" with full survey data
+    //   3. Normal merged parcels → send as "Merge" with empty ParcelOperationValue
+    //
+    // Original parent deactivation:
+    //   - Only sent via opValue on the FIRST split parcel to be uploaded
+    //   - If original is already inactive → empty opValue (don't deactivate again)
+    //
     private suspend fun processMergeParcels(survey: NewSurveyNewEntity): List<NewSurveyNewEntity> {
-        Log.d(TAG, "Processing merge parcel upload for parcelId=${survey.parcelId}")
+        Log.d(TAG, "=== PROCESS MERGE PARCELS ===")
+        Log.d(TAG, "Main parcelId=${survey.parcelId}, operation=${survey.parcelOperation}")
 
         val mainParcel = activeParcelDao.getParcelById(survey.parcelId)
         if (mainParcel == null) {
-            Log.e(TAG, "Main parcel not found for merge operation")
+            Log.e(TAG, "❌ Main parcel not found for ID=${survey.parcelId}")
             return emptyList()
         }
 
+        Log.d(TAG, "Main parcel => ParcelNo=${mainParcel.parcelNo}, SubParcelNo='${mainParcel.subParcelNo}', isActivate=${mainParcel.isActivate}")
+
+        val mainIsSplitParcel = mainParcel.subParcelNo.isNotBlank() && mainParcel.subParcelNo != "0"
+        Log.d(TAG, "Main parcel isSplitParcel=$mainIsSplitParcel")
+
         val mergeSurveys = mutableListOf<NewSurveyNewEntity>()
 
-        // Add main parcel
-        val mainSurvey = survey.copy(
-            parcelOperation = "Merge",
-            parcelOperationValue = survey.parcelOperationValue
-        )
-        mergeSurveys.add(mainSurvey)
-        Log.d(TAG, "Added main parcel to merge with ParcelOperationValue: ${survey.parcelOperationValue}")
-
-        // Add merged parcels
         val mergedParcelIds = survey.parcelOperationValue
             .split(",")
             .mapNotNull { it.trim().toLongOrNull() }
             .filter { it != survey.parcelId }
 
-        Log.d(TAG, "Found ${mergedParcelIds.size} additional parcels to merge: $mergedParcelIds")
+        Log.d(TAG, "Other parcels to merge: $mergedParcelIds")
 
-        mergedParcelIds.forEach { mergedParcelId ->
-            val mergedParcel = activeParcelDao.getParcelById(mergedParcelId)
-            if (mergedParcel != null) {
-                val mergedSurvey = survey.copy(
-                    pkId = survey.pkId,
-                    parcelId = mergedParcelId,
-                    parcelNo = mergedParcel.parcelNo.toString(),
-                    subParcelNo = mergedParcel.subParcelNo,
-                    parcelOperation = "Merge",
-                    parcelOperationValue = ""
+        if (mainIsSplitParcel) {
+            // =========================================================
+            // CASE: Main parcel is a SPLIT parcel
+            // =========================================================
+            Log.d(TAG, "=== SPLIT PARCEL MERGE FLOW ===")
+
+            // Find original parent (subParcelNo = "" or "0")
+            val allParcelsWithSameNumber = activeParcelDao.getParcelsByMauzaAndArea(
+                mainParcel.mauzaId,
+                mainParcel.areaAssigned
+            ).filter {
+                it.parcelNo == mainParcel.parcelNo &&
+                        (it.subParcelNo.isBlank() || it.subParcelNo == "0")
+            }
+            val originalParent = allParcelsWithSameNumber.firstOrNull()
+
+            Log.d(TAG, "Original parent: ${
+                if (originalParent != null)
+                    "ID=${originalParent.id}, isActivate=${originalParent.isActivate}"
+                else "NOT FOUND"
+            }")
+
+            // ✅ Find ALL sibling split parcels (same parcelNo, different subParcelNo)
+            // These are the unsurveyed siblings that also need to be sent to server
+            val allSiblingsSplitParcels = activeParcelDao.getParcelsByMauzaAndArea(
+                mainParcel.mauzaId,
+                mainParcel.areaAssigned
+            ).filter {
+                it.parcelNo == mainParcel.parcelNo &&
+                        it.subParcelNo.isNotBlank() &&
+                        it.subParcelNo != "0" &&
+                        it.id != mainParcel.id  // exclude the main (surveyed) one
+            }
+
+            Log.d(TAG, "Found ${allSiblingsSplitParcels.size} unsurveyed sibling split parcel(s): ${allSiblingsSplitParcels.map { "ID=${it.id}, SubParcel=${it.subParcelNo}" }}")
+
+            // Determine opValue for original parent deactivation
+            val originalIsStillActive = originalParent?.isActivate == true
+            val originalParentIdStr = if (originalIsStillActive) originalParent!!.id.toString() else ""
+
+            Log.d(TAG, "Original parent deactivation: ${if (originalIsStillActive) "YES → ID=${originalParent!!.id}" else "NO (already inactive or not found)"}")
+
+            // ✅ STEP 1: Send unsurveyed sibling split parcels FIRST
+            // They need the deactivation opValue only on the FIRST one sent
+            // (to mirror what pure split upload does)
+            var deactivationOpValueUsed = false
+
+            allSiblingsSplitParcels.forEachIndexed { index, sibling ->
+                val siblingOpValue = if (!deactivationOpValueUsed && originalIsStillActive) {
+                    deactivationOpValueUsed = true
+                    originalParentIdStr  // first sibling carries deactivation request
+                } else {
+                    ""  // subsequent siblings send empty opValue
+                }
+
+                // ✅ Create an UNSURVEYED survey record for this sibling
+                // No persons, no pictures — server will create it with SurveyStatusCode=1
+                val siblingSurvey = survey.copy(
+                    parcelId = sibling.id,
+                    parcelNo = sibling.parcelNo.toString(),
+                    subParcelNo = sibling.subParcelNo,
+                    parcelOperation = "New",
+                    parcelOperationValue = siblingOpValue,
+                    // ✅ Clear survey-specific data so server treats as unsurveyed
+                    propertyType = "",      // empty → isSurveyed=false on server
+                    ownershipStatus = "",
+                    variety = "",
+                    cropType = "",
+                    crop = "",
+                    year = "",
+                    area = "",
+                    remarks = "",
+                    isGeometryCorrect = false
                 )
-                mergeSurveys.add(mergedSurvey)
-                Log.d(TAG, "Added merged parcel with EMPTY ParcelOperationValue: ID=$mergedParcelId")
+                mergeSurveys.add(siblingSurvey)
+
+                Log.d(TAG, "✅ Added UNSURVEYED sibling split parcel as 'New':")
+                Log.d(TAG, "   parcelId=${sibling.id}, ParcelNo=${sibling.parcelNo}, SubParcelNo=${sibling.subParcelNo}")
+                Log.d(TAG, "   parcelOperationValue='$siblingOpValue'")
+            }
+
+            // ✅ STEP 2: Send the SURVEYED main split parcel
+            val mainOpValue = if (!deactivationOpValueUsed && originalIsStillActive) {
+                // No siblings were sent yet, main carries deactivation
+                originalParentIdStr
+            } else {
+                // Siblings already carried deactivation, or original already inactive
+                ""
+            }
+
+            val splitParcelSurvey = survey.copy(
+                parcelId = mainParcel.id,
+                parcelNo = mainParcel.parcelNo.toString(),
+                subParcelNo = mainParcel.subParcelNo,
+                parcelOperation = "New",
+                parcelOperationValue = mainOpValue
+                // ✅ Keep all survey data (persons, pictures, propertyType etc.) intact
+            )
+            mergeSurveys.add(splitParcelSurvey)
+
+            Log.d(TAG, "✅ Added SURVEYED main split parcel as 'New':")
+            Log.d(TAG, "   parcelId=${mainParcel.id}, ParcelNo=${mainParcel.parcelNo}, SubParcelNo=${mainParcel.subParcelNo}")
+            Log.d(TAG, "   parcelOperationValue='$mainOpValue'")
+
+            // ✅ STEP 3: Add normal merged parcels as "Merge"
+            mergedParcelIds.forEach { mergedParcelId ->
+                addMergedParcel(survey, mergedParcelId, mergeSurveys)
+            }
+
+        } else {
+            // =========================================================
+            // CASE: Main parcel is a NORMAL parcel (unchanged)
+            // =========================================================
+            Log.d(TAG, "=== NORMAL PARCEL MERGE FLOW ===")
+
+            val mainSurvey = survey.copy(
+                parcelOperation = "Merge",
+                parcelOperationValue = survey.parcelOperationValue
+            )
+            mergeSurveys.add(mainSurvey)
+            Log.d(TAG, "✅ Added main normal parcel as 'Merge' with value: ${survey.parcelOperationValue}")
+
+            mergedParcelIds.forEach { mergedParcelId ->
+                addMergedParcel(survey, mergedParcelId, mergeSurveys)
             }
         }
 
-        Log.d(TAG, "Created ${mergeSurveys.size} survey records for merge operation")
+        Log.d(TAG, "=== MERGE PROCESSING COMPLETE: ${mergeSurveys.size} records ===")
+        mergeSurveys.forEachIndexed { i, s ->
+            Log.d(TAG, "  Record ${i + 1}: parcelId=${s.parcelId}, ParcelNo=${s.parcelNo}, SubParcel=${s.subParcelNo}, op=${s.parcelOperation}, opValue='${s.parcelOperationValue}', propertyType='${s.propertyType}'")
+        }
         return mergeSurveys
+    }
+
+    // ===== HELPER: Add a single merged parcel (normal or split) =====
+    private suspend fun addMergedParcel(
+        survey: NewSurveyNewEntity,
+        mergedParcelId: Long,
+        mergeSurveys: MutableList<NewSurveyNewEntity>
+    ) {
+        val mergedParcel = activeParcelDao.getParcelById(mergedParcelId)
+        if (mergedParcel == null) {
+            Log.e(TAG, "❌ Merged parcel not found locally for ID=$mergedParcelId")
+            return
+        }
+
+        val mergedIsSplit = mergedParcel.subParcelNo.isNotBlank() && mergedParcel.subParcelNo != "0"
+        Log.d(TAG, "Processing merged parcel ID=$mergedParcelId: ParcelNo=${mergedParcel.parcelNo}, SubParcelNo='${mergedParcel.subParcelNo}', isSplit=$mergedIsSplit")
+
+        if (mergedIsSplit) {
+            // Split parcel being merged — send as "New" with deactivation logic
+            val allParcelsWithSameNumber = activeParcelDao.getParcelsByMauzaAndArea(
+                mergedParcel.mauzaId,
+                mergedParcel.areaAssigned
+            ).filter {
+                it.parcelNo == mergedParcel.parcelNo &&
+                        (it.subParcelNo.isBlank() || it.subParcelNo == "0")
+            }
+            val originalParent = allParcelsWithSameNumber.firstOrNull()
+            val opValue = if (originalParent?.isActivate == true) originalParent.id.toString() else ""
+
+            val mergedSurvey = survey.copy(
+                pkId = survey.pkId,
+                parcelId = mergedParcel.id,
+                parcelNo = mergedParcel.parcelNo.toString(),
+                subParcelNo = mergedParcel.subParcelNo,
+                parcelOperation = "New",
+                parcelOperationValue = opValue
+            )
+            mergeSurveys.add(mergedSurvey)
+            Log.d(TAG, "✅ Added split merged parcel as 'New': ID=${mergedParcel.id}, opValue='$opValue'")
+        } else {
+            // Normal parcel — send as "Merge"
+            val mergedSurvey = survey.copy(
+                pkId = survey.pkId,
+                parcelId = mergedParcelId,
+                parcelNo = mergedParcel.parcelNo.toString(),
+                subParcelNo = mergedParcel.subParcelNo,
+                parcelOperation = "Merge",
+                parcelOperationValue = ""
+            )
+            mergeSurveys.add(mergedSurvey)
+            Log.d(TAG, "✅ Added normal merged parcel as 'Merge': ID=$mergedParcelId, ParcelNo=${mergedParcel.parcelNo}")
+        }
+    }
+    // ===== getParcelDataForOperation =====
+    private suspend fun getParcelDataForOperation(subSurvey: NewSurveyNewEntity): ParcelData {
+        Log.d(TAG, "=== Getting parcel data for operation ===")
+        Log.d(TAG, "ParcelId: ${subSurvey.parcelId}, Op: ${subSurvey.parcelOperation}, SubParcel: ${subSurvey.subParcelNo}")
+
+        return when (subSurvey.parcelOperation) {
+
+            "New" -> {
+                // Always fetch geometry from the local parcel ID directly
+                // (works for both split-only uploads AND split-in-merge uploads)
+                val parcel = activeParcelDao.getParcelById(subSurvey.parcelId)
+                if (parcel != null) {
+                    val calculatedArea = calculateAreaFromGeometry(parcel.geomWKT)
+                    Log.d(TAG, "✅ [New] Found parcel ID=${parcel.id}, SubParcel=${parcel.subParcelNo}, area=$calculatedArea, geomLen=${parcel.geomWKT?.length ?: 0}")
+
+                    if (parcel.geomWKT.isNullOrEmpty()) {
+                        Log.e(TAG, "❌❌ CRITICAL: Parcel ${parcel.id} has NO geometry!")
+                    }
+
+                    // Get khewatInfo / parcelAreaKMF from original parent if sub-parcel
+                    val isSub = parcel.subParcelNo.isNotBlank() && parcel.subParcelNo != "0"
+                    val khewatParent = if (isSub) {
+                        activeParcelDao.getParcelsByMauzaAndArea(
+                            parcel.mauzaId, parcel.areaAssigned
+                        ).firstOrNull {
+                            it.parcelNo == parcel.parcelNo &&
+                                    (it.subParcelNo.isBlank() || it.subParcelNo == "0")
+                        }
+                    } else null
+
+                    ParcelData(
+                        geomWKT = parcel.geomWKT ?: "",
+                        centroid = parcel.centroid ?: "",
+                        khewatInfo = khewatParent?.khewatInfo ?: parcel.khewatInfo ?: "",
+                        parcelAreaKMF = khewatParent?.parcelAreaKMF ?: parcel.parcelAreaKMF ?: "",
+                        calculatedArea = calculatedArea
+                    )
+                } else {
+                    Log.e(TAG, "❌❌ [New] Parcel NOT FOUND for ID=${subSurvey.parcelId}")
+                    ParcelData("", "", "", "", "")
+                }
+            }
+
+            "Same", "Merge" -> {
+                val parcel = activeParcelDao.getParcelById(subSurvey.parcelId)
+                if (parcel != null) {
+                    val calculatedArea = calculateAreaFromGeometry(parcel.geomWKT)
+                    Log.d(TAG, "✅ [${subSurvey.parcelOperation}] Found parcel ID=${parcel.id}, SubParcel=${parcel.subParcelNo}, area=$calculatedArea, geomLen=${parcel.geomWKT?.length ?: 0}")
+                    ParcelData(
+                        geomWKT = parcel.geomWKT ?: "",
+                        centroid = parcel.centroid ?: "",
+                        khewatInfo = parcel.khewatInfo ?: "",
+                        parcelAreaKMF = parcel.parcelAreaKMF ?: "",
+                        calculatedArea = calculatedArea
+                    )
+                } else {
+                    Log.e(TAG, "❌ [${subSurvey.parcelOperation}] Parcel NOT FOUND for ID=${subSurvey.parcelId}")
+                    ParcelData("", "", "", "", "")
+                }
+            }
+
+            else -> {
+                Log.e(TAG, "❌ Unknown operation: ${subSurvey.parcelOperation}")
+                ParcelData("", "", "", "", "")
+            }
+        }
     }
 
     // ===== PROCESS SAME PARCELS =====
@@ -541,20 +811,23 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 }
 
                 if (existingSurvey != null) {
-                    // ✅ Split parcel is surveyed - include full survey data
+                    // ✅ CRITICAL FIX: Preserve correct parcelId, parcelNo, and subParcelNo from split parcel
                     val surveyRecord = existingSurvey.copy(
+                        parcelId = splitParcel.id,           // ✅ Use split parcel ID
+                        parcelNo = splitParcel.parcelNo.toString(), // ✅ Use split parcel number
+                        subParcelNo = splitParcel.subParcelNo,      // ✅ Use split parcel's subParcelNo
                         parcelOperation = "New",
                         parcelOperationValue = originalParentId
                     )
                     cleanSurveys.add(surveyRecord)
-                    Log.d(TAG, "✅ Added SURVEYED split parcel: SubParcel=${splitParcel.subParcelNo}, HasSurveyData=true")
+                    Log.d(TAG, "✅ Added SURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, HasSurveyData=true")
                 } else {
-                    // ✅ Split parcel is NOT surveyed - create minimal record for server
+                    // ✅ CRITICAL FIX: Create minimal record with correct IDs from split parcel
                     val minimalSurvey = survey.copy(
                         pkId = 0,
-                        parcelId = splitParcel.id,
-                        parcelNo = splitParcel.parcelNo.toString(),
-                        subParcelNo = splitParcel.subParcelNo,
+                        parcelId = splitParcel.id,                  // ✅ Use split parcel ID
+                        parcelNo = splitParcel.parcelNo.toString(), // ✅ Use split parcel number
+                        subParcelNo = splitParcel.subParcelNo,      // ✅ Use split parcel's subParcelNo
                         parcelOperation = "New",
                         parcelOperationValue = originalParentId,
                         propertyType = "",
@@ -568,7 +841,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         isGeometryCorrect = false
                     )
                     cleanSurveys.add(minimalSurvey)
-                    Log.d(TAG, "⚠️ Added UNSURVEYED split parcel: SubParcel=${splitParcel.subParcelNo}, HasSurveyData=false")
+                    Log.d(TAG, "⚠️ Added UNSURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, HasSurveyData=false")
                 }
             }
 
@@ -620,15 +893,21 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "Found ${personsEntities.size} persons for survey pkId=${sourceSurveyPkId}")
 
             // ✅ Get parcel data (geometry, khewatInfo, etc.)
-            val parcelData = getParcelDataForSplitParcel(subSurvey, index)
+            val parcelData = getParcelDataForOperation(subSurvey)
 
             Log.d(TAG, "=== PARCEL DATA ===")
             Log.d(TAG, "IsSurveyed: $isSurveyed")
-            Log.d(TAG, "GeomWKT: ${if (parcelData.geomWKT.isNotEmpty()) "Present (${parcelData.geomWKT.length} chars)" else "Empty"}")
-            Log.d(TAG, "Centroid: ${if (parcelData.centroid.isNotEmpty()) parcelData.centroid else "Empty"}")
+            Log.d(TAG, "ParcelId: ${subSurvey.parcelId}")
+            Log.d(TAG, "SubParcelNo: ${subSurvey.subParcelNo}")
+            Log.d(TAG, "CalculatedArea: ${parcelData.calculatedArea} Acres")
+            Log.d(TAG, "GeomWKT: ${if (parcelData.geomWKT.isNotEmpty()) "Present (${parcelData.geomWKT.length} chars)" else "❌ EMPTY/NULL"}")
+            Log.d(TAG, "Centroid: ${if (parcelData.centroid.isNotEmpty()) parcelData.centroid else "❌ EMPTY/NULL"}")
             Log.d(TAG, "KhewatInfo: ${parcelData.khewatInfo}")
             Log.d(TAG, "ParcelAreaKMF: ${parcelData.parcelAreaKMF}")
 
+            if (parcelData.geomWKT.isEmpty()) {
+                Log.e(TAG, "❌❌ CRITICAL ERROR: Empty geometry for parcel ${subSurvey.parcelNo}-${subSurvey.subParcelNo}")
+            }
             // Build the survey post
             val surveyPost = buildCleanSurveyPostNew(
                 subSurvey,
@@ -638,6 +917,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 parcelData.centroid,
                 parcelData.khewatInfo,
                 parcelData.parcelAreaKMF,
+                parcelData.calculatedArea,
                 100 // distance
             )
 
@@ -646,39 +926,50 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
     }
 
-    // ✅ NEW: Helper function to get parcel data for split parcels
-    private suspend fun getParcelDataForSplitParcel(
-        subSurvey: NewSurveyNewEntity,
-        index: Int
-    ): ParcelData {
-        Log.d(TAG, "Getting parcel data for split parcel: parcelId=${subSurvey.parcelId}")
 
-        val localParcel = activeParcelDao.getParcelById(subSurvey.parcelId)
+    private suspend fun calculateAreaFromGeometry(geomWKT: String?): String {
+        return withContext(Dispatchers.Default) {
+            try {
+                if (geomWKT.isNullOrEmpty()) {
+                    Log.w(TAG, "Empty geometry provided for area calculation")
+                    return@withContext ""
+                }
 
-        if (localParcel != null) {
-            Log.d(TAG, "✅ Found split parcel: ID=${localParcel.id}, SubParcel=${localParcel.subParcelNo}")
+                // Handle both POLYGON and MULTIPOLYGON
+                val polygon = when {
+                    geomWKT.contains("MULTIPOLYGON") -> {
+                        val polygons = Utility.getMultiPolygonFromString(geomWKT, wgs84)
+                        polygons?.firstOrNull()
+                    }
+                    geomWKT.contains("POLYGON") -> {
+                        Utility.getPolygonFromString(geomWKT, wgs84)
+                    }
+                    else -> null
+                }
 
-            // Get original parent for khewatInfo and parcelAreaKMF
-            val allParcelsWithSameNumber = activeParcelDao.getParcelsByMauzaAndArea(
-                localParcel.mauzaId,
-                localParcel.areaAssigned
-            ).filter {
-                it.parcelNo == localParcel.parcelNo
+                if (polygon != null && !polygon.isEmpty) {
+                    // Calculate area in square feet
+                    val areaSqFt = GeometryEngine.areaGeodetic(
+                        polygon,
+                        AreaUnit(AreaUnitId.SQUARE_FEET),
+                        GeodeticCurveType.NORMAL_SECTION
+                    )
+
+                    // Convert to Acres (1 Acre = 43,560 sq ft)
+                    val areaAcres = areaSqFt / 43560.0
+
+                    val formattedArea = String.format(Locale.US, "%.4f", areaAcres)
+                    Log.d(TAG, "Area calculation: $areaSqFt sq ft = $formattedArea Acres")
+
+                    formattedArea
+                } else {
+                    Log.e(TAG, "Failed to parse geometry for area calculation")
+                    ""
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error calculating area from geometry: ${e.message}", e)
+                ""
             }
-
-            val originalParent = allParcelsWithSameNumber.firstOrNull {
-                it.subParcelNo.isBlank() || it.subParcelNo == "0"
-            }
-
-            return ParcelData(
-                geomWKT = localParcel.geomWKT ?: "",
-                centroid = localParcel.centroid ?: "",
-                khewatInfo = originalParent?.khewatInfo ?: localParcel.khewatInfo ?: "",
-                parcelAreaKMF = originalParent?.parcelAreaKMF ?: localParcel.parcelAreaKMF ?: ""
-            )
-        } else {
-            Log.w(TAG, "❌ Split parcel not found for ID: ${subSurvey.parcelId}")
-            return ParcelData("", "", "", "")
         }
     }
 
@@ -691,6 +982,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
         centroid: String,
         khewatInfo: String,
         parcelAreaKMF: String,
+        calculatedArea: String,
         distance: Int = 100
     ): SurveyPostNew {
         // ✅ For split parcels (or any "New" operation), don't send parcel ID
@@ -708,6 +1000,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
             crop = survey.crop,
             year = survey.year,
             area = survey.area,
+            calculatedArea = calculatedArea,
             isGeometryCorrect = survey.isGeometryCorrect,
             remarks = survey.remarks,
             mauzaId = survey.mauzaId,
@@ -742,6 +1035,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 growerCode = person.growerCode ?: "",
                 personArea = person.personArea?.toString() ?: "",
                 ownershipType = person.ownershipType ?: "",
+                address = person.address,
                 extra1 = person.extra1 ?: "",
                 extra2 = person.extra2 ?: "",
                 mauzaId = person.mauzaId ?: 0L,
@@ -801,18 +1095,32 @@ class NewSurveyRepositoryImpl @Inject constructor(
     private fun logSurveyPost(surveyPost: SurveyPostNew, index: Int) {
         Log.d(TAG, "=== Survey Post ${index + 1} Details ===")
         Log.d(TAG, "ParcelNo: ${surveyPost.parcelNo}, SubParcel: ${surveyPost.subParcelNo}")
+        Log.d(TAG, "ParcelId: ${surveyPost.parcelId}")
         Log.d(TAG, "Parcel Operation: ${surveyPost.parcelOperation}")
         Log.d(TAG, "Parcel Operation Value: ${surveyPost.parcelOperationValue}")
+        Log.d(TAG, "CalculatedArea: ${surveyPost.calculatedArea} Acres")
 
-        // ✅ NEW: Explicit logging for server deactivation
+        // ✅ CRITICAL VALIDATION
+        if (surveyPost.geomWKT.isNullOrEmpty()) {
+            Log.e(TAG, "❌❌ CRITICAL ERROR: GeomWKT is NULL/EMPTY for ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
+            Log.e(TAG, "   This will cause NULL geometry in SQL Server!")
+        } else {
+            Log.d(TAG, "✅ GeomWKT: Present (${surveyPost.geomWKT.length} chars)")
+            Log.d(TAG, "   Preview: ${surveyPost.geomWKT.take(100)}...")
+        }
+
+        if (surveyPost.centriod.isNullOrEmpty()) {
+            Log.e(TAG, "❌ WARNING: Centroid is NULL/EMPTY")
+        } else {
+            Log.d(TAG, "✅ Centroid: ${surveyPost.centriod}")
+        }
+
         if (surveyPost.parcelOperation == "New" && surveyPost.parcelOperationValue.isNotBlank()) {
             Log.d(TAG, "📤 SERVER DEACTIVATION REQUEST:")
             Log.d(TAG, "   Original Parcel ID to deactivate: ${surveyPost.parcelOperationValue}")
             Log.d(TAG, "   New Parcel being created: ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
         }
 
-        Log.d(TAG, "GeomWKT: ${if (surveyPost.geomWKT?.isNotEmpty() == true) "Present (${surveyPost.geomWKT.length} chars)" else "Empty/Null"}")
-        Log.d(TAG, "Centroid: ${surveyPost.centriod ?: "Empty/Null"}")
         Log.d(TAG, "KhewatInfo: ${surveyPost.khewatInfo}")
         Log.d(TAG, "Pictures Count: ${surveyPost.pictures.size}")
         Log.d(TAG, "Persons Count: ${surveyPost.persons.size}")

@@ -831,7 +831,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            Log.d("Camera", "Camera result: success=$success, path=$tempImagePath, uri=$tempImageUri")
+            Log.d(
+                "Camera",
+                "Camera result: success=$success, path=$tempImagePath, uri=$tempImageUri"
+            )
 
             if (!success) {
                 ToastUtil.showShort(context, "Photo capture was cancelled")
@@ -860,11 +863,15 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     if (finalFile == null && tempImageUri != null) {
                         val input = contentResolver.openInputStream(tempImageUri!!)
                         if (input != null) {
-                            val fallbackFile = File(filesDir, "fallback_${System.currentTimeMillis()}.jpg")
+                            val fallbackFile =
+                                File(filesDir, "fallback_${System.currentTimeMillis()}.jpg")
                             fallbackFile.outputStream().use { output -> input.copyTo(output) }
                             if (fallbackFile.exists() && fallbackFile.length() > 0) {
                                 finalFile = fallbackFile
-                                Log.d("Camera", "Recovered image from Uri to: ${fallbackFile.absolutePath}")
+                                Log.d(
+                                    "Camera",
+                                    "Recovered image from Uri to: ${fallbackFile.absolutePath}"
+                                )
                             }
                         }
                     }
@@ -908,9 +915,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                         hideImageLoading()
 
                         // ===== MODIFIED: Show Date, Time, and Coordinates instead of address =====
-                        val dateTime = SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault()).format(
-                            Date(timestamp)
-                        )
+                        val dateTime =
+                            SimpleDateFormat("dd/MM/yyyy hh:mm:ss a", Locale.getDefault()).format(
+                                Date(timestamp)
+                            )
 
                         val locationInfo = if (currentLocation != null) {
                             val lat = String.format("%.6f", currentLocation!!.latitude)
@@ -927,7 +935,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                             ""
                         }
 
-                        ToastUtil.showShort(context, "Photo added\n$dateTime$locationInfo$directionInfo")
+                        ToastUtil.showShort(
+                            context,
+                            "Photo added\n$dateTime$locationInfo$directionInfo"
+                        )
 
                         // Reset current location for next image
                         currentLocation = null
@@ -1149,7 +1160,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                     // ========== SMART PERSON HANDLING: Reuse unchanged, create new if modified ==========
                     rawPersons.forEach { person ->
-                        Log.d("SurveyActivity", "Processing person: ${person.firstName} ${person.lastName}")
+                        Log.d(
+                            "SurveyActivity",
+                            "Processing person: ${person.firstName} ${person.lastName}"
+                        )
                         Log.d("SurveyActivity", "  Current personId: ${person.personId}")
                         Log.d("SurveyActivity", "  Database ID: ${person.id}")
                         Log.d("SurveyActivity", "  Grower Code: ${person.growerCode}")
@@ -1165,7 +1179,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                                 if (hasChanges) {
                                     // ✅ DATA WAS MODIFIED: Create a new person record
-                                    Log.d("SurveyActivity", "  ⚠️ Person data was modified - creating new record")
+                                    Log.d(
+                                        "SurveyActivity",
+                                        "  ⚠️ Person data was modified - creating new record"
+                                    )
 
                                     val newPerson = person.copy(
                                         id = 0, // ← Force new database ID (0 for auto-generate)
@@ -1175,11 +1192,17 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                     )
 
                                     val insertedId = database.personDao().insertPerson(newPerson)
-                                    Log.d("SurveyActivity", "  ✅ Created NEW person record with ID: $insertedId")
+                                    Log.d(
+                                        "SurveyActivity",
+                                        "  ✅ Created NEW person record with ID: $insertedId"
+                                    )
 
                                 } else {
                                     // ✅ NO CHANGES: Create a link to existing person for this survey
-                                    Log.d("SurveyActivity", "  ✓ No changes - linking existing person to survey")
+                                    Log.d(
+                                        "SurveyActivity",
+                                        "  ✓ No changes - linking existing person to survey"
+                                    )
 
                                     val personLink = person.copy(
                                         id = 0, // ← New link record (0 for auto-generate)
@@ -1189,11 +1212,17 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                     )
 
                                     val linkId = database.personDao().insertPerson(personLink)
-                                    Log.d("SurveyActivity", "  ✅ Created link record with ID: $linkId (points to personId: ${originalPerson.personId})")
+                                    Log.d(
+                                        "SurveyActivity",
+                                        "  ✅ Created link record with ID: $linkId (points to personId: ${originalPerson.personId})"
+                                    )
                                 }
                             } else {
                                 // Person ID exists but not found in DB (shouldn't happen)
-                                Log.w("SurveyActivity", "  ⚠️ PersonId ${person.personId} not found in DB - creating new")
+                                Log.w(
+                                    "SurveyActivity",
+                                    "  ⚠️ PersonId ${person.personId} not found in DB - creating new"
+                                )
 
                                 val newPerson = person.copy(
                                     id = 0,
@@ -1215,7 +1244,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                             if (similarPerson != null) {
                                 // Similar person found by CNIC, link to existing
-                                Log.d("SurveyActivity", "  ⚠️ Found similar person by CNIC - linking")
+                                Log.d(
+                                    "SurveyActivity",
+                                    "  ⚠️ Found similar person by CNIC - linking"
+                                )
                                 val personLink = person.copy(
                                     id = 0,
                                     personId = similarPerson.personId,
@@ -1232,7 +1264,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                 )
 
                                 val insertedId = database.personDao().insertPerson(newPerson)
-                                Log.d("SurveyActivity", "  ✅ Created new person with ID: $insertedId")
+                                Log.d(
+                                    "SurveyActivity",
+                                    "  ✅ Created new person with ID: $insertedId"
+                                )
                             }
                         }
                     }
@@ -1283,7 +1318,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
-    private fun hasPersonDataChanged(original: SurveyPersonEntity, current: SurveyPersonEntity): Boolean {
+    private fun hasPersonDataChanged(
+        original: SurveyPersonEntity,
+        current: SurveyPersonEntity
+    ): Boolean {
         // Compare all important fields
         return original.firstName.trim() != current.firstName.trim() ||
                 original.lastName.trim() != current.lastName.trim() ||
@@ -1292,6 +1330,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 original.religion.trim() != current.religion.trim() ||
                 original.mobile.trim() != current.mobile.trim() ||
                 original.nic.trim() != current.nic.trim() ||
+                original.address.trim() != current.address.trim() ||
                 original.growerCode.trim() != current.growerCode.trim() ||
                 original.ownershipType.trim() != current.ownershipType.trim() ||
                 original.extra1.trim() != current.extra1.trim() ||
@@ -1309,8 +1348,15 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         event?.let {
             when (it.sensor.type) {
                 Sensor.TYPE_ACCELEROMETER -> {
-                    System.arraycopy(it.values, 0, accelerometerReading, 0, accelerometerReading.size)
+                    System.arraycopy(
+                        it.values,
+                        0,
+                        accelerometerReading,
+                        0,
+                        accelerometerReading.size
+                    )
                 }
+
                 Sensor.TYPE_MAGNETIC_FIELD -> {
                     System.arraycopy(it.values, 0, magnetometerReading, 0, magnetometerReading.size)
                 }
@@ -1332,7 +1378,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 null,
                 accelerometerReading,
                 magnetometerReading
-            )) {
+            )
+        ) {
             SensorManager.getOrientation(rotationMatrix, orientationAngles)
 
             // Convert radians to degrees and normalize to 0-360

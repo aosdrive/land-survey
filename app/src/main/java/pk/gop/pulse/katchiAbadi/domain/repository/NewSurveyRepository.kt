@@ -13,8 +13,9 @@ interface NewSurveyRepository {
     fun getTotalPendingCount(): Flow<Int>
 
     suspend fun deleteSurvey(survey: NewSurveyNewEntity): Resource<Unit>
-//    suspend fun uploadSurvey(survey: NewSurveyNewEntity): Resource<Unit>
-suspend fun uploadSurvey(context: Context, survey: NewSurveyNewEntity): Resource<Unit>
+
+    //    suspend fun uploadSurvey(survey: NewSurveyNewEntity): Resource<Unit>
+    suspend fun uploadSurvey(context: Context, survey: NewSurveyNewEntity): Resource<Unit>
     suspend fun getOnePendingSurvey(): NewSurveyNewEntity?
 
     suspend fun getSurveyById(id: Long): NewSurveyNewEntity?

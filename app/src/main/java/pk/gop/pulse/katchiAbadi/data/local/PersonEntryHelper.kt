@@ -40,6 +40,8 @@ class PersonEntryHelper(
         binding.etExtra2.setText(data?.extra2.orEmpty())
         binding.etMauzaId.setText(data?.mauzaId?.toString().orEmpty())
         binding.etMauzaName.setText(data?.mauzaName.orEmpty())
+        binding.etAddress.setText(data?.address.orEmpty())
+        binding.etAddress.isEnabled = editable
 
         // --- Grower Code Format with Auto-Formatting ---
         setupGrowerCodeFormatting(binding)
@@ -79,7 +81,7 @@ class PersonEntryHelper(
 
         // Enable/disable all fields
         listOf(
-            binding.etFirstName, binding.etLastName, binding.etMobile, binding.etNic,
+            binding.etFirstName, binding.etLastName, binding.etMobile, binding.etNic,binding.etAddress,
             binding.etGrowerCode, binding.etExtra1, binding.etExtra2,
             binding.etMauzaId, binding.etMauzaName,
             binding.spinnerRelation, binding.spinnerGender, binding.spinnerOwnership
@@ -154,7 +156,8 @@ class PersonEntryHelper(
                 extra2 = binding.etExtra2?.text?.toString()?.trim().orEmpty(),
 
                 mauzaId = binding.etMauzaId?.text?.toString()?.toLongOrNull() ?: 0L,
-                mauzaName = binding.etMauzaName?.text?.toString()?.trim().orEmpty()
+                mauzaName = binding.etMauzaName?.text?.toString()?.trim().orEmpty(),
+                address = binding.etAddress?.text?.toString()?.trim().orEmpty(),
             )
         }
     }
@@ -185,7 +188,8 @@ class PersonEntryHelper(
                 extra2 = binding.etExtra2?.text?.toString()?.trim().orEmpty(),
 
                 mauzaId = currentMauzaId,
-                mauzaName = binding.etMauzaName?.text?.toString()?.trim().orEmpty()
+                mauzaName = binding.etMauzaName?.text?.toString()?.trim().orEmpty(),
+                address = binding.etAddress?.text?.toString()?.trim().orEmpty(),
             )
         }
     }

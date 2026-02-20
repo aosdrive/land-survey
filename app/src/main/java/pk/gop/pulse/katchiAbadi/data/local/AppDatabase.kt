@@ -31,7 +31,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -74,6 +74,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration9to10)
                     .addMigrations(migration10to11)
                     .addMigrations(migration11to12)
+                    .addMigrations(migration12to13)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -190,5 +191,11 @@ val migration10to11 = object : Migration(10, 11) {
 val migration11to12 = object : Migration(11, 12) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("ALTER TABLE survey_images ADD COLUMN bearing REAL")
+    }
+}
+
+val migration12to13 = object : Migration(12, 13) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE survey_persons ADD COLUMN address TEXT NOT NULL DEFAULT ''")
     }
 }
