@@ -20,6 +20,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.KachiAbadiEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NotAtHomeSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.StatusConverter
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyFormEntity
@@ -30,8 +31,8 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 
 @Database(
-    entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class],
-    version = 13,
+    entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class, SowingPersonEntity::class],
+    version = 17,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -51,6 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cropDao(): CropDao
     abstract fun cropTypeDao(): CropTypeDao
     abstract fun cropVarietyDao(): CropVarietyDao
+    abstract fun sowingPersonDao(): SowingPersonDao
     companion object {
 
         @Volatile
@@ -75,6 +77,9 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration10to11)
                     .addMigrations(migration11to12)
                     .addMigrations(migration12to13)
+                    .addMigrations(migration13to14)
+                    .addMigrations(migration14to15)
+                    .addMigrations(migration15to16)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -134,7 +139,8 @@ val migration4to5 = object : Migration(4, 5) {
 // ✅ NEW MIGRATION: Add tasks table
 val migration5to6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE IF NOT EXISTS tasks (
                 taskId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 assignDate TEXT NOT NULL DEFAULT '',
@@ -149,7 +155,8 @@ val migration5to6 = object : Migration(5, 6) {
                 createdOn INTEGER NOT NULL DEFAULT 0,
                 isSynced INTEGER NOT NULL DEFAULT 0
             )
-        """)
+        """
+        )
     }
 }
 
@@ -197,5 +204,35 @@ val migration11to12 = object : Migration(11, 12) {
 val migration12to13 = object : Migration(12, 13) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("ALTER TABLE survey_persons ADD COLUMN address TEXT NOT NULL DEFAULT ''")
+    }
+}
+val migration13to14 = object : Migration(13, 14) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE new_surveys ADD COLUMN address TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+val migration14to15 = object : Migration(14, 15) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS sowing_persons (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                surveyId INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                cnic TEXT NOT NULL,
+                growerCode TEXT NOT NULL DEFAULT ''
+            )
+        """.trimIndent())
+
+        database.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_sowing_persons_surveyId ON sowing_persons(surveyId)"
+        )
+    }
+}
+
+val migration15to16 = object : Migration(15, 16) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE new_surveys ADD COLUMN sowingStatus TEXT NOT NULL DEFAULT 'No'")
+        database.execSQL("ALTER TABLE new_surveys ADD COLUMN sowingDate TEXT")
     }
 }

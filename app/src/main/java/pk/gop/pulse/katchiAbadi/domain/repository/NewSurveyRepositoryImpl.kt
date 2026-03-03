@@ -19,6 +19,7 @@ import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
+import pk.gop.pulse.katchiAbadi.data.local.SowingPersonDao
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.post.Pictures
 import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
@@ -26,6 +27,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonPost
@@ -52,6 +54,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
     private val dao: NewSurveyNewDao,
     private val imageDao: SurveyImageDao,
     private val personDao: SurveyPersonDao,
+    private val sowingPersonDao: SowingPersonDao,
     private val api: ServerApi,
     private val sharedPreferences: SharedPreferences,
     private val activeParcelDao: ActiveParcelDao
@@ -892,6 +895,19 @@ class NewSurveyRepositoryImpl @Inject constructor(
             val persons = convertPersonsToSurveyPersonPost(personsEntities)
             Log.d(TAG, "Found ${personsEntities.size} persons for survey pkId=${sourceSurveyPkId}")
 
+            val sowingPersonEntities = if (isSurveyed) {
+                sowingPersonDao.getBySurveyId(sourceSurveyPkId)
+            } else {
+                emptyList()
+            }
+            val sowingPersonDtos = sowingPersonEntities.map { sp ->
+                SowingPersonPostDto(
+                    name = sp.name,
+                    CNIC = sp.cnic,
+                    growerCode = sp.growerCode ?: ""
+                )
+            }
+
             // ✅ Get parcel data (geometry, khewatInfo, etc.)
             val parcelData = getParcelDataForOperation(subSurvey)
 
@@ -918,6 +934,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 parcelData.khewatInfo,
                 parcelData.parcelAreaKMF,
                 parcelData.calculatedArea,
+                sowingPersonDtos,
                 100 // distance
             )
 
@@ -983,8 +1000,13 @@ class NewSurveyRepositoryImpl @Inject constructor(
         khewatInfo: String,
         parcelAreaKMF: String,
         calculatedArea: String,
+        sowingPersons: List<SowingPersonPostDto> = emptyList(),
         distance: Int = 100
     ): SurveyPostNew {
+
+        Log.d(TAG, "=== SOWING INFO FROM ENTITY ===")
+        Log.d(TAG, "survey.sowingStatus = '${survey.sowingStatus}'")
+        Log.d(TAG, "survey.sowingDate   = '${survey.sowingDate}'")
         // ✅ For split parcels (or any "New" operation), don't send parcel ID
         val parcelIdToSend = if (survey.parcelOperation == "New") {
             0L // Let server create new
@@ -992,7 +1014,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
             survey.parcelId ?: 0L
         }
 
-        return SurveyPostNew(
+        val post = SurveyPostNew(
             propertyType = survey.propertyType,
             ownershipStatus = survey.ownershipStatus,
             variety = survey.variety,
@@ -1015,9 +1037,19 @@ class NewSurveyRepositoryImpl @Inject constructor(
             khewatInfo = khewatInfo,
             parcelAreaKMF = parcelAreaKMF,
             distance = distance,
+            sowingStatus = survey.sowingStatus,
+            sowingDate = survey.sowingDate,
             pictures = pictures,
-            persons = persons
+            persons = persons,
+            sowingPersons = sowingPersons
         )
+
+        Log.d(TAG, "=== SOWING INFO IN POST ===")
+        Log.d(TAG, "post.sowingStatus = '${post.sowingStatus}'")
+        Log.d(TAG, "post.sowingDate   = '${post.sowingDate}'")
+
+        return post
+
     }
 
     // ===== HELPER: CONVERT PERSONS =====
@@ -1099,6 +1131,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
         Log.d(TAG, "Parcel Operation: ${surveyPost.parcelOperation}")
         Log.d(TAG, "Parcel Operation Value: ${surveyPost.parcelOperationValue}")
         Log.d(TAG, "CalculatedArea: ${surveyPost.calculatedArea} Acres")
+
+        Log.d(TAG, "=== SOWING DETAILS ===")
+        Log.d(TAG, "SowingStatus : '${surveyPost.sowingStatus}'")
+        Log.d(TAG, "SowingDate   : '${surveyPost.sowingDate}'")
 
         // ✅ CRITICAL VALIDATION
         if (surveyPost.geomWKT.isNullOrEmpty()) {

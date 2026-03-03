@@ -28,6 +28,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.VersionCheckResponse
+import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
 import pk.gop.pulse.katchiAbadi.domain.model.TaskResponse
 import pk.gop.pulse.katchiAbadi.domain.model.UserResponse
@@ -212,4 +213,9 @@ interface ServerApi {
         @Body data: OnboardingUploadDto
     ): Response<OnboardingResponse>
 
+//    @POST("api/MobileData/AddSowingUserDetails")
+//    suspend fun postSowingUsers(
+//        @Header("Authorization") token: String,
+//        @Body sowingUsers: List<SowingPersonPostDto>
+//    ): Response<Any>
 }

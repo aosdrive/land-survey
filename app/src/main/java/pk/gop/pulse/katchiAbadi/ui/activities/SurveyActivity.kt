@@ -62,6 +62,9 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import javax.inject.Inject
 import com.google.android.gms.location.Priority
+import com.google.android.material.textfield.TextInputEditText
+import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntry
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -112,6 +115,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private val accelerometerReading = FloatArray(3)
     private val magnetometerReading = FloatArray(3)
     private var currentBearing: Float = 0f
+
+    private val sowingPersonViews = mutableListOf<View>()
+    private var selectedSowingDate: String? = null
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("tempImagePath", tempImagePath)
@@ -132,6 +138,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         setupSensors()
+        setupSowingSection()
 
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
@@ -182,6 +189,111 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         loadSharedMouzaData()
         syncUnsyncedData()
     }
+
+    private fun setupSowingSection() {
+        val sowingAdapter = ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_item,
+            listOf("No", "Yes")
+        )
+        sowingAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerSowing.adapter = sowingAdapter
+
+        binding.spinnerSowing.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                val isYes = parent.getItemAtPosition(position).toString() == "Yes"
+                binding.layoutSowingSection.visibility = if (isYes) View.VISIBLE else View.GONE
+                if (!isYes) {
+                    binding.layoutSowingPersonEntries.removeAllViews()
+                    sowingPersonViews.clear()
+                    selectedSowingDate = null
+                    binding.etSowingDate.setText("")
+                } else if (sowingPersonViews.isEmpty()) {
+                    addSowingPersonEntry()
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+
+        binding.etSowingDate.setOnClickListener {
+            val cal = java.util.Calendar.getInstance()
+            android.app.DatePickerDialog(
+                this,
+                { _, year, month, day ->
+                    selectedSowingDate = String.format("%02d/%02d/%04d", day, month + 1, year)
+                    binding.etSowingDate.setText(selectedSowingDate)
+                },
+                cal.get(java.util.Calendar.YEAR),
+                cal.get(java.util.Calendar.MONTH),
+                cal.get(java.util.Calendar.DAY_OF_MONTH)
+            ).show()
+        }
+
+        binding.btnAddSowingPerson.setOnClickListener {
+            addSowingPersonEntry()
+        }
+    }
+
+    private fun addSowingPersonEntry() {
+        val entryView = layoutInflater.inflate(
+            R.layout.item_sowing_person,
+            binding.layoutSowingPersonEntries,
+            false
+        )
+
+        val index = sowingPersonViews.size + 1
+        entryView.findViewById<TextView>(R.id.tvSowingPersonIndex).text = "Person $index"
+
+        // CNIC auto-formatter: 12345-1234567-1
+        entryView.findViewById<com.google.android.material.textfield.TextInputEditText>(
+            R.id.etSowingCnic
+        ).addTextChangedListener(object : android.text.TextWatcher {
+            private var isFormatting = false
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (isFormatting) return
+                isFormatting = true
+                val digits = s.toString().replace("-", "")
+                val formatted = buildString {
+                    digits.forEachIndexed { i, c ->
+                        if (i == 5 || i == 12) append('-')
+                        append(c)
+                    }
+                }
+                s?.replace(0, s.length, formatted)
+                isFormatting = false
+            }
+        })
+
+        // Remove button
+        entryView.findViewById<com.google.android.material.button.MaterialButton>(
+            R.id.btnRemoveSowingPerson
+        ).setOnClickListener {
+            binding.layoutSowingPersonEntries.removeView(entryView)
+            sowingPersonViews.remove(entryView)
+            // Re-index remaining
+            sowingPersonViews.forEachIndexed { i, v ->
+                v.findViewById<TextView>(R.id.tvSowingPersonIndex).text = "Person ${i + 1}"
+            }
+        }
+
+        binding.layoutSowingPersonEntries.addView(entryView)
+        sowingPersonViews.add(entryView)
+    }
+
+    private fun getAllSowingPersons(): List<SowingPersonEntry> {
+        return sowingPersonViews.map { view ->
+            SowingPersonEntry(
+                name = view.findViewById<TextInputEditText>(R.id.etSowingName)
+                    .text.toString().trim(),
+                cnic = view.findViewById<TextInputEditText>(R.id.etSowingCnic)
+                    .text.toString().trim()
+            )
+        }.filter { it.name.isNotBlank() }   // optional: skip completely empty rows
+    }
+
+
 
     private fun setupSensors() {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -1044,6 +1156,38 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 //                return@setOnClickListener
 //            }
 
+            // ===== VALIDATION: If sowing is Yes, date must be selected =====
+            val isSowing = binding.spinnerSowing.selectedItem.toString()
+            if (isSowing == "Yes" && selectedSowingDate.isNullOrBlank()) {
+                AlertDialog.Builder(this)
+                    .setTitle("Sowing Date Required")
+                    .setMessage("Please select a sowing date.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            // ===== VALIDATION: Sowing persons =====
+//            if (isSowing) {
+//                val sowingPersons = getAllSowingPersons()
+//
+//                if (sowingPersons.isEmpty()) {
+//                    AlertDialog.Builder(this)
+//                        .setTitle("Person Required")
+//                        .setMessage("Please add at least one sowing person.")
+//                        .setPositiveButton("OK", null).show()
+//                    return@setOnClickListener
+//                }
+//
+//                if (sowingPersons.any { it.name.isBlank() }) {
+//                    AlertDialog.Builder(this)
+//                        .setTitle("Name Required")
+//                        .setMessage("Please enter the name for all sowing persons.")
+//                        .setPositiveButton("OK", null).show()
+//                    return@setOnClickListener
+//                }
+//            }
+
             // ===== GET PERSONS FROM HELPER =====
             val rawPersons = personEntryHelper.getAllPersons()
 
@@ -1147,7 +1291,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 areaName = sharedPreferences.getString(
                     Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
                     Constants.SHARED_PREF_DEFAULT_STRING
-                ).orEmpty()
+                ).orEmpty(),
+                sowingStatus = isSowing,
+                sowingDate = if (isSowing == "Yes") selectedSowingDate else null
             )
 
             val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
@@ -1157,6 +1303,25 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 withContext(Dispatchers.IO) {
                     val surveyId = database.newSurveyNewDao().insertSurvey(survey)
                     Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId ===")
+
+
+
+                    // In setupSubmit, replace the sowing person saving block:
+
+                    val sowingPersons = getAllSowingPersons()
+                    val primaryGrowerCode = rawPersons.firstOrNull()?.growerCode?.trim() ?: ""
+
+                    val sowingEntities = sowingPersons.map { person ->
+                        SowingPersonEntity(
+                            surveyId = surveyId,
+                            name = person.name,
+                            cnic = person.cnic,
+                            growerCode = primaryGrowerCode   // ← always from first parcel owner
+                        )
+                    }
+                    database.sowingPersonDao().insertAll(sowingEntities)
+                        Log.d("SurveyActivity", "Saved ${sowingEntities.size} sowing persons for surveyId=$surveyId")
+
 
                     // ========== SMART PERSON HANDLING: Reuse unchanged, create new if modified ==========
                     rawPersons.forEach { person ->

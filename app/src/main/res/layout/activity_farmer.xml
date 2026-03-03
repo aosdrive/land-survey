@@ -3,24 +3,62 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="#F0F4F0"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:paddingBottom="24dp">
+        android:paddingBottom="32dp">
 
-        <!-- Main Form Card -->
+        <!-- ─── HEADER BANNER ─── -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/forest_green"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                app:tint="@color/white" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Farmer Profile"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="View &amp; Update Grower Information"
+                    android:textColor="#CCFFD0"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ─── SEARCH CARD ─── -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_margin="16dp"
             app:cardBackgroundColor="@color/white"
             app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            app:cardElevation="4dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -28,386 +66,1047 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- CNIC Input -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="🔍  Search Farmer"
+                    android:textColor="#333333"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- CNIC Search -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="CNIC Number"
-                    app:boxBackgroundMode="outline"
+                    android:layout_marginBottom="10dp"
+                    android:hint="Search by CNIC"
                     app:boxCornerRadiusBottomEnd="8dp"
                     app:boxCornerRadiusBottomStart="8dp"
                     app:boxCornerRadiusTopEnd="8dp"
                     app:boxCornerRadiusTopStart="8dp"
                     app:boxStrokeColor="@color/forest_green"
-                    app:boxStrokeErrorColor="#D32F2F"
-                    app:helperText="Format: XXXXX-XXXXXXX-X"
-                    app:helperTextTextColor="#999999"
                     app:hintTextColor="@color/forest_green"
                     app:startIconDrawable="@android:drawable/ic_menu_myplaces"
-                    app:startIconTint="@color/forest_green">
+                    app:startIconTint="@color/forest_green"
+                    app:endIconMode="clear_text">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etCnic"
+                        android:id="@+id/etSearchCnic"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:digits="0123456789-"
+                        android:hint="XXXXX-XXXXXXX-X"
                         android:inputType="number"
                         android:maxLength="15"
-                        android:maxLines="1"
-                        android:textColor="#333333"
-                        android:textSize="15sp" />
+                        android:textSize="14sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Contact Number Input -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Contact Number"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxStrokeColor="@color/forest_green"
-                    app:boxStrokeErrorColor="#D32F2F"
-                    app:helperText="Enter mobile number"
-                    app:helperTextTextColor="#999999"
-                    app:hintTextColor="@color/forest_green"
-                    app:prefixText="+92 "
-                    app:startIconDrawable="@android:drawable/stat_notify_call_mute"
-                    app:startIconTint="@color/forest_green">
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_gravity="center"-->
+<!--                    android:layout_marginBottom="10dp"-->
+<!--                    android:text="— OR —"-->
+<!--                    android:textColor="#999999"-->
+<!--                    android:textSize="12sp" />-->
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etContact"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="phone"
-                        android:maxLength="11"
-                        android:maxLines="1"
-                        android:textColor="#333333"
-                        android:textSize="15sp" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Address Input -->
+                <!-- Grower Code Search -->
 <!--                <com.google.android.material.textfield.TextInputLayout-->
 <!--                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"-->
 <!--                    android:layout_width="match_parent"-->
 <!--                    android:layout_height="wrap_content"-->
-<!--                    android:layout_marginBottom="16dp"-->
-<!--                    android:hint="Address"-->
-<!--                    app:boxBackgroundMode="outline"-->
+<!--                    android:layout_marginBottom="12dp"-->
+<!--                    android:hint="Search by Grower Code"-->
 <!--                    app:boxCornerRadiusBottomEnd="8dp"-->
 <!--                    app:boxCornerRadiusBottomStart="8dp"-->
 <!--                    app:boxCornerRadiusTopEnd="8dp"-->
 <!--                    app:boxCornerRadiusTopStart="8dp"-->
 <!--                    app:boxStrokeColor="@color/forest_green"-->
-<!--                    app:boxStrokeErrorColor="#D32F2F"-->
-<!--                    app:helperText="Enter complete address"-->
-<!--                    app:helperTextTextColor="#999999"-->
 <!--                    app:hintTextColor="@color/forest_green"-->
-<!--                    app:startIconDrawable="@android:drawable/ic_menu_mylocation"-->
-<!--                    app:startIconTint="@color/forest_green">-->
+<!--                    app:startIconDrawable="@android:drawable/ic_menu_search"-->
+<!--                    app:startIconTint="@color/forest_green"-->
+<!--                    app:endIconMode="clear_text">-->
 
 <!--                    <com.google.android.material.textfield.TextInputEditText-->
-<!--                        android:id="@+id/etAddress"-->
+<!--                        android:id="@+id/etSearchGrowerCode"-->
 <!--                        android:layout_width="match_parent"-->
 <!--                        android:layout_height="wrap_content"-->
-<!--                        android:inputType="textPostalAddress|textCapSentences"-->
-<!--                        android:maxLength="200"-->
-<!--                        android:minLines="2"-->
-<!--                        android:maxLines="4"-->
-<!--                        android:gravity="start|top"-->
-<!--                        android:textColor="#333333"-->
-<!--                        android:textSize="15sp" />-->
+<!--                        android:inputType="text"-->
+<!--                        android:textSize="14sp" />-->
 <!--                </com.google.android.material.textfield.TextInputLayout>-->
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="Search Farmer"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/forest_green"
+                    app:cornerRadius="8dp"
+                    app:icon="@android:drawable/ic_menu_search"
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/white" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Image Capture Card -->
-        <androidx.cardview.widget.CardView
+        <!-- ─── PROFILE SECTION (shown after search) ─── -->
+        <LinearLayout
+            android:id="@+id/layoutProfile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            android:orientation="vertical"
+            android:visibility="visible">
 
-            <LinearLayout
+            <!-- Profile Picture + Name Banner -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-                <!-- Section Header -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingBottom="16dp">
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@color/Chocolate" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Photo Capture"
-                        android:textColor="@color/Chocolate"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Capture Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCaptureImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginBottom="12dp"
-                    android:text="Capture Photo"
-                    android:textColor="@color/white"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="@color/Chocolate"
-                    app:cornerRadius="8dp"
-                    app:icon="@android:drawable/ic_menu_camera"
-                    app:iconGravity="textStart"
-                    app:iconTint="@color/white" />
-
-                <!-- Image Preview Container -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#FAFAFA"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="1dp">
-
+                    <!-- Profile Picture -->
                     <FrameLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="200dp">
+                        android:layout_width="100dp"
+                        android:layout_height="100dp">
 
-                        <!-- Image View -->
-                        <ImageView
-                            android:id="@+id/ivCapturedImage"
-                            android:layout_width="match_parent"
-                            android:layout_height="200dp"
-                            android:scaleType="centerCrop"
-                            android:visibility="gone" />
-
-                        <!-- Empty State -->
-                        <LinearLayout
-                            android:id="@+id/layoutImageEmptyState"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:visibility="visible">
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="100dp"
+                            android:layout_height="100dp"
+                            app:cardCornerRadius="50dp"
+                            app:cardElevation="4dp">
 
                             <ImageView
-                                android:layout_width="64dp"
-                                android:layout_height="64dp"
-                                android:alpha="0.3"
-                                android:src="@android:drawable/ic_menu_camera"
-                                app:tint="#999999" />
+                                android:id="@+id/ivProfilePicture"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@android:drawable/ic_menu_gallery" />
+                        </androidx.cardview.widget.CardView>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="No photo captured"
-                                android:textColor="#999999"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Tap the button above to capture"
-                                android:textColor="#CCCCCC"
-                                android:textSize="12sp" />
-                        </LinearLayout>
+                        <!-- Edit Icon Badge -->
+                        <com.google.android.material.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/fabEditPhoto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|end"
+                            android:src="@android:drawable/ic_menu_camera"
+                            app:backgroundTint="@color/Chocolate"
+                            app:maxImageSize="16dp"
+                            app:tint="@color/white" />
                     </FrameLayout>
-                </androidx.cardview.widget.CardView>
 
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                    <TextView
+                        android:id="@+id/tvFullName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Muhammad Ali Khan"
+                        android:textColor="#1A1A1A"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
 
-        <!-- Thumbprint Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+                    <TextView
+                        android:id="@+id/tvGrowerCodeBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="#E8F5E9"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:text="Grower Code: GRW-2024-00123"
+                        android:textColor="@color/forest_green"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
 
-            <LinearLayout
+                    <!-- Row 1: Gender, Religion, Ownership -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvGenderBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:background="#E3F2FD"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="♂ Male"
+                            android:textColor="#1976D2"
+                            android:textSize="12sp" />
+
+<!--                        <TextView-->
+<!--                            android:id="@+id/tvReligionBadge"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_marginEnd="8dp"-->
+<!--                            android:background="#FFF3E0"-->
+<!--                            android:paddingHorizontal="10dp"-->
+<!--                            android:paddingVertical="4dp"-->
+<!--                            android:text="Islam"-->
+<!--                            android:textColor="#E65100"-->
+<!--                            android:textSize="12sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvOwnershipBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#F3E5F5"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="Owner"
+                            android:textColor="#7B1FA2"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                    <!-- Row 2: Mauza, Circle, Group -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvMauzaBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:background="#E8F5E9"
+                            android:drawablePadding="4dp"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="📍 Mauza Gulshan"
+                            android:textColor="#2E7D32"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvCircleBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:background="#E0F7FA"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="⭕ Circle 04"
+                            android:textColor="#00838F"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvGroupBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#FFF8E1"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:text="👥 Group B"
+                            android:textColor="#F57F17"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ─── READ-ONLY INFO CARD ─── -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
 
-                <!-- Section Header -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingBottom="16dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="#1976D2" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Fingerprint Verification"
-                        android:textColor="#1976D2"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Verify Fingerprint Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCaptureThumbprint"
-                    android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginBottom="12dp"
-                    android:text="Verify Fingerprint"
-                    android:textColor="@color/white"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    app:backgroundTint="#1976D2"
-                    app:cornerRadius="8dp"
-                    app:icon="@android:drawable/ic_lock_idle_lock"
-                    app:iconGravity="textStart"
-                    app:iconTint="@color/white" />
-
-                <!-- Thumbprint Status Container -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#FAFAFA"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="1dp">
-
-                    <FrameLayout
+                    <!-- Card Header -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="150dp">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingBottom="12dp">
 
-                        <!-- Empty State -->
-                        <LinearLayout
-                            android:id="@+id/layoutThumbprintEmptyState"
+                        <View
+                            android:layout_width="4dp"
+                            android:layout_height="22dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="#1976D2" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Personal Information"
+                            android:textColor="#1976D2"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#E3F2FD"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:text="Read Only"
+                            android:textColor="#1976D2"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#F0F0F0" />
+
+                    <!-- Row: First Name -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FAFAFA"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:drawablePadding="6dp"
+                            android:text="First Name"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvFirstName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="Muhammad"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: Last Name -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FFFFFF"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="Father/Husband Name"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvLastName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="Ali Khan"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: CNIC -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FAFAFA"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="CNIC"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvCnic"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="35201-1234567-9"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: Gender -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FFFFFF"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="Gender"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvGender"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="Male"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: Relation -->
+<!--                    <LinearLayout-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_marginBottom="10dp"-->
+<!--                        android:background="#FAFAFA"-->
+<!--                        android:orientation="horizontal"-->
+<!--                        android:padding="10dp">-->
+
+<!--                        <TextView-->
+<!--                            android:layout_width="110dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text="Relation"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+<!--&lt;!&ndash;                        <TextView&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_width="0dp"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_height="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_weight="1"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:text=":"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:textColor="#888888"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:textSize="13sp" />&ndash;&gt;-->
+
+<!--                        <TextView-->
+<!--                            android:id="@+id/tvRelation"-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="3"-->
+<!--                            android:text="Son"-->
+<!--                            android:textColor="#1A1A1A"-->
+<!--                            android:textSize="13sp"-->
+<!--                            android:textStyle="bold" />-->
+<!--                    </LinearLayout>-->
+
+                    <!-- Row: Religion -->
+<!--                    <LinearLayout-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_marginBottom="10dp"-->
+<!--                        android:background="#FFFFFF"-->
+<!--                        android:orientation="horizontal"-->
+<!--                        android:padding="10dp">-->
+
+<!--                        <TextView-->
+<!--                            android:layout_width="110dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text="Religion"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+<!--&lt;!&ndash;                        <TextView&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_width="0dp"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_height="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_weight="1"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:text=":"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:textColor="#888888"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:textSize="13sp" />&ndash;&gt;-->
+
+<!--                        <TextView-->
+<!--                            android:id="@+id/tvReligion"-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="3"-->
+<!--                            android:text="Islam"-->
+<!--                            android:textColor="#1A1A1A"-->
+<!--                            android:textSize="13sp"-->
+<!--                            android:textStyle="bold" />-->
+<!--                    </LinearLayout>-->
+
+                    <!-- Row: Mobile -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FAFAFA"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="Mobile"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvMobile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="+92 300 1234567"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ─── LAND INFO CARD ─── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Card Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingBottom="12dp">
+
+                        <View
+                            android:layout_width="4dp"
+                            android:layout_height="22dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@color/Chocolate" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Land &amp; Location Details"
+                            android:textColor="@color/Chocolate"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="#FFF3E0"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:text="Read Only"
+                            android:textColor="@color/Chocolate"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#F0F0F0" />
+
+                    <!-- Row: Ownership Type -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FAFAFA"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="Ownership"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvOwnershipType"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="Owner"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: Person Area -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FFFFFF"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="Area"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvPersonArea"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="12.5 Acres"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: Mauza -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:background="#FAFAFA"
+                        android:orientation="horizontal"
+                        android:padding="10dp">
+
+                        <TextView
+                            android:layout_width="110dp"
+                            android:layout_height="wrap_content"
+                            android:text="Mauza"
+                            android:textColor="#888888"
+                            android:textSize="13sp" />
+
+<!--                        <TextView-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="1"-->
+<!--                            android:text=":"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+                        <TextView
+                            android:id="@+id/tvMauzaName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:text="Mauza Gulshan"
+                            android:textColor="#1A1A1A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Row: Created Date -->
+<!--                    <LinearLayout-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_marginBottom="4dp"-->
+<!--                        android:background="#FFFFFF"-->
+<!--                        android:orientation="horizontal"-->
+<!--                        android:padding="10dp">-->
+
+<!--                        <TextView-->
+<!--                            android:layout_width="110dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text="Created Date"-->
+<!--                            android:textColor="#888888"-->
+<!--                            android:textSize="13sp" />-->
+
+<!--&lt;!&ndash;                        <TextView&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_width="0dp"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_height="wrap_content"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:layout_weight="1"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:text=":"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:textColor="#888888"&ndash;&gt;-->
+<!--&lt;!&ndash;                            android:textSize="13sp" />&ndash;&gt;-->
+
+<!--                        <TextView-->
+<!--                            android:id="@+id/tvCreatedDate"-->
+<!--                            android:layout_width="0dp"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_weight="3"-->
+<!--                            android:text="15 Jan 2024"-->
+<!--                            android:textColor="#1A1A1A"-->
+<!--                            android:textSize="13sp"-->
+<!--                            android:textStyle="bold" />-->
+<!--                    </LinearLayout>-->
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ─── EDITABLE FIELDS CARD ─── -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Card Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingBottom="12dp">
+
+                        <View
+                            android:layout_width="4dp"
+                            android:layout_height="22dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@color/forest_green" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Editable Information"
+                            android:textColor="@color/forest_green"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#F0F0F0" />
+
+                    <!-- Mobile No -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:hint="Mobile Number"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxStrokeColor="@color/forest_green"
+                        app:helperText="Optional — update contact number"
+                        app:helperTextTextColor="#999999"
+                        app:hintTextColor="@color/forest_green"
+                        app:prefixText="+92 "
+                        app:startIconDrawable="@android:drawable/stat_notify_call_mute"
+                        app:startIconTint="@color/forest_green"
+                        app:endIconMode="clear_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etEditMobile"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:visibility="visible">
+                            android:layout_height="wrap_content"
+                            android:inputType="phone"
+                            android:maxLength="11"
+                            android:text="3001234567"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Mother Name -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:hint="Mother's Name"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxStrokeColor="@color/forest_green"
+                        app:helperText="Optional"
+                        app:helperTextTextColor="#999999"
+                        app:hintTextColor="@color/forest_green"
+                        app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                        app:startIconTint="@color/forest_green"
+                        app:endIconMode="clear_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etMotherName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPersonName|textCapWords"
+                            android:text="Fatima Bibi"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Email -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:hint="Email Address"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxStrokeColor="@color/forest_green"
+                        app:helperText="Optional"
+                        app:helperTextTextColor="#999999"
+                        app:hintTextColor="@color/forest_green"
+                        app:startIconDrawable="@android:drawable/sym_action_email"
+                        app:startIconTint="@color/forest_green"
+                        app:endIconMode="clear_text">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textEmailAddress"
+                            android:text="m.ali.khan@example.com"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Address -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:hint="Address"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxStrokeColor="@color/forest_green"
+                        app:helperText="Optional — street, city, district"
+                        app:helperTextTextColor="#999999"
+                        app:hintTextColor="@color/forest_green"
+                        app:startIconDrawable="@android:drawable/ic_menu_mylocation"
+                        app:startIconTint="@color/forest_green">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etEditAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="start|top"
+                            android:inputType="textPostalAddress|textCapSentences|textMultiLine"
+                            android:maxLines="4"
+                            android:minLines="2"
+                            android:text="House 12, Street 4, Gulshan Colony, Lahore"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Profile Picture Update -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="Profile Picture"
+                        android:textColor="#555555"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:background="#F5F5F5"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="60dp"
+                            android:layout_height="60dp"
+                            android:layout_marginEnd="12dp"
+                            app:cardCornerRadius="30dp"
+                            app:cardElevation="2dp">
 
                             <ImageView
-                                android:layout_width="64dp"
-                                android:layout_height="64dp"
-                                android:alpha="0.3"
-                                android:src="@android:drawable/ic_menu_view"
-                                app:tint="#1976D2" />
+                                android:id="@+id/ivEditProfilePic"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@android:drawable/ic_menu_gallery" />
+                        </androidx.cardview.widget.CardView>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="No fingerprint verified"
-                                android:textColor="#999999"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Tap the button above to verify"
-                                android:textColor="#CCCCCC"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                        <!-- Status Indicator -->
                         <LinearLayout
-                            android:id="@+id/layoutThumbprintStatus"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="24dp"
-                            android:visibility="gone">
-
-                            <ImageView
-                                android:layout_width="80dp"
-                                android:layout_height="80dp"
-                                android:src="@android:drawable/ic_secure"
-                                app:tint="#4CAF50" />
-
-                            <View
-                                android:id="@+id/viewThumbprintStatusDot"
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:layout_marginTop="12dp"
-                                android:background="@android:drawable/presence_online" />
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
                             <TextView
-                                android:id="@+id/tvThumbprintStatus"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Verified"
-                                android:textColor="#4CAF50"
-                                android:textSize="18sp"
+                                android:text="Update Photo"
+                                android:textColor="#333333"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Fingerprint authenticated successfully"
-                                android:textColor="#666666"
-                                android:textSize="12sp" />
+                                android:layout_marginTop="2dp"
+                                android:text="Optional — tap to change"
+                                android:textColor="#999999"
+                                android:textSize="11sp" />
                         </LinearLayout>
-                    </FrameLayout>
-                </androidx.cardview.widget.CardView>
 
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnChangePic"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:text="Change"
+                            android:textSize="12sp"
+                            app:cornerRadius="6dp"
+                            app:strokeColor="@color/forest_green"
+                            app:strokeWidth="1dp" />
+                    </LinearLayout>
 
-        <!-- Save Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_marginTop="8dp"
-            android:text="Save Registration"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:backgroundTint="@color/forest_green"
-            app:cornerRadius="12dp"
-            app:elevation="4dp"
-            app:icon="@android:drawable/ic_menu_save"
-            app:iconGravity="textStart"
-            app:iconTint="@color/white" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ─── SAVE BUTTON ─── -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveProfile"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="Save Changes"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/forest_green"
+                app:cornerRadius="12dp"
+                app:elevation="4dp"
+                app:icon="@android:drawable/ic_menu_save"
+                app:iconGravity="textStart"
+                app:iconTint="@color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginHorizontal="16dp"
+                android:gravity="center"
+                android:text="Only editable fields will be updated. Read-only information cannot be changed."
+                android:textColor="#AAAAAA"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+        <!-- end layoutProfile -->
 
     </LinearLayout>
 </ScrollView>

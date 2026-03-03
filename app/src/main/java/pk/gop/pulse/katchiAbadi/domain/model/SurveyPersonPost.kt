@@ -48,8 +48,11 @@ data class SurveyPostNew(
     val khewatInfo: String? = null, // Add this field
     val parcelAreaKMF: String?= null,
     val distance: Int = 100,
+    val sowingStatus: String = "No",
+    val sowingDate: String? = null,
     val pictures: List<Pictures>,
     val persons: List<SurveyPersonPost>,
+    val sowingPersons: List<SowingPersonPostDto>? = null
 )
 
 

@@ -35,8 +35,9 @@ class NewSurveyViewModel @Inject constructor(
 //    private val _surveysWithKhewat = MutableStateFlow<List<SurveyWithKhewat>>(emptyList())
 //    val surveysWithKhewat = _surveysWithKhewat.asStateFlow()
 
-    val surveysWithKhewat: StateFlow<List<SurveyWithKhewat>> = useCase.getAllPendingSurveysWithKhewat()
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val surveysWithKhewat: StateFlow<List<SurveyWithKhewat>> =
+        useCase.getAllPendingSurveysWithKhewat()
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
 
     fun deleteData(survey: NewSurveyNewEntity) {
@@ -81,7 +82,8 @@ class NewSurveyViewModel @Inject constructor(
                 extra1 = p.extra1,
                 extra2 = p.extra2,
                 mauzaId = p.mauzaId,
-                mauzaName = p.mauzaName
+                mauzaName = p.mauzaName,
+                address = p.address
             )
         }
     }

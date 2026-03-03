@@ -20,6 +20,7 @@ import pk.gop.pulse.katchiAbadi.BuildConfig
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
+import pk.gop.pulse.katchiAbadi.data.local.SowingPersonDao
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
@@ -438,7 +439,17 @@ object AppModule {
     fun provideActiveParcelDao(db: AppDatabase): ActiveParcelDao {
         return db.activeParcelDao()
     }
+    @Provides
+    @Singleton
+    fun provideLogoutUseCase(repository: AuthRepository): LogoutUseCase {
+        return LogoutUseCase(repository)
+    }
 
+    @Provides
+    @Singleton
+    fun provideSowingPersonDao(db: AppDatabase): SowingPersonDao {
+        return db.sowingPersonDao()
+    }
 
     // Provide your repository with all dependencies injected
     @Provides
@@ -447,6 +458,7 @@ object AppModule {
         dao: NewSurveyNewDao,
         imageDao: SurveyImageDao,
         personDao: SurveyPersonDao,
+        db: AppDatabase,
         api: ServerApi,
         sharedPreferences: SharedPreferences,
         activeParcelDao: ActiveParcelDao   // <-- Add this
@@ -455,17 +467,10 @@ object AppModule {
             dao,
             imageDao,
             personDao,
+            db.sowingPersonDao(),
             api,
             sharedPreferences,
-            activeParcelDao
+            activeParcelDao,
         )
     }
-
-
-    @Provides
-    @Singleton
-    fun provideLogoutUseCase(repository: AuthRepository): LogoutUseCase {
-        return LogoutUseCase(repository)
-    }
-
 }

@@ -27,11 +27,9 @@ data class NewSurveyNewEntity(
     val subParcelNo: String = "",
     val parcelOperation: String = "",
     val parcelOperationValue: String = "",
-
-//    var userId: Long,
-//    var surveyId: Long,
-
     val statusBit: Int = 0,
+    val sowingStatus: String = "No",
+    val sowingDate: String? = null
 
 
 
@@ -49,6 +47,6 @@ data class NewSurveyNewEntity(
 //    var appVersion: String,
 //    var uniqueId: String,
 
-    )
+)
 
 
