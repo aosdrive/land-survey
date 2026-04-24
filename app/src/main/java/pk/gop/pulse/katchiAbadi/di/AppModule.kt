@@ -461,7 +461,7 @@ object AppModule {
         db: AppDatabase,
         api: ServerApi,
         sharedPreferences: SharedPreferences,
-        activeParcelDao: ActiveParcelDao   // <-- Add this
+        activeParcelDao: ActiveParcelDao
     ): NewSurveyRepository {
         return NewSurveyRepositoryImpl(
             dao,

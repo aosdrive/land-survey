@@ -67,6 +67,8 @@ class OwnerSelectionDialog(
             android.R.layout.simple_list_item_1,
             filteredOwners.map {
                 "${it.firstName} ${it.lastName} - ${it.nic} - GC - ${it.growerCode} (${it.ownershipType})"
+//                "${it.firstName} ${it.lastName} - ${it.nic} - (${it.ownershipType})"
+
             }
         )
 
@@ -98,7 +100,8 @@ class OwnerSelectionDialog(
             val ownership = it.ownershipType.lowercase()
             val grcode = it.growerCode.lowercase()
             fullName.contains(query.lowercase()) ||
-                    nic.contains(query.lowercase()) ||grcode.contains(query.lowercase()) ||
+                    nic.contains(query.lowercase()) ||
+                    grcode.contains(query.lowercase()) ||
                     ownership.contains(query.lowercase())
         }.toMutableList()
 
@@ -106,6 +109,8 @@ class OwnerSelectionDialog(
         adapter.addAll(
             filteredOwners.map {
                 "${it.firstName} ${it.lastName} - ${it.nic}-GC- ${it.growerCode} (${it.ownershipType})"
+//                "${it.firstName} ${it.lastName} - ${it.nic} - (${it.ownershipType})"
+
             }
         )
         adapter.notifyDataSetChanged()

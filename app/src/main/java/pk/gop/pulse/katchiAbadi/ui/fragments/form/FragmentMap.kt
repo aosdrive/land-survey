@@ -1,4 +1,5 @@
 package pk.gop.pulse.katchiAbadi.ui.fragments.form
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -43,9 +44,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
-import com.devstune.searchablemultiselectspinner.SearchableItem
-import com.devstune.searchablemultiselectspinner.SearchableMultiSelectSpinner
-import com.devstune.searchablemultiselectspinner.SelectionCompleteListener
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
 import com.esri.arcgisruntime.arcgisservices.LevelOfDetail
 import com.esri.arcgisruntime.arcgisservices.TileInfo
@@ -123,6 +121,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
+
 @AndroidEntryPoint
 class FragmentMap : Fragment() {
     @Inject

@@ -201,9 +201,13 @@ class TaskAssignActivity : AppCompatActivity() {
                     val response = withContext(Dispatchers.IO) {
                         serverApi.getAllUsers(
                             token = "Bearer $token",
-                            roleId = 8
                         )
                     }
+
+                    Log.d("API_DEBUG", "Response Code: ${response.code()}")
+                    Log.d("API_DEBUG", "Response Body: ${response.body()}")
+                    Log.d("API_DEBUG", "Error Body: ${response.errorBody()?.string()}")
+                    Log.d("API_DEBUG", "User count: ${response.body()?.size}")
 
                     binding.btnSelectOwner.isEnabled = true
 

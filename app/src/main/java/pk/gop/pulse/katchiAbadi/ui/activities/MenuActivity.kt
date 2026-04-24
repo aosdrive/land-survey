@@ -208,11 +208,11 @@ class MenuActivity : BaseActivity() {
             }
         }
 
-        binding.farmers.setOnClickListener {
-            Intent(this@MenuActivity, FarmerActivity::class.java).apply {
-                startActivity(this)
-            }
-        }
+//        binding.farmers.setOnClickListener {
+//            Intent(this@MenuActivity, FarmerActivity::class.java).apply {
+//                startActivity(this)
+//            }
+//        }
 
         binding.apply {
 
@@ -605,6 +605,7 @@ class MenuActivity : BaseActivity() {
                                             "API_CALL",
                                             "Calling getAreasByMauzaId with mauzaId: ${selectedMauza.mauzaId}"
                                         )
+                                        Log.d("API_URL", "Fetching areas → mauzaId: ${selectedMauza.mauzaId}, token: Bearer $token")
 
                                         val areaResponse = serverApi.getAreasByMauzaId(
                                             selectedMauza.mauzaId,
@@ -765,9 +766,11 @@ class MenuActivity : BaseActivity() {
             Log.d("FETCH_PARCELS", "unitId: $unitId, groupId: $groupId")
 
             val authToken = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+            Log.d("API_URL", "Fetching parcels → mauzaId: $mauzaId, area: $areaName, token: Bearer $authToken")
 
             val response =
                 serverApi.getActiveParcelsByMauzaAndArea(mauzaId, areaName, "Bearer $authToken")
+
 
             Log.d("FETCH_PARCELS", "API Response received: ${response.parcelsData.size} parcels")
 
@@ -837,10 +840,12 @@ class MenuActivity : BaseActivity() {
                 }
             }
 
-            val khewatIds = response.parcelsData.mapNotNull { it.mauzaId }.distinct()
-            Log.d("FETCH_PARCELS", "Extracted ${khewatIds.size} unique khewat IDs")
+//            val khewatIds = response.parcelsData.mapNotNull { it.mauzaId }.distinct()
+//            Log.d("FETCH_PARCELS", "Extracted ${khewatIds.size} unique khewat IDs")
+//            Log.d("API_URL", "Fetching owners → khewatIds: $khewatIds, token: Bearer $authToken")
+            Log.d("API_URL", "Fetching all owners for logged-in user → token: Bearer $authToken")
 
-            val ownerResponses = serverApi.getOwnersFromDbOffline("Bearer $authToken", khewatIds)
+            val ownerResponses = serverApi.getOwnersFromDbOffline("Bearer $authToken")
             Log.d("FETCH_PARCELS", "Fetched ${ownerResponses.size} owners")
 
             val persons = ownerResponses.map { detail ->

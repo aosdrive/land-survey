@@ -143,7 +143,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
         // Set default year
-        binding.etYear.setText("2025")
+        binding.etYear.setText("2026")
 //        setupAreaInputRestrictions()
 
 
@@ -176,6 +176,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 // Add the rest with tabs (inline)
         parcelInfoText.append("$parcelNo/$subParcelNo\t\t GC= $khewatInfo \t\tArea: $parcelArea\t\tID: $parcelId\t\tOperation: $parcelOperation\t\tparcelOperationValue: $parcelOperationValue")
 
+//        parcelInfoText.append("$parcelNo/$subParcelNo\t\tArea: $parcelArea\t\tID: $parcelId\t\tOperation: $parcelOperation\t\tparcelOperationValue: $parcelOperationValue")
+
+
 // Set to TextView
         binding.tvParcelInfo.text = parcelInfoText
 
@@ -196,7 +199,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             android.R.layout.simple_spinner_item,
             listOf("No", "Yes")
         )
-        sowingAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        sowingAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
         binding.spinnerSowing.adapter = sowingAdapter
 
         binding.spinnerSowing.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -500,7 +503,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
             ownershipStatusList
         )
-        ownershipAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        ownershipAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
         binding.spinnerOwnershipStatus.adapter = ownershipAdapter
 
         val propertyAdapter = ArrayAdapter(
@@ -508,7 +511,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
             propertyTypeList
         )
-        propertyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        propertyAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
         binding.spinnerPropertyStatus.adapter = propertyAdapter
 
         val imageAdapter = ArrayAdapter(
@@ -516,7 +519,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
             imageTypeList
         )
-        imageAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        imageAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
         binding.spinnerImageType.adapter = imageAdapter
 
         // Load dynamic spinners from API
@@ -540,7 +543,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     android.R.layout.simple_spinner_item,  // Changed
                     cropList
                 )
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Added
+                adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)  // Added
                 binding.etCrop.adapter = adapter
 
                 val sugarcanePosition = cropList.indexOf("Sugarcane")
@@ -570,10 +573,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                 val adapter = ArrayAdapter(
                     context,
-                    android.R.layout.simple_spinner_item,  // Changed
+                    android.R.layout.simple_spinner_item,
                     cropTypeList
                 )
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Added
+                adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)  // Added
                 binding.etCropType.adapter = adapter
                 setupCropTypeListener()
 
@@ -601,7 +604,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     android.R.layout.simple_spinner_item,  // Changed
                     varietyList
                 )
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Added
+                adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)  // Added
                 binding.etVariety.adapter = adapter
                 setupVarietyListener()
 

@@ -31,22 +31,6 @@ data class NewSurveyNewEntity(
     val sowingStatus: String = "No",
     val sowingDate: String? = null
 
-
-
-
-//
-//    var gpsAccuracy: String,
-//    var gpsAltitude: String,
-//    var gpsProvider: String,
-//    var gpsTimestamp: String,
-//    var latitude: String,
-//    var longitude: String,
-//    var timeZoneId: String,
-//    var timeZoneName: String,
-//    var mobileTimestamp: String,
-//    var appVersion: String,
-//    var uniqueId: String,
-
 )
 
 

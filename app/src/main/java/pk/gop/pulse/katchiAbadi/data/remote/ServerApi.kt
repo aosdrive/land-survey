@@ -153,7 +153,6 @@ interface ServerApi {
     @Headers("Content-Type: application/json")
     suspend fun getOwnersFromDbOffline(
         @Header("Authorization") token: String,
-        @Body khewatIds: List<Long>
     ): List<OwnerResponse>
 
     @GET("api/Account/GetAllUsersList")

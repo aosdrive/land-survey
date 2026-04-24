@@ -1123,7 +1123,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
         )
     }
 
-    // ===== HELPER: LOG SURVEY POST =====
+    // ===== HELPER: LOG SURVEY POST ===== //
     private fun logSurveyPost(surveyPost: SurveyPostNew, index: Int) {
         Log.d(TAG, "=== Survey Post ${index + 1} Details ===")
         Log.d(TAG, "ParcelNo: ${surveyPost.parcelNo}, SubParcel: ${surveyPost.subParcelNo}")
@@ -1136,23 +1136,23 @@ class NewSurveyRepositoryImpl @Inject constructor(
         Log.d(TAG, "SowingStatus : '${surveyPost.sowingStatus}'")
         Log.d(TAG, "SowingDate   : '${surveyPost.sowingDate}'")
 
-        // ✅ CRITICAL VALIDATION
+        //  CRITICAL VALIDATION
         if (surveyPost.geomWKT.isNullOrEmpty()) {
-            Log.e(TAG, "❌❌ CRITICAL ERROR: GeomWKT is NULL/EMPTY for ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
+            Log.e(TAG, " CRITICAL ERROR: GeomWKT is NULL/EMPTY for ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
             Log.e(TAG, "   This will cause NULL geometry in SQL Server!")
         } else {
-            Log.d(TAG, "✅ GeomWKT: Present (${surveyPost.geomWKT.length} chars)")
+            Log.d(TAG, " GeomWKT: Present (${surveyPost.geomWKT.length} chars)")
             Log.d(TAG, "   Preview: ${surveyPost.geomWKT.take(100)}...")
         }
 
         if (surveyPost.centriod.isNullOrEmpty()) {
-            Log.e(TAG, "❌ WARNING: Centroid is NULL/EMPTY")
+            Log.e(TAG, " WARNING: Centroid is NULL/EMPTY")
         } else {
-            Log.d(TAG, "✅ Centroid: ${surveyPost.centriod}")
+            Log.d(TAG, " Centroid: ${surveyPost.centriod}")
         }
 
         if (surveyPost.parcelOperation == "New" && surveyPost.parcelOperationValue.isNotBlank()) {
-            Log.d(TAG, "📤 SERVER DEACTIVATION REQUEST:")
+            Log.d(TAG, " SERVER DEACTIVATION REQUEST:")
             Log.d(TAG, "   Original Parcel ID to deactivate: ${surveyPost.parcelOperationValue}")
             Log.d(TAG, "   New Parcel being created: ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
         }
