@@ -3,6 +3,8 @@ package pk.gop.pulse.katchiAbadi.data.remote
 import ActiveParcelResponse
 import AreaResponse
 import OwnerResponse
+import com.google.gson.JsonElement
+import okhttp3.ResponseBody
 import pk.gop.pulse.katchiAbadi.data.local.AddVarietyRequest
 import pk.gop.pulse.katchiAbadi.data.local.AddVarietyResponse
 import pk.gop.pulse.katchiAbadi.data.local.DropdownItem
@@ -24,6 +26,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.request.OnboardingUploadDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.LookupItemDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
@@ -146,14 +149,13 @@ interface ServerApi {
     suspend fun getActiveParcelsByMauzaAndArea(
         @Path("mauzaId") mauzaId: Long,
         @Path("areaName") areaName: String,
-        @Header("Authorization") token: String
-    ): ActiveParcelResponse
+    ): Response<ActiveParcelResponse>
 
-    @POST("api/MobileData/Getownersfromdboffline2")
+    @GET("api/MobileData/Getownersfromdboffline2")
     @Headers("Content-Type: application/json")
     suspend fun getOwnersFromDbOffline(
         @Header("Authorization") token: String,
-    ): List<OwnerResponse>
+    ): Response<ResponseBody>
 
     @GET("api/Account/GetAllUsersList")
     suspend fun getAllUsers(
@@ -212,9 +214,15 @@ interface ServerApi {
         @Body data: OnboardingUploadDto
     ): Response<OnboardingResponse>
 
-//    @POST("api/MobileData/AddSowingUserDetails")
-//    suspend fun postSowingUsers(
-//        @Header("Authorization") token: String,
-//        @Body sowingUsers: List<SowingPersonPostDto>
-//    ): Response<Any>
+    @GET("api/IssueType/GetAllIssueTypes")
+    suspend fun getIssueTypes(
+    ): Response<List<LookupItemDto>>
+
+    @GET("api/PestType/GetAllPestTypes")
+    suspend fun getPestTypes(
+    ): Response<List<LookupItemDto>>
+
+    @GET("api/DiseaseType/GetAllDiseaseTypes")
+    suspend fun getDiseaseTypes(
+    ): Response<List<LookupItemDto>>
 }

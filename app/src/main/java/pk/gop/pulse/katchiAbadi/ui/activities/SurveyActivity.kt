@@ -73,7 +73,7 @@ import java.util.Locale
 
 @AndroidEntryPoint
 class SurveyActivity : AppCompatActivity(), SensorEventListener {
-
+    private var parcelMauzaName: String = ""
     private lateinit var binding: ActivitySurveyNewBinding
     private lateinit var context: Context
     private lateinit var personEntryHelper: PersonEntryHelper
@@ -159,6 +159,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         val khewatInfo = intent.getStringExtra("khewatInfo") ?: ""
         val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
         val parcelOperationValue = intent.getStringExtra("parcelOperationValue") ?: ""
+        parcelMauzaName = intent.getStringExtra("mauzaName") ?: ""
 
 //        val parcelInfoText = "Parcel #$parcelNo-$subParcelNo\nArea: $parcelArea\nID: $parcelId"
         val parcelInfoText = SpannableStringBuilder()
@@ -203,7 +204,12 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         binding.spinnerSowing.adapter = sowingAdapter
 
         binding.spinnerSowing.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: AdapterView<*>,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
                 val isYes = parent.getItemAtPosition(position).toString() == "Yes"
                 binding.layoutSowingSection.visibility = if (isYes) View.VISIBLE else View.GONE
                 if (!isYes) {
@@ -215,6 +221,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     addSowingPersonEntry()
                 }
             }
+
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
@@ -295,7 +302,6 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             )
         }.filter { it.name.isNotBlank() }   // optional: skip completely empty rows
     }
-
 
 
     private fun setupSensors() {
@@ -1119,49 +1125,15 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
     private fun setupSubmit(parcelId: Long, parcelNo: String, subParcelNo: String) {
         binding.btnSubmitSurvey.setOnClickListener {
-            // ===== VALIDATION: Check if survey area is filled =====
-//            val surveyArea = binding.etArea.text.toString().trim()
-//            if (surveyArea.isBlank()) {
-//                AlertDialog.Builder(this)
-//                    .setTitle("Area Required")
-//                    .setMessage("Please enter the survey area before submitting.")
-//                    .setPositiveButton("OK", null)
-//                    .show()
-//                return@setOnClickListener
-//            }
 
-            // ===== NEW VALIDATION: Check if area exceeds maximum value of 100 =====
-//            val areaValue = surveyArea.toDoubleOrNull()
-//            if (areaValue == null) {
-//                AlertDialog.Builder(this)
-//                    .setTitle("Invalid Area")
-//                    .setMessage("Please enter a valid numeric value for area.")
-//                    .setPositiveButton("OK", null)
-//                    .show()
-//                return@setOnClickListener
-//            }
-
-//            if (areaValue > 100) {
-//                AlertDialog.Builder(this)
-//                    .setTitle("Area Limit Exceeded")
-//                    .setMessage("Survey area cannot exceed 100. Please enter a value between 0 and 100.")
-//                    .setPositiveButton("OK", null)
-//                    .show()
-//                return@setOnClickListener
-//            }
-//
-//            if (areaValue <= 0) {
-//                AlertDialog.Builder(this)
-//                    .setTitle("Invalid Area")
-//                    .setMessage("Survey area must be greater than 0.")
-//                    .setPositiveButton("OK", null)
-//                    .show()
-//                return@setOnClickListener
-//            }
+            // ===== PREVENT DOUBLE SUBMISSION =====
+            // Disable button immediately - re-enable only on validation failure
+            binding.btnSubmitSurvey.isEnabled = false
 
             // ===== VALIDATION: If sowing is Yes, date must be selected =====
             val isSowing = binding.spinnerSowing.selectedItem.toString()
             if (isSowing == "Yes" && selectedSowingDate.isNullOrBlank()) {
+                binding.btnSubmitSurvey.isEnabled = true   // re-enable
                 AlertDialog.Builder(this)
                     .setTitle("Sowing Date Required")
                     .setMessage("Please select a sowing date.")
@@ -1170,32 +1142,12 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 return@setOnClickListener
             }
 
-            // ===== VALIDATION: Sowing persons =====
-//            if (isSowing) {
-//                val sowingPersons = getAllSowingPersons()
-//
-//                if (sowingPersons.isEmpty()) {
-//                    AlertDialog.Builder(this)
-//                        .setTitle("Person Required")
-//                        .setMessage("Please add at least one sowing person.")
-//                        .setPositiveButton("OK", null).show()
-//                    return@setOnClickListener
-//                }
-//
-//                if (sowingPersons.any { it.name.isBlank() }) {
-//                    AlertDialog.Builder(this)
-//                        .setTitle("Name Required")
-//                        .setMessage("Please enter the name for all sowing persons.")
-//                        .setPositiveButton("OK", null).show()
-//                    return@setOnClickListener
-//                }
-//            }
-
             // ===== GET PERSONS FROM HELPER =====
             val rawPersons = personEntryHelper.getAllPersons()
 
             // ===== VALIDATION: Check if at least one owner/person has been added =====
             if (rawPersons.isEmpty()) {
+                binding.btnSubmitSurvey.isEnabled = true
                 AlertDialog.Builder(this)
                     .setTitle("Owner Required")
                     .setMessage("Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button.")
@@ -1210,6 +1162,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
 
             if (invalidPersons.isNotEmpty()) {
+                binding.btnSubmitSurvey.isEnabled = true
                 AlertDialog.Builder(this)
                     .setTitle("Missing Required Fields")
                     .setMessage("Please enter the first name for all owners.")
@@ -1218,24 +1171,16 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 return@setOnClickListener
             }
 
-            // ===== VALIDATION: Check for valid Grower Code =====
-            val growerCodePattern = Regex("""^\d{2}-(\d{2}-\d{5}|\d{5})$""")
+            // ===== VALIDATION: Check for valid Grower Code (strict 12-34-56789 format) =====
+            val growerCodePattern = Regex("""^\d{2}-\d{2}-\d{5}$""")
 
             val personsWithoutGrowerCode = rawPersons.filter { person ->
                 val growerCode = person.growerCode?.trim()
-
-                Log.d("GrowerCodeValidation", "Person: ${person.firstName}")
-                Log.d("GrowerCodeValidation", "Raw code: '${person.growerCode}'")
-                Log.d("GrowerCodeValidation", "Cleaned code: '$growerCode'")
-                Log.d(
-                    "GrowerCodeValidation",
-                    "Pattern matches: ${growerCode?.let { growerCodePattern.matches(it) }}"
-                )
-
                 growerCode.isNullOrBlank() || !growerCodePattern.matches(growerCode)
             }
 
             if (personsWithoutGrowerCode.isNotEmpty()) {
+                binding.btnSubmitSurvey.isEnabled = true
                 val invalidCodes = mutableListOf<String>()
                 personsWithoutGrowerCode.forEachIndexed { index, person ->
                     val name = person.firstName ?: "Person ${index + 1}"
@@ -1246,8 +1191,37 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 AlertDialog.Builder(this)
                     .setTitle("Invalid Grower Code")
                     .setMessage(
-                        "Please provide valid Grower Code with dashes (numbers only):\n• 12-34-56789 (11 digits)\n• 12-56789 (8 digits)\n\nInvalid codes:\n${
+                        "Please provide valid Grower Code in format 12-34-56789 (numbers only).\n\nInvalid codes:\n${
                             invalidCodes.joinToString("\n")
+                        }"
+                    )
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@setOnClickListener
+            }
+
+            // ===== VALIDATION: Check for valid CNIC (strict 12345-1234567-1 format) =====
+            val cnicPattern = Regex("""^\d{5}-\d{7}-\d{1}$""")
+
+            val personsWithInvalidCnic = rawPersons.filter { person ->
+                val cnic = person.nic?.trim()
+                cnic.isNullOrBlank() || !cnicPattern.matches(cnic)
+            }
+
+            if (personsWithInvalidCnic.isNotEmpty()) {
+                binding.btnSubmitSurvey.isEnabled = true
+                val invalidCnics = mutableListOf<String>()
+                personsWithInvalidCnic.forEachIndexed { index, person ->
+                    val name = person.firstName ?: "Person ${index + 1}"
+                    val cnic = person.nic?.trim().orEmpty().ifBlank { "Empty" }
+                    invalidCnics.add("$name: $cnic")
+                }
+
+                AlertDialog.Builder(this)
+                    .setTitle("Invalid CNIC")
+                    .setMessage(
+                        "Please provide valid CNIC in format 12345-1234567-1.\n\nInvalid CNICs:\n${
+                            invalidCnics.joinToString("\n")
                         }"
                     )
                     .setPositiveButton("OK", null)
@@ -1257,6 +1231,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
             // ===== VALIDATION: Check if at least one image has been added =====
             if (viewModel.surveyImages.value.isEmpty()) {
+                binding.btnSubmitSurvey.isEnabled = true
                 AlertDialog.Builder(this)
                     .setTitle("Image Required")
                     .setMessage("Please add at least one image before submitting the survey. Use 'Add Image' or 'Take Photo' button.")
@@ -1264,6 +1239,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     .show()
                 return@setOnClickListener
             }
+
+            // ===== ALL VALIDATIONS PASSED — proceed with insert =====
+            // Button stays disabled. We don't re-enable it because finish() will close the activity.
 
             val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
             val parcelOperationValue = if (parcelOperation == "Split") {
@@ -1282,7 +1260,6 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 crop = binding.etCrop.selectedItem.toString(),
                 cropType = selectedCropType ?: binding.etCropType.selectedItem.toString(),
                 year = binding.etYear.text.toString(),
-//                area = binding.etArea.text.toString(),
                 isGeometryCorrect = binding.cbGeometryCorrect.isChecked,
                 remarks = binding.etRemarks.text.toString(),
                 parcelOperation = parcelOperation,
@@ -1303,185 +1280,136 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             val images = viewModel.surveyImages.value!!
 
             lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    val surveyId = database.newSurveyNewDao().insertSurvey(survey)
-                    Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId ===")
+                try {
+                    withContext(Dispatchers.IO) {
+                        val surveyId = database.newSurveyNewDao().insertSurvey(survey)
+                        Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId ===")
 
+                        val sowingPersons = getAllSowingPersons()
+                        val primaryGrowerCode = rawPersons.firstOrNull()?.growerCode?.trim() ?: ""
 
-
-                    // In setupSubmit, replace the sowing person saving block:
-
-                    val sowingPersons = getAllSowingPersons()
-                    val primaryGrowerCode = rawPersons.firstOrNull()?.growerCode?.trim() ?: ""
-
-                    val sowingEntities = sowingPersons.map { person ->
-                        SowingPersonEntity(
-                            surveyId = surveyId,
-                            name = person.name,
-                            cnic = person.cnic,
-                            growerCode = primaryGrowerCode   // ← always from first parcel owner
-                        )
-                    }
-                    database.sowingPersonDao().insertAll(sowingEntities)
-                        Log.d("SurveyActivity", "Saved ${sowingEntities.size} sowing persons for surveyId=$surveyId")
-
-
-                    // ========== SMART PERSON HANDLING: Reuse unchanged, create new if modified ==========
-                    rawPersons.forEach { person ->
+                        val sowingEntities = sowingPersons.map { person ->
+                            SowingPersonEntity(
+                                surveyId = surveyId,
+                                name = person.name,
+                                cnic = person.cnic,
+                                growerCode = primaryGrowerCode
+                            )
+                        }
+                        database.sowingPersonDao().insertAll(sowingEntities)
                         Log.d(
                             "SurveyActivity",
-                            "Processing person: ${person.firstName} ${person.lastName}"
+                            "Saved ${sowingEntities.size} sowing persons for surveyId=$surveyId"
                         )
-                        Log.d("SurveyActivity", "  Current personId: ${person.personId}")
-                        Log.d("SurveyActivity", "  Database ID: ${person.id}")
-                        Log.d("SurveyActivity", "  Grower Code: ${person.growerCode}")
 
-                        // Check if this is an existing person from the database
-                        if (person.personId != null && person.personId > 0) {
-                            // This person was selected from existing list
-                            val originalPerson = database.personDao().getPersonById(person.personId)
-
-                            if (originalPerson != null) {
-                                // Compare if any data was changed
-                                val hasChanges = hasPersonDataChanged(originalPerson, person)
-
-                                if (hasChanges) {
-                                    // ✅ DATA WAS MODIFIED: Create a new person record
-                                    Log.d(
-                                        "SurveyActivity",
-                                        "  ⚠️ Person data was modified - creating new record"
-                                    )
-
-                                    val newPerson = person.copy(
-                                        id = 0, // ← Force new database ID (0 for auto-generate)
-                                        personId = 0, // ← Clear old personId to create completely new
-                                        surveyId = surveyId,
-                                        mauzaId = mauzaId
-                                    )
-
-                                    val insertedId = database.personDao().insertPerson(newPerson)
-                                    Log.d(
-                                        "SurveyActivity",
-                                        "  ✅ Created NEW person record with ID: $insertedId"
-                                    )
-
-                                } else {
-                                    // ✅ NO CHANGES: Create a link to existing person for this survey
-                                    Log.d(
-                                        "SurveyActivity",
-                                        "  ✓ No changes - linking existing person to survey"
-                                    )
-
-                                    val personLink = person.copy(
-                                        id = 0, // ← New link record (0 for auto-generate)
-                                        personId = originalPerson.personId, // ← Keep reference to original
-                                        surveyId = surveyId,
-                                        mauzaId = mauzaId
-                                    )
-
-                                    val linkId = database.personDao().insertPerson(personLink)
-                                    Log.d(
-                                        "SurveyActivity",
-                                        "  ✅ Created link record with ID: $linkId (points to personId: ${originalPerson.personId})"
-                                    )
-                                }
-                            } else {
-                                // Person ID exists but not found in DB (shouldn't happen)
-                                Log.w(
-                                    "SurveyActivity",
-                                    "  ⚠️ PersonId ${person.personId} not found in DB - creating new"
-                                )
-
-                                val newPerson = person.copy(
-                                    id = 0,
-                                    surveyId = surveyId,
-                                    mauzaId = mauzaId
-                                )
-                                database.personDao().insertPerson(newPerson)
-                            }
-                        } else {
-                            // ✅ COMPLETELY NEW PERSON: User clicked "Add New Person"
-                            Log.d("SurveyActivity", "  ➕ New person being added")
-
-                            // Check if similar person exists by CNIC to avoid duplicates
-                            val similarPerson = if (!person.nic.isNullOrBlank()) {
-                                database.personDao().getPersonByCnic(person.nic)
-                            } else {
-                                null
-                            }
-
-                            if (similarPerson != null) {
-                                // Similar person found by CNIC, link to existing
-                                Log.d(
-                                    "SurveyActivity",
-                                    "  ⚠️ Found similar person by CNIC - linking"
-                                )
-                                val personLink = person.copy(
-                                    id = 0,
-                                    personId = similarPerson.personId,
-                                    surveyId = surveyId,
-                                    mauzaId = mauzaId
-                                )
-                                database.personDao().insertPerson(personLink)
-                            } else {
-                                // Completely new person, insert
-                                val newPerson = person.copy(
-                                    id = 0,
-                                    surveyId = surveyId,
-                                    mauzaId = mauzaId
-                                )
-
-                                val insertedId = database.personDao().insertPerson(newPerson)
-                                Log.d(
-                                    "SurveyActivity",
-                                    "  ✅ Created new person with ID: $insertedId"
-                                )
-                            }
-                        }
-                    }
-                    // ========== END SMART PERSON HANDLING ==========
-
-                    images.forEach {
-                        it.surveyId = surveyId
-                        database.imageDao().insertImage(it)
-                    }
-
-                    // Mark parcel as surveyed
-                    database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, parcelId)
-
-                    val log = TempSurveyLogEntity(
-                        parcelId = parcelId,
-                        parcelNo = parcelNo,
-                        subParcelNo = subParcelNo
-                    )
-                    database.tempSurveyLogDao().insertLog(log)
-
-                    // If operation is "Merge", mark the merged parcels as surveyed
-                    if (parcelOperation.equals(
-                            "Merge",
-                            ignoreCase = true
-                        ) && parcelOperationValue.isNotBlank()
-                    ) {
-                        Log.d("SurveyActivity", "Merge operation detected.")
-                        Log.d("SurveyActivity", "Raw merge parcel IDs: $parcelOperationValue")
-
-                        val parcelIdList = parcelOperationValue
-                            .split(",")
-                            .mapNotNull { it.trim().toLongOrNull() }
-
-                        Log.d("SurveyActivity", "Parsed merge parcel IDs: $parcelIdList")
-
-                        parcelIdList.forEach { id ->
+                        // ========== SMART PERSON HANDLING ==========
+                        rawPersons.forEach { person ->
                             Log.d(
                                 "SurveyActivity",
-                                "Marking parcelId=$id as surveyed with surveyId=$surveyId"
+                                "Processing person: ${person.firstName} ${person.lastName}"
                             )
-                            database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
+
+                            if (person.personId != null && person.personId > 0) {
+                                val originalPerson =
+                                    database.personDao().getPersonById(person.personId)
+
+                                if (originalPerson != null) {
+                                    val hasChanges = hasPersonDataChanged(originalPerson, person)
+
+                                    if (hasChanges) {
+                                        val newPerson = person.copy(
+                                            id = 0,
+                                            personId = 0,
+                                            surveyId = surveyId,
+                                            mauzaId = mauzaId,
+                                            mauzaName = parcelMauzaName
+                                        )
+                                        database.personDao().insertPerson(newPerson)
+                                        Log.d("SurveyActivity", "  ✅ Created NEW person (modified)")
+
+                                    } else {
+                                        val personLink = person.copy(
+                                            id = 0,
+                                            personId = originalPerson.personId,
+                                            surveyId = surveyId,
+                                            mauzaId = mauzaId,
+                                            mauzaName = parcelMauzaName
+                                        )
+                                        database.personDao().insertPerson(personLink)
+                                        Log.d("SurveyActivity", "  ✅ Linked existing person")
+                                    }
+                                } else {
+                                    val newPerson = person.copy(
+                                        id = 0,
+                                        surveyId = surveyId,
+                                        mauzaId = mauzaId,
+                                        mauzaName = parcelMauzaName
+                                    )
+                                    database.personDao().insertPerson(newPerson)
+                                }
+                            } else {
+                                val similarPerson = if (!person.nic.isNullOrBlank()) {
+                                    database.personDao().getPersonByCnic(person.nic)
+                                } else {
+                                    null
+                                }
+
+                                if (similarPerson != null) {
+                                    val personLink = person.copy(
+                                        id = 0,
+                                        personId = similarPerson.personId,
+                                        surveyId = surveyId,
+                                        mauzaId = mauzaId,
+                                        mauzaName = parcelMauzaName
+                                    )
+                                    database.personDao().insertPerson(personLink)
+                                } else {
+                                    val newPerson = person.copy(
+                                        id = 0,
+                                        surveyId = surveyId,
+                                        mauzaId = mauzaId,
+                                        mauzaName = parcelMauzaName
+                                    )
+                                    database.personDao().insertPerson(newPerson)
+                                    Log.d("SurveyActivity", "  ✅ Created brand new person")
+                                }
+                            }
+                        }
+
+                        images.forEach {
+                            it.surveyId = surveyId
+                            database.imageDao().insertImage(it)
+                        }
+
+                        database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, parcelId)
+
+                        val log = TempSurveyLogEntity(
+                            parcelId = parcelId,
+                            parcelNo = parcelNo,
+                            subParcelNo = subParcelNo
+                        )
+                        database.tempSurveyLogDao().insertLog(log)
+
+                        if (parcelOperation.equals("Merge", ignoreCase = true) &&
+                            parcelOperationValue.isNotBlank()
+                        ) {
+                            val parcelIdList = parcelOperationValue
+                                .split(",")
+                                .mapNotNull { it.trim().toLongOrNull() }
+
+                            parcelIdList.forEach { id ->
+                                database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
+                            }
                         }
                     }
+                    ToastUtil.showShort(context, "Survey saved locally")
+                    finish()
+                } catch (e: Exception) {
+                    // If insertion fails, re-enable button so user can retry
+                    Log.e("SurveyActivity", "Error saving survey: ${e.message}", e)
+                    binding.btnSubmitSurvey.isEnabled = true
+                    ToastUtil.showShort(context, "Error saving survey: ${e.message}")
                 }
-                ToastUtil.showShort(context, "Survey saved locally")
-                finish()
             }
         }
     }

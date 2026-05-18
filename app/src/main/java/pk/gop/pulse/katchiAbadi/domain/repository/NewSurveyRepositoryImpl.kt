@@ -764,8 +764,9 @@ class NewSurveyRepositoryImpl @Inject constructor(
     }
 
     // ===== PROCESS SAME PARCELS =====
+// ===== PROCESS SAME PARCELS (FIXED) =====
     private suspend fun processSameParcels(survey: NewSurveyNewEntity): List<NewSurveyNewEntity> {
-        Log.d(TAG, "Processing 'Same' operation for parcelId=${survey.parcelId}")
+        Log.d(TAG, "Processing 'Same' operation for parcelId=${survey.parcelId}, pkId=${survey.pkId}")
         val localParcel = activeParcelDao.getParcelById(survey.parcelId)
 
         if (localParcel != null && localParcel.subParcelNo.isNotBlank() && localParcel.subParcelNo != "0") {
@@ -804,33 +805,32 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
             // ✅ Create survey records for ALL split parcels
             allSplitParcels.forEach { splitParcel ->
-                // Check if this split parcel has been surveyed
+                // ✅ FIX: Only fetch the SPECIFIC survey being uploaded for the current parcel,
+                //         and only one record per other split parcel (most recent / first)
                 val existingSurvey = if (splitParcel.id == survey.parcelId) {
-                    // This is the current parcel being uploaded - use its survey data
-                    dao.getCompleteRecord(survey.parcelId).firstOrNull()
+                    // This is the current parcel being uploaded - use THIS specific survey row
+                    survey   // ← use the passed-in survey directly, not fetch from DB
                 } else {
-                    // Check if this split parcel has a survey
+                    // For sibling split parcels, take only the first existing survey if any
                     dao.getSurveysByParcelId(splitParcel.id).firstOrNull()
                 }
 
                 if (existingSurvey != null) {
-                    // ✅ CRITICAL FIX: Preserve correct parcelId, parcelNo, and subParcelNo from split parcel
                     val surveyRecord = existingSurvey.copy(
-                        parcelId = splitParcel.id,           // ✅ Use split parcel ID
-                        parcelNo = splitParcel.parcelNo.toString(), // ✅ Use split parcel number
-                        subParcelNo = splitParcel.subParcelNo,      // ✅ Use split parcel's subParcelNo
+                        parcelId = splitParcel.id,
+                        parcelNo = splitParcel.parcelNo.toString(),
+                        subParcelNo = splitParcel.subParcelNo,
                         parcelOperation = "New",
                         parcelOperationValue = originalParentId
                     )
                     cleanSurveys.add(surveyRecord)
-                    Log.d(TAG, "✅ Added SURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, HasSurveyData=true")
+                    Log.d(TAG, "✅ Added SURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}")
                 } else {
-                    // ✅ CRITICAL FIX: Create minimal record with correct IDs from split parcel
                     val minimalSurvey = survey.copy(
                         pkId = 0,
-                        parcelId = splitParcel.id,                  // ✅ Use split parcel ID
-                        parcelNo = splitParcel.parcelNo.toString(), // ✅ Use split parcel number
-                        subParcelNo = splitParcel.subParcelNo,      // ✅ Use split parcel's subParcelNo
+                        parcelId = splitParcel.id,
+                        parcelNo = splitParcel.parcelNo.toString(),
+                        subParcelNo = splitParcel.subParcelNo,
                         parcelOperation = "New",
                         parcelOperationValue = originalParentId,
                         propertyType = "",
@@ -844,15 +844,19 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         isGeometryCorrect = false
                     )
                     cleanSurveys.add(minimalSurvey)
-                    Log.d(TAG, "⚠️ Added UNSURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}, HasSurveyData=false")
+                    Log.d(TAG, "⚠️ Added UNSURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}")
                 }
             }
 
             Log.d(TAG, "Converted ${cleanSurveys.size} survey records (surveyed + unsurveyed split parcels)")
             return cleanSurveys
         } else {
-            Log.d(TAG, "Normal 'Same' operation - proceeding with existing parcel")
-            return dao.getCompleteRecord(survey.parcelId)
+            // ✅ THE ACTUAL FIX FOR YOUR DUPLICATE BUG:
+            // Normal (non-split) "Same" operation — return ONLY the specific survey being uploaded,
+            // not ALL surveys for that parcelId. If the parcel has been surveyed multiple times locally,
+            // getCompleteRecord(parcelId) would return all of them and cause duplicate uploads.
+            Log.d(TAG, "Normal 'Same' operation - returning only the specific survey pkId=${survey.pkId}")
+            return listOf(survey)
         }
     }
 

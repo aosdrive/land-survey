@@ -7,7 +7,7 @@ data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
     val taskId: Long = 0,
     val assignDate: String = "",
-    val issueType: String = "",
+    val issueType: String,
     val details: String = "",
     val picData: String = "",
     val parcelId: Long = 0,
@@ -18,6 +18,9 @@ data class TaskEntity(
     val khewatInfo: String="",
     val createdOn: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
-    val daysToComplete: Int
+    val daysToComplete: Int,
+    val issueTypeId: Int? = null,           // NEW
+    val pestTypeIds: String? = null,        // NEW — CSV like "1,3"
+    val diseaseTypeIds: String? = null,
 
-)
+    )

@@ -20,6 +20,9 @@ import pk.gop.pulse.katchiAbadi.BuildConfig
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
+import pk.gop.pulse.katchiAbadi.data.local.DiseaseTypeDao
+import pk.gop.pulse.katchiAbadi.data.local.IssueTypeDao
+import pk.gop.pulse.katchiAbadi.data.local.PestTypeDao
 import pk.gop.pulse.katchiAbadi.data.local.SowingPersonDao
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
@@ -115,57 +118,77 @@ object AppModule {
         val builder = OkHttpClient.Builder()
             .protocols(listOf(Protocol.HTTP_1_1))
 
-            // Add Version Check Interceptor FIRST
+            // Version Check Interceptor
             .addInterceptor(VersionCheckInterceptor(context, sharedPreferences))
 
-            // Add Authorization Interceptor
+            // ===== FIXED Authorization Interceptor =====
+            // ONE chain.proceed() call — never two.
             .addInterceptor { chain ->
-                val requestBuilder = chain.request().newBuilder()
                 val original = chain.request()
 
                 Log.d("API_REQUEST", "==========================================")
                 Log.d("API_REQUEST", "Full URL: ${original.url}")
                 Log.d("API_REQUEST", "Method: ${original.method}")
-                Log.d("API_REQUEST", "Headers: ${original.headers}")
 
+                // Build the authorized request first
+                val requestBuilder = original.newBuilder()
                 val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, null)
                 if (!token.isNullOrEmpty()) {
                     requestBuilder.addHeader("Authorization", "Bearer $token")
                 }
-                chain.proceed(requestBuilder.build())
+                val authorizedRequest = requestBuilder.build()
+
+                // Send the request EXACTLY ONCE
+                val response = chain.proceed(authorizedRequest)
+
+                // Optional: peek at response body for debug logging only
+                // (peekBody is safe — it does not consume the stream)
+                if (BuildConfig.DEBUG) {
+                    try {
+                        val bodyString = response.peekBody(Long.MAX_VALUE).string()
+                        if (bodyString.contains("isUpdateRequired")) {
+                            Log.d("RESPONSE_DEBUG", "URL: ${original.url}")
+                            Log.d("RESPONSE_DEBUG", "Code: ${response.code}")
+                            Log.d("RESPONSE_DEBUG", "Body: $bodyString")
+                        }
+                    } catch (e: Exception) {
+                        Log.w("RESPONSE_DEBUG", "Could not peek body: ${e.message}")
+                    }
+                }
+
+                response   // return the single response
             }
 
-            // Add Logging Interceptor
+            // Logging Interceptor
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
                     else HttpLoggingInterceptor.Level.NONE
                 }
             )
-            .readTimeout(60, TimeUnit.SECONDS)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(true)
+
+            // ===== TIMEOUT + RETRY FIXES =====
+            // Generous timeouts — survey uploads carry base64 images and can be MBs in size
+            .readTimeout(5, TimeUnit.MINUTES)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(5, TimeUnit.MINUTES)
+
+            // ⚠️ CRITICAL: Disable silent retries.
+            // When true, OkHttp transparently re-sends a request on any I/O hiccup.
+            // For non-idempotent POSTs (like uploading a survey), this causes duplicates
+            // because the server may have already processed the first attempt.
+            .retryOnConnectionFailure(false)
+
             .followRedirects(true)
             .followSslRedirects(true)
             .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
 
-        // Allow all SSL certs in debug mode
+        // Allow all SSL certs in debug mode (unchanged)
         if (BuildConfig.DEBUG) {
             try {
                 val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-                    override fun checkClientTrusted(
-                        chain: Array<X509Certificate>,
-                        authType: String
-                    ) {
-                    }
-
-                    override fun checkServerTrusted(
-                        chain: Array<X509Certificate>,
-                        authType: String
-                    ) {
-                    }
-
+                    override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
                     override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
                 })
 
@@ -185,6 +208,101 @@ object AppModule {
 
         return builder.build()
     }
+
+//    @Provides
+//    @Singleton
+//    fun provideOkHttpClient(
+//        @ApplicationContext context: Context,
+//        sharedPreferences: SharedPreferences
+//    ): OkHttpClient {
+//        val builder = OkHttpClient.Builder()
+//            .protocols(listOf(Protocol.HTTP_1_1))
+//
+//            // Add Version Check Interceptor FIRST
+//            .addInterceptor(VersionCheckInterceptor(context, sharedPreferences))
+//
+//            // Add Authorization Interceptor
+//            .addInterceptor { chain ->
+//
+//                val response = chain.proceed(chain.request())
+//                val responseBody = response.peekBody(Long.MAX_VALUE)
+//                val bodyString = responseBody.string()
+//
+//                if (bodyString.contains("isUpdateRequired") ||
+//                    bodyString.contains("update") ||
+//                    bodyString.contains("false")) {
+//                    Log.d("RESPONSE_DEBUG", "=== FAILED REQUEST ===")
+//                    Log.d("RESPONSE_DEBUG", "URL: ${chain.request().url}")
+//                    Log.d("RESPONSE_DEBUG", "Code: ${response.code}")
+//                    Log.d("RESPONSE_DEBUG", "Body: $bodyString")
+//                    Log.d("RESPONSE_DEBUG", "======================")
+//                }
+//
+//                val requestBuilder = chain.request().newBuilder()
+//                val original = chain.request()
+//
+//                Log.d("API_REQUEST", "==========================================")
+//                Log.d("API_REQUEST", "Full URL: ${original.url}")
+//                Log.d("API_REQUEST", "Method: ${original.method}")
+//                Log.d("API_REQUEST", "Headers: ${original.headers}")
+//
+//                val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, null)
+//                if (!token.isNullOrEmpty()) {
+//                    requestBuilder.addHeader("Authorization", "Bearer $token")
+//                }
+//                chain.proceed(requestBuilder.build())
+//            }
+//
+//            // Add Logging Interceptor
+//            .addInterceptor(
+//                HttpLoggingInterceptor().apply {
+//                    level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+//                    else HttpLoggingInterceptor.Level.NONE
+//                }
+//            )
+//            .readTimeout(60, TimeUnit.SECONDS)
+//            .connectTimeout(30, TimeUnit.SECONDS)
+//            .writeTimeout(30, TimeUnit.SECONDS)
+//            .retryOnConnectionFailure(true)
+//            .followRedirects(true)
+//            .followSslRedirects(true)
+//            .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+//
+//        // Allow all SSL certs in debug mode
+//        if (BuildConfig.DEBUG) {
+//            try {
+//                val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+//                    override fun checkClientTrusted(
+//                        chain: Array<X509Certificate>,
+//                        authType: String
+//                    ) {
+//                    }
+//
+//                    override fun checkServerTrusted(
+//                        chain: Array<X509Certificate>,
+//                        authType: String
+//                    ) {
+//                    }
+//
+//                    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+//                })
+//
+//                val sslContext = SSLContext.getInstance("SSL").apply {
+//                    init(null, trustAllCerts, SecureRandom())
+//                }
+//
+//                builder.sslSocketFactory(
+//                    sslContext.socketFactory,
+//                    trustAllCerts[0] as X509TrustManager
+//                )
+//                builder.hostnameVerifier { _, _ -> true }
+//            } catch (e: Exception) {
+//                throw RuntimeException(e)
+//            }
+//        }
+//
+//        return builder.build()
+//    }
 
 //    fun provideOkHttpClient(sharedPreferences: SharedPreferences): OkHttpClient {
 //        val builder = OkHttpClient.Builder()
@@ -265,10 +383,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAuthApi(client: OkHttpClient): ServerApi {
+
+        val gson = com.google.gson.GsonBuilder()
+            .setLenient()
+            .create()
         return Retrofit.Builder()
             .baseUrl(Constants.BASE_URL)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(ServerApi::class.java)
     }
@@ -450,6 +572,23 @@ object AppModule {
     fun provideSowingPersonDao(db: AppDatabase): SowingPersonDao {
         return db.sowingPersonDao()
     }
+    @Provides
+    @Singleton
+    fun provideIssueTypeDao(db: AppDatabase): IssueTypeDao {
+        return db.issueTypeDao()
+    }
+
+    @Provides
+    @Singleton
+    fun providePestTypeDao(db: AppDatabase): PestTypeDao {
+        return db.pestTypeDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDiseaseTypeDao(db: AppDatabase): DiseaseTypeDao {
+        return db.diseaseTypeDao()
+    }
 
     // Provide your repository with all dependencies injected
     @Provides
@@ -473,4 +612,6 @@ object AppModule {
             activeParcelDao,
         )
     }
+
+
 }

@@ -29,7 +29,11 @@ import pk.gop.pulse.katchiAbadi.data.local.SurveyImageAdapter
 import pk.gop.pulse.katchiAbadi.data.local.TaskSubmitDto
 import pk.gop.pulse.katchiAbadi.data.local.UserSelectionDialog
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
+import pk.gop.pulse.katchiAbadi.data.repository.LookupRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivityTaskAssignBinding
+import pk.gop.pulse.katchiAbadi.domain.model.DiseaseTypeEntity
+import pk.gop.pulse.katchiAbadi.domain.model.IssueTypeEntity
+import pk.gop.pulse.katchiAbadi.domain.model.PestTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.domain.model.UserResponse
@@ -61,6 +65,16 @@ class TaskAssignActivity : AppCompatActivity() {
 
     @Inject
     lateinit var serverApi: ServerApi
+
+    @Inject lateinit var lookupRepository: LookupRepository
+
+    private var issueTypes: List<IssueTypeEntity> = emptyList()
+    private var pestTypes: List<PestTypeEntity> = emptyList()
+    private var diseaseTypes: List<DiseaseTypeEntity> = emptyList()
+
+    private val selectedPestIds = mutableSetOf<Int>()
+    private val selectedDiseaseIds = mutableSetOf<Int>()
+    private var selectedIssueTypeId: Int? = null
 
     data class ParcelData(
         val parcelId: Long,
@@ -171,16 +185,164 @@ class TaskAssignActivity : AppCompatActivity() {
         }
 
     private fun setupSpinners() {
-        val propertyTypeList = listOf("Pest Attack", "Drone Spray", "Excess Water", "Water Shortage", "Other")
+        lifecycleScope.launch {
+            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+            Log.d("DROPDOWN_DEBUG", "Token present: ${token.isNotEmpty()}, length: ${token.length}")
+
+            if (token.isEmpty()) {
+                ToastUtil.showShort(context, "Please login again")
+                return@launch
+            }
+
+            try {
+                withContext(Dispatchers.IO) {
+                    Log.d("DROPDOWN_DEBUG", "Calling getIssueTypes API...")
+                    issueTypes = lookupRepository.getIssueTypes()
+                    Log.d("DROPDOWN_DEBUG", "Got ${issueTypes.size} issue types: ${issueTypes.map { it.name }}")
+
+                    pestTypes = lookupRepository.getPestTypes()
+                    Log.d("DROPDOWN_DEBUG", "Got ${pestTypes.size} pest types")
+
+                    diseaseTypes = lookupRepository.getDiseaseTypes()
+                    Log.d("DROPDOWN_DEBUG", "Got ${diseaseTypes.size} disease types")
+                }
+
+                Log.d("DROPDOWN_DEBUG", "About to setup issue type spinner with ${issueTypes.size} items")
+                setupIssueTypeSpinner()
+                setupConditionalDropdowns()
+
+            } catch (e: Exception) {
+                Log.e("DROPDOWN_DEBUG", "Exception in setupSpinners: ${e.message}", e)
+                ToastUtil.showShort(context, "Failed to load dropdown values: ${e.message}")
+            }
+        }
+    }
+
+    private fun setupIssueTypeSpinner() {
+        if (issueTypes.isEmpty()) {
+            ToastUtil.showShort(context, "No issue types available")
+            return
+        }
+
+        // Add a placeholder at position 0
+        val displayList = mutableListOf("-- Select Issue Type --")
+        displayList.addAll(issueTypes.map { it.name })
 
         val adapter = ArrayAdapter(
             context,
-            android.R.layout.simple_spinner_item,  // Layout for the closed spinner
-            propertyTypeList
+            android.R.layout.simple_spinner_item,
+            displayList
         )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)  // Layout for dropdown list
-
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerPropertyStatus.adapter = adapter
+
+        binding.spinnerPropertyStatus.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+                    if (position == 0) {
+                        selectedIssueTypeId = null
+                        binding.layoutPestType.visibility = View.GONE
+                        binding.layoutDiseaseType.visibility = View.GONE
+                        return
+                    }
+
+                    val selected = issueTypes[position - 1]
+                    selectedIssueTypeId = selected.id
+
+                    // Reset child selections when issue changes
+                    selectedPestIds.clear()
+                    selectedDiseaseIds.clear()
+                    binding.btnSelectPestType.text = "Select pest type(s)"
+                    binding.btnSelectDiseaseType.text = "Select disease type(s)"
+
+                    when (selected.name.lowercase()) {
+                        "pest attack" -> {
+                            binding.layoutPestType.visibility = View.VISIBLE
+                            binding.layoutDiseaseType.visibility = View.GONE
+                        }
+                        "diseases" -> {
+                            binding.layoutPestType.visibility = View.GONE
+                            binding.layoutDiseaseType.visibility = View.VISIBLE
+                        }
+                        else -> {
+                            binding.layoutPestType.visibility = View.GONE
+                            binding.layoutDiseaseType.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
+    }
+
+    private fun setupConditionalDropdowns() {
+        binding.btnSelectPestType.setOnClickListener {
+            showMultiSelectDialog(
+                title = "Select Pest Type(s)",
+                items = pestTypes.map { it.name },
+                preSelectedIds = selectedPestIds,
+                allIds = pestTypes.map { it.id }
+            ) { chosenIds ->
+                selectedPestIds.clear()
+                selectedPestIds.addAll(chosenIds)
+                val names = pestTypes
+                    .filter { it.id in selectedPestIds }
+                    .joinToString(", ") { it.name }
+                binding.btnSelectPestType.text = names.ifEmpty { "Select pest type(s)" }
+            }
+        }
+
+        binding.btnSelectDiseaseType.setOnClickListener {
+            showMultiSelectDialog(
+                title = "Select Disease Type(s)",
+                items = diseaseTypes.map { it.name },
+                preSelectedIds = selectedDiseaseIds,
+                allIds = diseaseTypes.map { it.id }
+            ) { chosenIds ->
+                selectedDiseaseIds.clear()
+                selectedDiseaseIds.addAll(chosenIds)
+                val names = diseaseTypes
+                    .filter { it.id in selectedDiseaseIds }
+                    .joinToString(", ") { it.name }
+                binding.btnSelectDiseaseType.text = names.ifEmpty { "Select disease type(s)" }
+            }
+        }
+    }
+    private fun showMultiSelectDialog(
+        title: String,
+        items: List<String>,
+        preSelectedIds: Set<Int>,
+        allIds: List<Int>,
+        onConfirm: (Set<Int>) -> Unit
+    ) {
+        if (items.isEmpty()) {
+            ToastUtil.showShort(context, "No options available")
+            return
+        }
+
+        val checkedItems = BooleanArray(items.size) { allIds[it] in preSelectedIds }
+        val tempSelection = checkedItems.copyOf()
+
+        androidx.appcompat.app.AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMultiChoiceItems(items.toTypedArray(), checkedItems) { _, which, isChecked ->
+                tempSelection[which] = isChecked
+            }
+            .setPositiveButton("OK") { dialog, _ ->
+                val chosen = mutableSetOf<Int>()
+                tempSelection.forEachIndexed { idx, picked ->
+                    if (picked) chosen.add(allIds[idx])
+                }
+                onConfirm(chosen)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun setupUserListSection() {
@@ -495,9 +657,29 @@ class TaskAssignActivity : AppCompatActivity() {
 
         binding.btnSubmitSurvey.setOnClickListener {
             val assignDate = binding.etDate.text.toString()
-            val issueType = binding.spinnerPropertyStatus.selectedItem.toString()
+//            val issueType = binding.spinnerPropertyStatus.selectedItem.toString()
             val details = binding.etDetail.text.toString()
             val daysToComplete = binding.etDaysToComplete.text.toString()
+
+            if (selectedIssueTypeId == null) {
+                ToastUtil.showShort(context, "Please select an issue type")
+                return@setOnClickListener
+            }
+            val selectedIssueName = issueTypes.find { it.id == selectedIssueTypeId }?.name ?: ""
+            when (selectedIssueName.lowercase()) {
+                "pest attack" -> {
+                    if (selectedPestIds.isEmpty()) {
+                        ToastUtil.showShort(context, "Please select at least one pest type")
+                        return@setOnClickListener
+                    }
+                }
+                "diseases" -> {
+                    if (selectedDiseaseIds.isEmpty()) {
+                        ToastUtil.showShort(context, "Please select at least one disease type")
+                        return@setOnClickListener
+                    }
+                }
+            }
 
             if (selectedUser == null) {
                 ToastUtil.showShort(context, "Please select a user to assign the task")
@@ -546,7 +728,7 @@ class TaskAssignActivity : AppCompatActivity() {
                     for (parcel in selectedParcels) {
                         val taskDto = TaskSubmitDto(
                             assignDate = assignDate,
-                            issueType = issueType,
+                            issueType = selectedIssueName,
                             detail = details,
                             images = base64Images,
                             parcelId = parcel.parcelId,
@@ -555,7 +737,10 @@ class TaskAssignActivity : AppCompatActivity() {
                             assignedByUserId = assignedByUserId,
                             assignedToUserId = selectedUser!!.id ?: 0L,
                             khewatInfo = parcel.khewatInfo,
-                            daysToComplete = daysToCompleteInt
+                            daysToComplete = daysToCompleteInt,
+                            issueTypeId = selectedIssueTypeId,
+                            pestTypeIds = selectedPestIds.toList(),
+                            diseaseTypeIds = selectedDiseaseIds.toList(),
                         )
 
                         Log.d("TaskAssign", "Submitting task for parcel ${parcel.parcelNo}")
@@ -568,7 +753,7 @@ class TaskAssignActivity : AppCompatActivity() {
                             val picData = images.joinToString(",") { it.uri }
                             val taskEntity = TaskEntity(
                                 assignDate = assignDate,
-                                issueType = issueType,
+                                issueType = selectedIssueName,
                                 details = details,
                                 picData = picData,
                                 parcelId = parcel.parcelId,
@@ -579,7 +764,10 @@ class TaskAssignActivity : AppCompatActivity() {
                                 khewatInfo = parcel.khewatInfo,
                                 createdOn = System.currentTimeMillis(),
                                 isSynced = true,
-                                daysToComplete = daysToCompleteInt
+                                daysToComplete = daysToCompleteInt,
+                                issueTypeId = selectedIssueTypeId,
+                                pestTypeIds = if (selectedPestIds.isNotEmpty()) selectedPestIds.joinToString(",") else null,
+                                diseaseTypeIds = if (selectedDiseaseIds.isNotEmpty()) selectedDiseaseIds.joinToString(",") else null,
                             )
 
                             withContext(Dispatchers.IO) {

@@ -178,7 +178,7 @@
                     app:startIconTint="@color/forest_green">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etDays_to_complete"
+                        android:id="@+id/etDaysToComplete"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="number"
@@ -186,6 +186,64 @@
                         android:textColor="#333333"
                         android:textSize="15sp" />
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Pest Type Multi-Select (visible only when "Pest Attack" selected) -->
+                <LinearLayout
+                    android:id="@+id/layoutPestType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingBottom="6dp"
+                        android:text="Pest Type (select one or more)"
+                        android:textColor="#666666"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSelectPestType"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginBottom="16dp"
+                        android:text="Select pest type(s)"
+                        android:textColor="@color/forest_green"
+                        app:cornerRadius="8dp"
+                        app:strokeColor="@color/forest_green" />
+                </LinearLayout>
+
+                <!-- Disease Type Multi-Select (visible only when "Diseases" selected) -->
+                <LinearLayout
+                    android:id="@+id/layoutDiseaseType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingBottom="6dp"
+                        android:text="Disease Type (select one or more)"
+                        android:textColor="#666666"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSelectDiseaseType"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginBottom="16dp"
+                        android:text="Select disease type(s)"
+                        android:textColor="@color/forest_green"
+                        app:cornerRadius="8dp"
+                        app:strokeColor="@color/forest_green" />
+                </LinearLayout>
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>

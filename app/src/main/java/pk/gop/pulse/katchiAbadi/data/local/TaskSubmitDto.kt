@@ -23,6 +23,9 @@ data class TaskSubmitDto (
     val assignedToUserId: Long,
     val khewatInfo: String="",
     @SerializedName("days_To_Complete")
-    val daysToComplete: Int
+    val daysToComplete: Int,
+    val issueTypeId: Int?,
+    val pestTypeIds: List<Int> = emptyList(),
+    val diseaseTypeIds: List<Int> = emptyList(),
 
 )

@@ -31,7 +31,6 @@ class PersonEntryHelper(
         binding.etLastName.setText(data?.lastName.orEmpty())
         binding.etMobile.setText(data?.mobile.orEmpty())
         binding.etNic.setText(data?.nic.orEmpty())
-//        binding.etPersonArea.setText(data?.personArea.orEmpty())
         binding.etReligion.setText(data?.religion.orEmpty())
 
         // New fields
@@ -43,18 +42,11 @@ class PersonEntryHelper(
         binding.etAddress.setText(data?.address.orEmpty())
         binding.etAddress.isEnabled = editable
 
-        // --- Grower Code Format with Auto-Formatting ---
+        // --- Grower Code: strict 12-34-56789 format with auto-dashes ---
         setupGrowerCodeFormatting(binding)
 
-        // --- CNIC Validation: 13 digits only ---
-        binding.etNic.filters = arrayOf(InputFilter.LengthFilter(13))
-        binding.etNic.doAfterTextChanged { text ->
-            if (text?.length != 13 || !text.all { it.isDigit() }) {
-                binding.etNic.error = "Enter valid 13-digit CNIC"
-            } else {
-                binding.etNic.error = null
-            }
-        }
+        // --- CNIC: XXXXX-XXXXXXX-X (5-7-1) with auto-dashes ---
+        setupCnicFormatting(binding)
 
         // --- Mobile Number Validation: 11 digits only ---
         binding.etMobile.filters = arrayOf(InputFilter.LengthFilter(11))
@@ -81,7 +73,7 @@ class PersonEntryHelper(
 
         // Enable/disable all fields
         listOf(
-            binding.etFirstName, binding.etLastName, binding.etMobile, binding.etNic,binding.etAddress,
+            binding.etFirstName, binding.etLastName, binding.etMobile, binding.etNic, binding.etAddress,
             binding.etGrowerCode, binding.etExtra1, binding.etExtra2,
             binding.etMauzaId, binding.etMauzaName,
             binding.spinnerRelation, binding.spinnerGender, binding.spinnerOwnership
@@ -100,38 +92,95 @@ class PersonEntryHelper(
     }
 
     private fun setupGrowerCodeFormatting(binding: ItemPersonEntryBinding) {
-        // Pattern with dashes: Only numbers allowed
-        val growerCodePattern = Regex("""^\d{2}-(\d{2}-\d{5}|\d{5})$""")
+        // Strict format: 12-34-56789 (2 digits - 2 digits - 5 digits)
+        val growerCodePattern = Regex("""^\d{2}-\d{2}-\d{5}$""")
 
-        binding.etGrowerCode.filters = arrayOf(
-            InputFilter.LengthFilter(11), // Maximum: 12-34-56789
-            InputFilter { source, start, end, dest, dstart, dend ->
-                // Allow ONLY numbers and dashes
-                val filtered = source.subSequence(start, end).filter {
-                    it.isDigit() || it == '-'
+        // Max length: "12-34-56789" = 11 chars
+        binding.etGrowerCode.filters = arrayOf(InputFilter.LengthFilter(11))
+
+        var isFormatting = false
+        binding.etGrowerCode.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting || s == null) return
+                isFormatting = true
+
+                // Strip everything except digits
+                val digits = s.toString().filter { it.isDigit() }.take(9)
+
+                // Rebuild with dashes: 12-34-56789
+                val formatted = buildString {
+                    for (i in digits.indices) {
+                        if (i == 2 || i == 4) append('-')
+                        append(digits[i])
+                    }
                 }
-                if (filtered.length != end - start) {
-                    filtered
-                } else {
-                    null
+
+                if (formatted != s.toString()) {
+                    binding.etGrowerCode.setText(formatted)
+                    binding.etGrowerCode.setSelection(formatted.length)
                 }
+
+                // Validate
+                when {
+                    formatted.isEmpty() -> binding.etGrowerCode.error = null
+                    formatted.length < 11 -> binding.etGrowerCode.error = null // still typing
+                    !growerCodePattern.matches(formatted) ->
+                        binding.etGrowerCode.error = "Format: 12-34-56789"
+                    else -> binding.etGrowerCode.error = null
+                }
+
+                isFormatting = false
             }
-        )
-
-        binding.etGrowerCode.doAfterTextChanged { text ->
-            val input = text?.toString()?.trim().orEmpty()
-
-            when {
-                input.isEmpty() -> binding.etGrowerCode.error = null
-                input.length < 8 -> binding.etGrowerCode.error = null // Still typing
-                !growerCodePattern.matches(input) -> {
-                    binding.etGrowerCode.error = "Format: 12-34-56789 or 12-56789"
-                }
-                else -> binding.etGrowerCode.error = null
-            }
-        }
+        })
     }
 
+    private fun setupCnicFormatting(binding: ItemPersonEntryBinding) {
+        // CNIC format: XXXXX-XXXXXXX-X (5-7-1 = 13 digits, total 15 chars with dashes)
+        val cnicPattern = Regex("""^\d{5}-\d{7}-\d{1}$""")
+
+        binding.etNic.filters = arrayOf(InputFilter.LengthFilter(15))
+
+        var isFormatting = false
+        binding.etNic.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                if (isFormatting || s == null) return
+                isFormatting = true
+
+                // Strip everything except digits, max 13
+                val digits = s.toString().filter { it.isDigit() }.take(13)
+
+                // Rebuild with dashes: 12345-1234567-1
+                val formatted = buildString {
+                    for (i in digits.indices) {
+                        if (i == 5 || i == 12) append('-')
+                        append(digits[i])
+                    }
+                }
+
+                if (formatted != s.toString()) {
+                    binding.etNic.setText(formatted)
+                    binding.etNic.setSelection(formatted.length)
+                }
+
+                // Validate
+                when {
+                    formatted.isEmpty() -> binding.etNic.error = null
+                    formatted.length < 15 -> binding.etNic.error = null // still typing
+                    !cnicPattern.matches(formatted) ->
+                        binding.etNic.error = "Format: 12345-1234567-1"
+                    else -> binding.etNic.error = null
+                }
+
+                isFormatting = false
+            }
+        })
+    }
 
     fun getAllPersons(): List<SurveyPersonEntity> {
         return personViews.map { binding ->
@@ -150,7 +199,6 @@ class PersonEntryHelper(
                 nic = binding.etNic.text.toString().trim(),
 
                 growerCode = binding.etGrowerCode?.text?.toString()?.trim()?.uppercase().orEmpty(),
-//                personArea = binding.etPersonArea.text.toString().trim(),
 
                 extra1 = binding.etExtra1?.text?.toString()?.trim().orEmpty(),
                 extra2 = binding.etExtra2?.text?.toString()?.trim().orEmpty(),
@@ -182,7 +230,6 @@ class PersonEntryHelper(
                 nic = binding.etNic.text.toString().trim(),
 
                 growerCode = binding.etGrowerCode?.text?.toString()?.trim().orEmpty(),
-//                personArea = binding.etPersonArea.text.toString().trim(),
 
                 extra1 = binding.etExtra1?.text?.toString()?.trim().orEmpty(),
                 extra2 = binding.etExtra2?.text?.toString()?.trim().orEmpty(),

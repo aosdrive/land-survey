@@ -2976,7 +2976,10 @@ class FragmentMap : Fragment() {
             viewModel.parcelId = attr["parcel_id"].toString().toLong()
             viewModel.parcelNo = attr["parcel_no"].toString().toLong()
             viewModel.subParcelNo = attr["sub_parcel_no"].toString()
-
+            val mauzaName = sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                Constants.SHARED_PREF_DEFAULT_STRING
+            ).orEmpty()
             when (rgParcel.checkedRadioButtonId) {
                 R.id.rb_same -> {
                     Log.d("TaskAssign", "=== RB_SAME OPERATION STARTED ===")
@@ -3054,6 +3057,7 @@ class FragmentMap : Fragment() {
                         putExtra("parcelOperationValueHi", parcelOperationValueHi)
                         putExtra("unitId", unitId)
                         putExtra("groupId", groupId)
+                        putExtra("mauzaName", mauzaName)
                     }
 
                     Log.d("TaskAssign", "Intent extras being passed:")
@@ -3153,6 +3157,7 @@ class FragmentMap : Fragment() {
                         )
                         putExtra("unitId", attr["unit_id"].toString().toLong())
                         putExtra("groupId", attr["group_id"].toString().toLong())
+                        putExtra("mauzaName", mauzaName)
                     }
                     startActivity(intent)
 //                    dialog.dismiss()
