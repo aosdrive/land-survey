@@ -81,6 +81,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private var tempImageUri: Uri? = null
     private var tempImagePath: String? = null
     private var currentImageType: String = ""
+    private var farmerProfilePath: String? = null
 
     private val viewModel: SurveyFormViewModel by viewModels()
 
@@ -116,7 +117,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private val magnetometerReading = FloatArray(3)
     private var currentBearing: Float = 0f
 
-    private val sowingPersonViews = mutableListOf<View>()
+//    private val sowingPersonViews = mutableListOf<View>()
     private var selectedSowingDate: String? = null
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -189,42 +190,13 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         setupSpinners()
         setupPersonSection()
         setupImageSection()
+        setupFarmerProfile()
         setupSubmit(parcelId, parcelNo, subParcelNo)
         loadSharedMouzaData()
         syncUnsyncedData()
     }
 
     private fun setupSowingSection() {
-        val sowingAdapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_item,
-            listOf("No", "Yes")
-        )
-        sowingAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
-        binding.spinnerSowing.adapter = sowingAdapter
-
-        binding.spinnerSowing.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
-                val isYes = parent.getItemAtPosition(position).toString() == "Yes"
-                binding.layoutSowingSection.visibility = if (isYes) View.VISIBLE else View.GONE
-                if (!isYes) {
-                    binding.layoutSowingPersonEntries.removeAllViews()
-                    sowingPersonViews.clear()
-                    selectedSowingDate = null
-                    binding.etSowingDate.setText("")
-                } else if (sowingPersonViews.isEmpty()) {
-                    addSowingPersonEntry()
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {}
-        }
-
         binding.etSowingDate.setOnClickListener {
             val cal = java.util.Calendar.getInstance()
             android.app.DatePickerDialog(
@@ -238,70 +210,66 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 cal.get(java.util.Calendar.DAY_OF_MONTH)
             ).show()
         }
-
-        binding.btnAddSowingPerson.setOnClickListener {
-            addSowingPersonEntry()
-        }
     }
 
-    private fun addSowingPersonEntry() {
-        val entryView = layoutInflater.inflate(
-            R.layout.item_sowing_person,
-            binding.layoutSowingPersonEntries,
-            false
-        )
+//    private fun addSowingPersonEntry() {
+//        val entryView = layoutInflater.inflate(
+//            R.layout.item_sowing_person,
+//            binding.layoutSowingPersonEntries,
+//            false
+//        )
+//
+//        val index = sowingPersonViews.size + 1
+//        entryView.findViewById<TextView>(R.id.tvSowingPersonIndex).text = "Person $index"
+//
+//        // CNIC auto-formatter: 12345-1234567-1
+//        entryView.findViewById<com.google.android.material.textfield.TextInputEditText>(
+//            R.id.etSowingCnic
+//        ).addTextChangedListener(object : android.text.TextWatcher {
+//            private var isFormatting = false
+//            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+//            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+//            override fun afterTextChanged(s: android.text.Editable?) {
+//                if (isFormatting) return
+//                isFormatting = true
+//                val digits = s.toString().replace("-", "")
+//                val formatted = buildString {
+//                    digits.forEachIndexed { i, c ->
+//                        if (i == 5 || i == 12) append('-')
+//                        append(c)
+//                    }
+//                }
+//                s?.replace(0, s.length, formatted)
+//                isFormatting = false
+//            }
+//        })
+//
+//        // Remove button
+//        entryView.findViewById<com.google.android.material.button.MaterialButton>(
+//            R.id.btnRemoveSowingPerson
+//        ).setOnClickListener {
+//            binding.layoutSowingPersonEntries.removeView(entryView)
+//            sowingPersonViews.remove(entryView)
+//            // Re-index remaining
+//            sowingPersonViews.forEachIndexed { i, v ->
+//                v.findViewById<TextView>(R.id.tvSowingPersonIndex).text = "Person ${i + 1}"
+//            }
+//        }
+//
+//        binding.layoutSowingPersonEntries.addView(entryView)
+//        sowingPersonViews.add(entryView)
+//    }
 
-        val index = sowingPersonViews.size + 1
-        entryView.findViewById<TextView>(R.id.tvSowingPersonIndex).text = "Person $index"
-
-        // CNIC auto-formatter: 12345-1234567-1
-        entryView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etSowingCnic
-        ).addTextChangedListener(object : android.text.TextWatcher {
-            private var isFormatting = false
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
-                if (isFormatting) return
-                isFormatting = true
-                val digits = s.toString().replace("-", "")
-                val formatted = buildString {
-                    digits.forEachIndexed { i, c ->
-                        if (i == 5 || i == 12) append('-')
-                        append(c)
-                    }
-                }
-                s?.replace(0, s.length, formatted)
-                isFormatting = false
-            }
-        })
-
-        // Remove button
-        entryView.findViewById<com.google.android.material.button.MaterialButton>(
-            R.id.btnRemoveSowingPerson
-        ).setOnClickListener {
-            binding.layoutSowingPersonEntries.removeView(entryView)
-            sowingPersonViews.remove(entryView)
-            // Re-index remaining
-            sowingPersonViews.forEachIndexed { i, v ->
-                v.findViewById<TextView>(R.id.tvSowingPersonIndex).text = "Person ${i + 1}"
-            }
-        }
-
-        binding.layoutSowingPersonEntries.addView(entryView)
-        sowingPersonViews.add(entryView)
-    }
-
-    private fun getAllSowingPersons(): List<SowingPersonEntry> {
-        return sowingPersonViews.map { view ->
-            SowingPersonEntry(
-                name = view.findViewById<TextInputEditText>(R.id.etSowingName)
-                    .text.toString().trim(),
-                cnic = view.findViewById<TextInputEditText>(R.id.etSowingCnic)
-                    .text.toString().trim()
-            )
-        }.filter { it.name.isNotBlank() }   // optional: skip completely empty rows
-    }
+//    private fun getAllSowingPersons(): List<SowingPersonEntry> {
+//        return sowingPersonViews.map { view ->
+//            SowingPersonEntry(
+//                name = view.findViewById<TextInputEditText>(R.id.etSowingName)
+//                    .text.toString().trim(),
+//                cnic = view.findViewById<TextInputEditText>(R.id.etSowingCnic)
+//                    .text.toString().trim()
+//            )
+//        }.filter { it.name.isNotBlank() }   // optional: skip completely empty rows
+//    }
 
 
     private fun setupSensors() {
@@ -429,6 +397,43 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
+    private val farmerCameraLauncher =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success && tempImagePath != null) {
+                val f = File(tempImagePath!!)
+                if (f.exists() && f.length() > 0) {
+                    val compressed = compressImageFile(f, 300) ?: f
+                    farmerProfilePath = compressed.absolutePath
+                    binding.ivFarmerProfileImage.setImageURI(Uri.fromFile(compressed))
+                    // Show image, hide placeholder
+                    binding.ivFarmerProfileImage.visibility = View.VISIBLE
+                    binding.layoutFarmerEmptyState.visibility = View.GONE
+                }
+            } else {
+                ToastUtil.showShort(context, "Profile photo cancelled")
+            }
+        }
+
+    private val farmerGalleryLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val saved = savePickedImageToInternalStorage(it)
+                        val compressed = compressImageFile(File(saved), 300) ?: File(saved)
+                        withContext(Dispatchers.Main) {
+                            farmerProfilePath = compressed.absolutePath
+                            binding.ivFarmerProfileImage.setImageURI(Uri.fromFile(compressed))
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            ToastUtil.showShort(context, "Error: ${e.message}")
+                        }
+                    }
+                }
+            }
+        }
+
     private fun getCurrentLocationAndCaptureImage() {
         Log.d("Locations", "getCurrentLocationAndCaptureImage() called")
 
@@ -497,6 +502,27 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
         }
 
+    private fun setupFarmerProfile() {
+        binding.btnFarmerCapture.setOnClickListener {
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.CAMERA), 200)
+                return@setOnClickListener
+            }
+            captureFarmerPhoto()
+        }
+    }
+
+    private fun captureFarmerPhoto() {
+        try {
+            val photoFile = File(filesDir, "farmer_${System.currentTimeMillis()}.jpg")
+            photoFile.parentFile?.mkdirs()
+            tempImagePath = photoFile.absolutePath
+            tempImageUri = FileProvider.getUriForFile(this, "${packageName}.fileProvider", photoFile)
+            farmerCameraLauncher.launch(tempImageUri!!)
+        } catch (e: Exception) {
+            ToastUtil.showShort(context, "Camera error: ${e.message}")
+        }
+    }
 
     private fun setupSpinners() {
         val ownershipStatusList = listOf("Self", "On Lease")
@@ -1131,16 +1157,16 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             binding.btnSubmitSurvey.isEnabled = false
 
             // ===== VALIDATION: If sowing is Yes, date must be selected =====
-            val isSowing = binding.spinnerSowing.selectedItem.toString()
-            if (isSowing == "Yes" && selectedSowingDate.isNullOrBlank()) {
-                binding.btnSubmitSurvey.isEnabled = true   // re-enable
-                AlertDialog.Builder(this)
-                    .setTitle("Sowing Date Required")
-                    .setMessage("Please select a sowing date.")
-                    .setPositiveButton("OK", null)
-                    .show()
-                return@setOnClickListener
-            }
+//            val isSowing = binding.spinnerSowing.selectedItem.toString()
+//            if (isSowing == "Yes" && selectedSowingDate.isNullOrBlank()) {
+//                binding.btnSubmitSurvey.isEnabled = true   // re-enable
+//                AlertDialog.Builder(this)
+//                    .setTitle("Sowing Date Required")
+//                    .setMessage("Please select a sowing date.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//            }
 
             // ===== GET PERSONS FROM HELPER =====
             val rawPersons = personEntryHelper.getAllPersons()
@@ -1172,10 +1198,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
 
             // ===== VALIDATION: Check for valid Grower Code (strict 12-34-56789 format) =====
-            val growerCodePattern = Regex("""^\d{2}-\d{2}-\d{5}$""")
+            val growerCodePattern = Regex("""^\d{2}-\d{3}-\d{5}$""")
 
             val personsWithoutGrowerCode = rawPersons.filter { person ->
-                val growerCode = person.growerCode?.trim()
+                val growerCode = person.growerCode?.replace("\\s".toRegex(), "")?.trim()
                 growerCode.isNullOrBlank() || !growerCodePattern.matches(growerCode)
             }
 
@@ -1191,7 +1217,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 AlertDialog.Builder(this)
                     .setTitle("Invalid Grower Code")
                     .setMessage(
-                        "Please provide valid Grower Code in format 12-34-56789 (numbers only).\n\nInvalid codes:\n${
+                        "Please Enter Valid Grower Code — format: 12-344-56789 (2-3-5 digits, total 10 numbers).\n\nInvalid codes:\n${
                             invalidCodes.joinToString("\n")
                         }"
                     )
@@ -1272,8 +1298,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
                     Constants.SHARED_PREF_DEFAULT_STRING
                 ).orEmpty(),
-                sowingStatus = isSowing,
-                sowingDate = if (isSowing == "Yes") selectedSowingDate else null
+                sowingStatus = if (selectedSowingDate.isNullOrBlank()) "No" else "Yes",
+                sowingDate = selectedSowingDate,   // optional, may be null
+                farmerProfilePath = farmerProfilePath
             )
 
             val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
@@ -1285,22 +1312,22 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                         val surveyId = database.newSurveyNewDao().insertSurvey(survey)
                         Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId ===")
 
-                        val sowingPersons = getAllSowingPersons()
-                        val primaryGrowerCode = rawPersons.firstOrNull()?.growerCode?.trim() ?: ""
-
-                        val sowingEntities = sowingPersons.map { person ->
-                            SowingPersonEntity(
-                                surveyId = surveyId,
-                                name = person.name,
-                                cnic = person.cnic,
-                                growerCode = primaryGrowerCode
-                            )
-                        }
-                        database.sowingPersonDao().insertAll(sowingEntities)
-                        Log.d(
-                            "SurveyActivity",
-                            "Saved ${sowingEntities.size} sowing persons for surveyId=$surveyId"
-                        )
+//                        val sowingPersons = getAllSowingPersons()
+//                        val primaryGrowerCode = rawPersons.firstOrNull()?.growerCode?.trim() ?: ""
+//
+//                        val sowingEntities = sowingPersons.map { person ->
+//                            SowingPersonEntity(
+//                                surveyId = surveyId,
+//                                name = person.name,
+//                                cnic = person.cnic,
+//                                growerCode = primaryGrowerCode
+//                            )
+//                        }
+//                        database.sowingPersonDao().insertAll(sowingEntities)
+//                        Log.d(
+//                            "SurveyActivity",
+//                            "Saved ${sowingEntities.size} sowing persons for surveyId=$surveyId"
+//                        )
 
                         // ========== SMART PERSON HANDLING ==========
                         rawPersons.forEach { person ->

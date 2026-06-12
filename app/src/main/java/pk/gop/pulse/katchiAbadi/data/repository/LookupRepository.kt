@@ -20,8 +20,55 @@ class LookupRepository @Inject constructor(
 ) {
     companion object { private const val TAG = "LookupRepository" }
 
+    // =================================================================
+    // CACHE-FIRST READERS (used by TaskAssignActivity)
+    //
+    // If the cache has data → return it instantly (works offline).
+    // Only if cache is empty → try the network as a last resort.
+    // =================================================================
+
     suspend fun getIssueTypes(): List<IssueTypeEntity> {
-        try {
+        val cached = issueTypeDao.getAll()
+        if (cached.isNotEmpty()) {
+            Log.d(TAG, "Returning ${cached.size} issue types from cache")
+            return cached
+        }
+        // Cache empty → try network as last resort
+        Log.d(TAG, "Issue type cache empty, trying network")
+        refreshIssueTypes()
+        return issueTypeDao.getAll()
+    }
+
+    suspend fun getPestTypes(): List<PestTypeEntity> {
+        val cached = pestTypeDao.getAll()
+        if (cached.isNotEmpty()) return cached
+        refreshPestTypes()
+        return pestTypeDao.getAll()
+    }
+
+    suspend fun getDiseaseTypes(): List<DiseaseTypeEntity> {
+        val cached = diseaseTypeDao.getAll()
+        if (cached.isNotEmpty()) return cached
+        refreshDiseaseTypes()
+        return diseaseTypeDao.getAll()
+    }
+
+    // =================================================================
+    // NETWORK REFRESH (call these when the user IS online — e.g. login)
+    //
+    // refreshAll() pre-caches everything in one go. Silent: returns
+    // Boolean, never throws.
+    // =================================================================
+
+    suspend fun refreshAll(): Boolean {
+        val a = refreshIssueTypes()
+        val b = refreshPestTypes()
+        val c = refreshDiseaseTypes()
+        return a && b && c
+    }
+
+    suspend fun refreshIssueTypes(): Boolean {
+        return try {
             val response = api.getIssueTypes()
             if (response.isSuccessful && response.body() != null) {
                 val items = response.body()!!.mapNotNull {
@@ -31,20 +78,21 @@ class LookupRepository @Inject constructor(
                 if (items.isNotEmpty()) {
                     issueTypeDao.clearAll()
                     issueTypeDao.insertAll(items)
-                    Log.d(TAG, " Synced ${items.size} issue types")
-                    return items
-                }
+                    Log.d(TAG, "✅ Cached ${items.size} issue types")
+                    true
+                } else false
             } else {
-                Log.w(TAG, "Issue types sync failed: ${response.code()}")
+                Log.w(TAG, "Issue types refresh failed: ${response.code()}")
+                false
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Issue types sync exception, falling back to cache: ${e.message}")
+            Log.w(TAG, "Issue types refresh exception: ${e.message}")
+            false
         }
-        return issueTypeDao.getAll()
     }
 
-    suspend fun getPestTypes(): List<PestTypeEntity> {
-        try {
+    suspend fun refreshPestTypes(): Boolean {
+        return try {
             val response = api.getPestTypes()
             if (response.isSuccessful && response.body() != null) {
                 val items = response.body()!!.mapNotNull {
@@ -54,20 +102,21 @@ class LookupRepository @Inject constructor(
                 if (items.isNotEmpty()) {
                     pestTypeDao.clearAll()
                     pestTypeDao.insertAll(items)
-                    Log.d(TAG, " Synced ${items.size} pest types")
-                    return items
-                }
+                    Log.d(TAG, "✅ Cached ${items.size} pest types")
+                    true
+                } else false
             } else {
-                Log.w(TAG, "Pest types sync failed: ${response.code()}")
+                Log.w(TAG, "Pest types refresh failed: ${response.code()}")
+                false
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Pest types sync exception, falling back to cache: ${e.message}")
+            Log.w(TAG, "Pest types refresh exception: ${e.message}")
+            false
         }
-        return pestTypeDao.getAll()
     }
 
-    suspend fun getDiseaseTypes(): List<DiseaseTypeEntity> {
-        try {
+    suspend fun refreshDiseaseTypes(): Boolean {
+        return try {
             val response = api.getDiseaseTypes()
             if (response.isSuccessful && response.body() != null) {
                 val items = response.body()!!.mapNotNull {
@@ -77,15 +126,16 @@ class LookupRepository @Inject constructor(
                 if (items.isNotEmpty()) {
                     diseaseTypeDao.clearAll()
                     diseaseTypeDao.insertAll(items)
-                    Log.d(TAG, " Synced ${items.size} disease types")
-                    return items
-                }
+                    Log.d(TAG, "✅ Cached ${items.size} disease types")
+                    true
+                } else false
             } else {
-                Log.w(TAG, "Disease types sync failed: ${response.code()}")
+                Log.w(TAG, "Disease types refresh failed: ${response.code()}")
+                false
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Disease types sync exception, falling back to cache: ${e.message}")
+            Log.w(TAG, "Disease types refresh exception: ${e.message}")
+            false
         }
-        return diseaseTypeDao.getAll()
     }
 }

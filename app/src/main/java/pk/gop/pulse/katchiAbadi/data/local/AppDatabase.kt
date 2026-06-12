@@ -21,6 +21,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.IssueTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.KachiAbadiEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NotAtHomeSurveyFormEntity
+import pk.gop.pulse.katchiAbadi.domain.model.OfficerEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.PestTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
@@ -38,8 +39,9 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
         SowingPersonEntity::class,
         IssueTypeEntity::class,
         PestTypeEntity::class,
-        DiseaseTypeEntity::class],
-    version = 18,
+        DiseaseTypeEntity::class,
+        OfficerEntity::class],
+    version = 20,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -63,6 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun issueTypeDao(): IssueTypeDao
     abstract fun pestTypeDao(): PestTypeDao
     abstract fun diseaseTypeDao(): DiseaseTypeDao
+    abstract fun officerDao(): OfficerDao
     companion object {
 
         @Volatile
@@ -90,6 +93,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration13to14)
                     .addMigrations(migration14to15)
                     .addMigrations(migration15to16)
+                    .addMigrations(migration16to17)
+                    .addMigrations(migration17to18)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -244,5 +249,22 @@ val migration15to16 = object : Migration(15, 16) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("ALTER TABLE new_surveys ADD COLUMN sowingStatus TEXT NOT NULL DEFAULT 'No'")
         database.execSQL("ALTER TABLE new_surveys ADD COLUMN sowingDate TEXT")
+    }
+}
+val migration16to17 = object : Migration(16, 17) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("     CREATE TABLE IF NOT EXISTS `officers` (\n" +
+                "           `id` INTEGER NOT NULL,\n" +
+                "           `fullName` TEXT,\n" +
+                "           `cnic` TEXT,\n" +
+                "           `roleName` TEXT,\n" +
+                "           `cachedAt` INTEGER NOT NULL,\n" +
+                "           PRIMARY KEY(`id`)\n" +
+                "       );")
+    }
+}
+val migration17to18 = object : Migration(17, 18) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE new_surveys ADD COLUMN farmerProfilePath TEXT")
     }
 }

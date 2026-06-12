@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 
 
@@ -30,4 +31,12 @@ interface TaskDao {
 
     @Delete
     suspend fun deleteTask(task: TaskEntity)
+
+    /** Live count for dashboard / nav-drawer badges */
+    @Query("SELECT COUNT(*) FROM tasks WHERE isSynced = 0")
+    fun livePendingCount(): Flow<Int>
+
+    /** Live list for the upload screen — auto-refreshes on insert/sync */
+    @Query("SELECT * FROM tasks WHERE isSynced = 0 ORDER BY createdOn DESC")
+    fun livePendingTasks(): Flow<List<TaskEntity>>
 }

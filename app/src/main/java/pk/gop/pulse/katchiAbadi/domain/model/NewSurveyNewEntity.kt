@@ -29,8 +29,8 @@ data class NewSurveyNewEntity(
     val parcelOperationValue: String = "",
     val statusBit: Int = 0,
     val sowingStatus: String = "No",
-    val sowingDate: String? = null
-
+    val sowingDate: String? = null,
+    val farmerProfilePath: String? = null
 )
 
 

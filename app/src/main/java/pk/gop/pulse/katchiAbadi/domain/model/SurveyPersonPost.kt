@@ -52,8 +52,9 @@ data class SurveyPostNew(
     val sowingDate: String? = null,
     val pictures: List<Pictures>,
     val persons: List<SurveyPersonPost>,
-    val sowingPersons: List<SowingPersonPostDto>? = null
-)
+    val sowingPersons: List<SowingPersonPostDto>? = null,
+    val farmerProfile: String? = null,
+    )
 
 
 

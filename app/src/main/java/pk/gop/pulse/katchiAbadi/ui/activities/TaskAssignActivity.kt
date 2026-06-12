@@ -1,4 +1,5 @@
 package pk.gop.pulse.katchiAbadi.ui.activities
+
 import android.app.DatePickerDialog
 import android.content.Context
 import android.content.SharedPreferences
@@ -23,13 +24,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.common.Constants
+import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.local.SurveyFormViewModel
 import pk.gop.pulse.katchiAbadi.data.local.SurveyImageAdapter
-import pk.gop.pulse.katchiAbadi.data.local.TaskSubmitDto
 import pk.gop.pulse.katchiAbadi.data.local.UserSelectionDialog
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.repository.LookupRepository
+import pk.gop.pulse.katchiAbadi.data.repository.OfficerRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivityTaskAssignBinding
 import pk.gop.pulse.katchiAbadi.domain.model.DiseaseTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.IssueTypeEntity
@@ -42,6 +44,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Calendar
 import javax.inject.Inject
+
 @AndroidEntryPoint
 class TaskAssignActivity : AppCompatActivity() {
     private lateinit var binding: ActivityTaskAssignBinding
@@ -57,15 +60,9 @@ class TaskAssignActivity : AppCompatActivity() {
     private lateinit var selectedParcels: List<ParcelData>
     private var isMultipleParcel: Boolean = false
 
-    @Inject
-    lateinit var sharedPreferences: SharedPreferences
-
-    @Inject
-    lateinit var database: AppDatabase
-
-    @Inject
-    lateinit var serverApi: ServerApi
-
+    @Inject lateinit var sharedPreferences: SharedPreferences
+    @Inject lateinit var database: AppDatabase
+    @Inject lateinit var serverApi: ServerApi
     @Inject lateinit var lookupRepository: LookupRepository
 
     private var issueTypes: List<IssueTypeEntity> = emptyList()
@@ -75,6 +72,8 @@ class TaskAssignActivity : AppCompatActivity() {
     private val selectedPestIds = mutableSetOf<Int>()
     private val selectedDiseaseIds = mutableSetOf<Int>()
     private var selectedIssueTypeId: Int? = null
+    @Inject lateinit var officerRepository: OfficerRepository
+
 
     data class ParcelData(
         val parcelId: Long,
@@ -104,18 +103,10 @@ class TaskAssignActivity : AppCompatActivity() {
         setContentView(binding.root)
         context = this@TaskAssignActivity
 
-        binding.btnTakePhoto.setOnClickListener {
-            requestCameraPermissionAndCapture()
-        }
+        binding.btnTakePhoto.setOnClickListener { requestCameraPermissionAndCapture() }
 
-        // Check if multiple parcels
         isMultipleParcel = intent.getBooleanExtra("isMultipleParcel", false)
-
-        if (isMultipleParcel) {
-            loadMultipleParcels()
-        } else {
-            loadSingleParcel()
-        }
+        if (isMultipleParcel) loadMultipleParcels() else loadSingleParcel()
 
         setupSpinners()
         setupUserListSection()
@@ -133,10 +124,7 @@ class TaskAssignActivity : AppCompatActivity() {
             unitId = intent.getLongExtra("unitId", 0L),
             groupId = intent.getLongExtra("groupId", 0L)
         )
-
         selectedParcels = listOf(parcelData)
-
-        // Update UI to show single parcel info
     }
 
     private fun loadMultipleParcels() {
@@ -159,36 +147,28 @@ class TaskAssignActivity : AppCompatActivity() {
                 groupId = groupIds.getOrNull(index) ?: 0L
             )
         }
-
-        // Update UI to show multiple parcels
-
         Log.d("TaskAssign", "Loaded ${selectedParcels.size} parcels for task assignment")
     }
 
     private fun requestCameraPermissionAndCapture() {
         if (checkSelfPermission(android.Manifest.permission.CAMERA) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
-        ) {
-            captureImage()
-        } else {
-            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
-        }
+        ) captureImage()
+        else cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
     }
 
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) {
-                captureImage()
-            } else {
-                ToastUtil.showShort(this, "Camera permission is required")
-            }
+            if (granted) captureImage()
+            else ToastUtil.showShort(this, "Camera permission is required")
         }
 
+    // ============================================================
+    //   SPINNERS — issue / pest / disease
+    // ============================================================
     private fun setupSpinners() {
         lifecycleScope.launch {
             val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
-            Log.d("DROPDOWN_DEBUG", "Token present: ${token.isNotEmpty()}, length: ${token.length}")
-
             if (token.isEmpty()) {
                 ToastUtil.showShort(context, "Please login again")
                 return@launch
@@ -196,21 +176,12 @@ class TaskAssignActivity : AppCompatActivity() {
 
             try {
                 withContext(Dispatchers.IO) {
-                    Log.d("DROPDOWN_DEBUG", "Calling getIssueTypes API...")
                     issueTypes = lookupRepository.getIssueTypes()
-                    Log.d("DROPDOWN_DEBUG", "Got ${issueTypes.size} issue types: ${issueTypes.map { it.name }}")
-
                     pestTypes = lookupRepository.getPestTypes()
-                    Log.d("DROPDOWN_DEBUG", "Got ${pestTypes.size} pest types")
-
                     diseaseTypes = lookupRepository.getDiseaseTypes()
-                    Log.d("DROPDOWN_DEBUG", "Got ${diseaseTypes.size} disease types")
                 }
-
-                Log.d("DROPDOWN_DEBUG", "About to setup issue type spinner with ${issueTypes.size} items")
                 setupIssueTypeSpinner()
                 setupConditionalDropdowns()
-
             } catch (e: Exception) {
                 Log.e("DROPDOWN_DEBUG", "Exception in setupSpinners: ${e.message}", e)
                 ToastUtil.showShort(context, "Failed to load dropdown values: ${e.message}")
@@ -223,26 +194,17 @@ class TaskAssignActivity : AppCompatActivity() {
             ToastUtil.showShort(context, "No issue types available")
             return
         }
-
-        // Add a placeholder at position 0
         val displayList = mutableListOf("-- Select Issue Type --")
         displayList.addAll(issueTypes.map { it.name })
 
-        val adapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_item,
-            displayList
-        )
+        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, displayList)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerPropertyStatus.adapter = adapter
 
         binding.spinnerPropertyStatus.onItemSelectedListener =
             object : android.widget.AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(
-                    parent: android.widget.AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
+                    parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long
                 ) {
                     if (position == 0) {
                         selectedIssueTypeId = null
@@ -250,11 +212,9 @@ class TaskAssignActivity : AppCompatActivity() {
                         binding.layoutDiseaseType.visibility = View.GONE
                         return
                     }
-
                     val selected = issueTypes[position - 1]
                     selectedIssueTypeId = selected.id
 
-                    // Reset child selections when issue changes
                     selectedPestIds.clear()
                     selectedDiseaseIds.clear()
                     binding.btnSelectPestType.text = "Select pest type(s)"
@@ -275,7 +235,6 @@ class TaskAssignActivity : AppCompatActivity() {
                         }
                     }
                 }
-
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
             }
     }
@@ -290,13 +249,11 @@ class TaskAssignActivity : AppCompatActivity() {
             ) { chosenIds ->
                 selectedPestIds.clear()
                 selectedPestIds.addAll(chosenIds)
-                val names = pestTypes
-                    .filter { it.id in selectedPestIds }
+                val names = pestTypes.filter { it.id in selectedPestIds }
                     .joinToString(", ") { it.name }
                 binding.btnSelectPestType.text = names.ifEmpty { "Select pest type(s)" }
             }
         }
-
         binding.btnSelectDiseaseType.setOnClickListener {
             showMultiSelectDialog(
                 title = "Select Disease Type(s)",
@@ -306,25 +263,21 @@ class TaskAssignActivity : AppCompatActivity() {
             ) { chosenIds ->
                 selectedDiseaseIds.clear()
                 selectedDiseaseIds.addAll(chosenIds)
-                val names = diseaseTypes
-                    .filter { it.id in selectedDiseaseIds }
+                val names = diseaseTypes.filter { it.id in selectedDiseaseIds }
                     .joinToString(", ") { it.name }
                 binding.btnSelectDiseaseType.text = names.ifEmpty { "Select disease type(s)" }
             }
         }
     }
+
     private fun showMultiSelectDialog(
-        title: String,
-        items: List<String>,
-        preSelectedIds: Set<Int>,
-        allIds: List<Int>,
-        onConfirm: (Set<Int>) -> Unit
+        title: String, items: List<String>, preSelectedIds: Set<Int>,
+        allIds: List<Int>, onConfirm: (Set<Int>) -> Unit
     ) {
         if (items.isEmpty()) {
             ToastUtil.showShort(context, "No options available")
             return
         }
-
         val checkedItems = BooleanArray(items.size) { allIds[it] in preSelectedIds }
         val tempSelection = checkedItems.copyOf()
 
@@ -335,9 +288,7 @@ class TaskAssignActivity : AppCompatActivity() {
             }
             .setPositiveButton("OK") { dialog, _ ->
                 val chosen = mutableSetOf<Int>()
-                tempSelection.forEachIndexed { idx, picked ->
-                    if (picked) chosen.add(allIds[idx])
-                }
+                tempSelection.forEachIndexed { idx, picked -> if (picked) chosen.add(allIds[idx]) }
                 onConfirm(chosen)
                 dialog.dismiss()
             }
@@ -345,76 +296,63 @@ class TaskAssignActivity : AppCompatActivity() {
             .show()
     }
 
+    // ============================================================
+    //   USER LIST  (still needs network — see note at bottom of file)
+    // ============================================================
     private fun setupUserListSection() {
         binding.btnSelectOwner.setOnClickListener {
             lifecycleScope.launch {
                 try {
-                    val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+                    binding.btnSelectOwner.isEnabled = false
 
-                    if (token.isEmpty()) {
-                        ToastUtil.showShort(context, "Please login again.")
+                    // 1) Try to refresh from network in the background — fine if it fails
+                    if (Utility.checkInternetConnection(context)) {
+                        withContext(Dispatchers.IO) {
+                            officerRepository.refreshFromServer()
+                        }
+                    }
+
+                    // 2) Always read from local cache (offline-first)
+                    val users = withContext(Dispatchers.IO) {
+                        officerRepository.getOfficers()
+                    }
+
+                    binding.btnSelectOwner.isEnabled = true
+
+                    if (users.isEmpty()) {
+                        ToastUtil.showShort(
+                            context,
+                            "No officers cached. Please connect to internet once to download the list."
+                        )
                         return@launch
                     }
 
-                    binding.btnSelectOwner.isEnabled = false
-
-                    Log.d("API_CALL", "Token: Bearer ${token.take(20)}...")
-
-                    val response = withContext(Dispatchers.IO) {
-                        serverApi.getAllUsers(
-                            token = "Bearer $token",
-                        )
-                    }
-
-                    Log.d("API_DEBUG", "Response Code: ${response.code()}")
-                    Log.d("API_DEBUG", "Response Body: ${response.body()}")
-                    Log.d("API_DEBUG", "Error Body: ${response.errorBody()?.string()}")
-                    Log.d("API_DEBUG", "User count: ${response.body()?.size}")
-
-                    binding.btnSelectOwner.isEnabled = true
-
-                    if (response.isSuccessful && response.body() != null) {
-                        val users = response.body()!!
-
-                        if (users.isEmpty()) {
-                            ToastUtil.showShort(context, "No users found.")
-                        } else {
-                            UserSelectionDialog(context, users) { selectedUserFromDialog ->
-                                selectedUser = selectedUserFromDialog
-
-                                displaySelectedUserInCard(selectedUserFromDialog)
-
-                                Toast.makeText(
-                                    context,
-                                    "Selected: ${selectedUserFromDialog.fullName}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }.show()
-                        }
-                    } else {
-                        val errorBody = response.errorBody()?.string()
-                        Log.e("API_ERROR", "Code: ${response.code()}, Body: $errorBody")
-                        ToastUtil.showShort(context, "Error: ${response.code()}")
-                    }
+                    UserSelectionDialog(context, users) { selectedUserFromDialog ->
+                        selectedUser = selectedUserFromDialog
+                        displaySelectedUserInCard(selectedUserFromDialog)
+                        Toast.makeText(
+                            context,
+                            "Selected: ${selectedUserFromDialog.fullName}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }.show()
 
                 } catch (e: Exception) {
                     binding.btnSelectOwner.isEnabled = true
-                    Log.e("API_EXCEPTION", "Error: ${e.message}", e)
-                    ToastUtil.showShort(context, "Error: ${e.localizedMessage}")
+                    Log.e("OfficerLoad", "Error: ${e.message}", e)
+                    ToastUtil.showShort(context, "Error loading officers: ${e.localizedMessage}")
                 }
             }
         }
     }
 
+
     private fun displaySelectedUserInCard(user: UserResponse) {
         binding.cardSelectedUser.visibility = View.VISIBLE
-
         binding.tvSelectedUserName.text = user.fullName ?: "N/A"
         binding.tvSelectedUserCnic.text = "CNIC: ${user.cnic ?: "N/A"}"
         binding.tvSelectedUserRole.text = "Role: ${user.roleName ?: "Officer"}"
-
         binding.btnSelectOwner.text = "Change Officer"
-
         binding.btnRemoveSelectedUser.setOnClickListener {
             selectedUser = null
             binding.cardSelectedUser.visibility = View.GONE
@@ -422,24 +360,20 @@ class TaskAssignActivity : AppCompatActivity() {
         }
     }
 
+    // ============================================================
+    //   IMAGE SECTION
+    // ============================================================
     private fun setupImageSection() {
         imageAdapter = SurveyImageAdapter { imageToRemove ->
             viewModel.removeImage(imageToRemove)
             imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
         }
-
         binding.recyclerPictures.apply {
             layoutManager = LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
             adapter = imageAdapter
         }
-
-        binding.btnAddImage.setOnClickListener {
-            imagePickerLauncher.launch("image/*")
-        }
-
-        binding.btnTakePhoto.setOnClickListener {
-            captureImage()
-        }
+        binding.btnAddImage.setOnClickListener { imagePickerLauncher.launch("image/*") }
+        binding.btnTakePhoto.setOnClickListener { captureImage() }
     }
 
     private val imagePickerLauncher =
@@ -453,17 +387,11 @@ class TaskAssignActivity : AppCompatActivity() {
         }
 
     private fun savePickedImageToInternalStorage(uri: Uri): String {
-        val inputStream =
-            contentResolver.openInputStream(uri) ?: throw Exception("Can't open image stream")
+        val inputStream = contentResolver.openInputStream(uri)
+            ?: throw Exception("Can't open image stream")
         val fileName = "img_${System.currentTimeMillis()}.jpg"
         val file = File(filesDir, fileName)
-
-        inputStream.use { input ->
-            file.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-
+        inputStream.use { input -> file.outputStream().use { output -> input.copyTo(output) } }
         return file.absolutePath
     }
 
@@ -471,21 +399,11 @@ class TaskAssignActivity : AppCompatActivity() {
         try {
             val timestamp = System.currentTimeMillis()
             val photoFile = File(filesDir, "survey_img_${timestamp}.jpg")
-
             tempImagePath = photoFile.absolutePath
-
             photoFile.parentFile?.mkdirs()
-
             tempImageUri = FileProvider.getUriForFile(
-                this,
-                "${packageName}.fileProvider",
-                photoFile
+                this, "${packageName}.fileProvider", photoFile
             )
-
-            Log.d("Camera", "Created photo file: ${photoFile.absolutePath}")
-            Log.d("Camera", "Stored path: $tempImagePath")
-            Log.d("Camera", "TempImageUri: $tempImageUri")
-
             cameraLauncher.launch(tempImageUri!!)
         } catch (e: Exception) {
             Log.e("Camera", "Error setting up camera: ${e.message}", e)
@@ -495,46 +413,27 @@ class TaskAssignActivity : AppCompatActivity() {
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
-            Log.d(
-                "Camera",
-                "Camera result: success=$success, path=$tempImagePath, uri=$tempImageUri"
-            )
-
             if (!success) {
                 ToastUtil.showShort(context, "Photo capture was cancelled")
                 return@registerForActivityResult
             }
-
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     var finalFile: File? = null
-
                     if (!tempImagePath.isNullOrEmpty()) {
                         val f = File(tempImagePath!!)
-                        if (f.exists() && f.length() > 0) {
-                            finalFile = f
-                            Log.d("Camera", "File exists at path: ${f.absolutePath}")
-                        } else {
-                            Log.w("Camera", "File not found or empty: $f")
-                        }
+                        if (f.exists() && f.length() > 0) finalFile = f
                     }
-
                     if (finalFile == null && tempImageUri != null) {
                         val input = contentResolver.openInputStream(tempImageUri!!)
                         if (input != null) {
                             val fallbackFile =
                                 File(filesDir, "fallback_${System.currentTimeMillis()}.jpg")
                             fallbackFile.outputStream().use { output -> input.copyTo(output) }
-                            if (fallbackFile.exists() && fallbackFile.length() > 0) {
+                            if (fallbackFile.exists() && fallbackFile.length() > 0)
                                 finalFile = fallbackFile
-                                Log.d(
-                                    "Camera",
-                                    "Recovered image from Uri to: ${fallbackFile.absolutePath}"
-                                )
-                            }
                         }
                     }
-
                     if (finalFile == null) {
                         withContext(Dispatchers.Main) {
                             ToastUtil.showShort(context, "Failed to get photo")
@@ -545,8 +444,9 @@ class TaskAssignActivity : AppCompatActivity() {
                     val compressedFile = compressImageFile(finalFile, 300) ?: finalFile
 
                     withContext(Dispatchers.Main) {
-                        val image =
-                            SurveyImage(uri = compressedFile.absolutePath, type = currentImageType)
+                        val image = SurveyImage(
+                            uri = compressedFile.absolutePath, type = currentImageType
+                        )
                         viewModel.addImage(image)
                         database.imageDao().insertImage(image)
                         imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
@@ -563,139 +463,96 @@ class TaskAssignActivity : AppCompatActivity() {
 
     private fun compressImageFile(inputFile: File, maxSizeKB: Int = 60): File? {
         try {
-            Log.d("ImageCompression", "📷 Original file size: ${inputFile.length() / 1024} KB")
-
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
+            val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(inputFile.absolutePath, options)
-
-            val originalWidth = options.outWidth
-            val originalHeight = options.outHeight
-            Log.d("ImageCompression", "📐 Original dimensions: ${originalWidth}x${originalHeight}")
 
             options.inSampleSize = calculateInSampleSize(options, 600, 600)
             options.inJustDecodeBounds = false
             options.inPreferredConfig = Bitmap.Config.RGB_565
 
             val bitmap = BitmapFactory.decodeFile(inputFile.absolutePath, options) ?: return null
-
-            Log.d("ImageCompression", "🖼️ Decoded bitmap: ${bitmap.width}x${bitmap.height}")
-
             var compressQuality = 75
             val stream = ByteArrayOutputStream()
-
             do {
                 stream.reset()
                 bitmap.compress(Bitmap.CompressFormat.JPEG, compressQuality, stream)
-                val currentSizeKB = stream.size() / 1024
-
-                Log.d("ImageCompression", "🔧 Quality: $compressQuality%, Size: $currentSizeKB KB")
-
-                if (currentSizeKB <= maxSizeKB) break
-
+                if (stream.size() / 1024 <= maxSizeKB) break
                 compressQuality -= 5
             } while (compressQuality > 20)
 
             val compressedFile = File(filesDir, "compressed_${System.currentTimeMillis()}.jpg")
             compressedFile.writeBytes(stream.toByteArray())
-
             bitmap.recycle()
-
-            val finalSizeKB = compressedFile.length() / 1024
-            val compressionRatio =
-                ((inputFile.length() - compressedFile.length()) * 100.0 / inputFile.length())
-
-            Log.d(
-                "ImageCompression",
-                "✅ Final: $finalSizeKB KB (${String.format("%.1f", compressionRatio)}% reduction)"
-            )
 
             if (compressedFile.exists() && compressedFile.length() > 0) {
                 inputFile.delete()
                 return compressedFile
             }
-
             return null
         } catch (e: Exception) {
-            Log.e("ImageCompression", "❌ Error: ${e.message}", e)
+            Log.e("ImageCompression", "Error: ${e.message}", e)
             return null
         }
     }
 
     private fun calculateInSampleSize(
-        options: BitmapFactory.Options,
-        reqWidth: Int,
-        reqHeight: Int
+        options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int
     ): Int {
         val height = options.outHeight
         val width = options.outWidth
         var inSampleSize = 1
-
         if (height > reqHeight || width > reqWidth) {
             val halfHeight = height / 2
             val halfWidth = width / 2
-
             while ((halfHeight / inSampleSize) >= reqHeight &&
                 (halfWidth / inSampleSize) >= reqWidth
-            ) {
-                inSampleSize *= 2
-            }
+            ) inSampleSize *= 2
         }
-
         return inSampleSize
     }
 
+    // ============================================================
+    //   SUBMIT  — OFFLINE FIRST: save to Room only, NO network call
+    // ============================================================
     private fun setupSubmit() {
-        binding.etDate.setOnClickListener {
-            showDatePicker()
-        }
-
+        binding.etDate.setOnClickListener { showDatePicker() }
         binding.etDate.isFocusable = false
         binding.etDate.isClickable = true
         binding.etDate.inputType = InputType.TYPE_NULL
 
         binding.btnSubmitSurvey.setOnClickListener {
             val assignDate = binding.etDate.text.toString()
-//            val issueType = binding.spinnerPropertyStatus.selectedItem.toString()
             val details = binding.etDetail.text.toString()
             val daysToComplete = binding.etDaysToComplete.text.toString()
 
+            // ---- VALIDATION ----
             if (selectedIssueTypeId == null) {
                 ToastUtil.showShort(context, "Please select an issue type")
                 return@setOnClickListener
             }
             val selectedIssueName = issueTypes.find { it.id == selectedIssueTypeId }?.name ?: ""
             when (selectedIssueName.lowercase()) {
-                "pest attack" -> {
-                    if (selectedPestIds.isEmpty()) {
-                        ToastUtil.showShort(context, "Please select at least one pest type")
-                        return@setOnClickListener
-                    }
+                "pest attack" -> if (selectedPestIds.isEmpty()) {
+                    ToastUtil.showShort(context, "Please select at least one pest type")
+                    return@setOnClickListener
                 }
-                "diseases" -> {
-                    if (selectedDiseaseIds.isEmpty()) {
-                        ToastUtil.showShort(context, "Please select at least one disease type")
-                        return@setOnClickListener
-                    }
+                "diseases" -> if (selectedDiseaseIds.isEmpty()) {
+                    ToastUtil.showShort(context, "Please select at least one disease type")
+                    return@setOnClickListener
                 }
             }
-
             if (selectedUser == null) {
                 ToastUtil.showShort(context, "Please select a user to assign the task")
                 return@setOnClickListener
             }
-
             if (assignDate.isEmpty()) {
                 ToastUtil.showShort(context, "Please select assign date")
                 return@setOnClickListener
             }
-
             if (daysToComplete.isEmpty()) {
                 ToastUtil.showShort(context, "Please enter days to complete")
                 return@setOnClickListener
             }
-
             val daysToCompleteInt = daysToComplete.toIntOrNull()
             if (daysToCompleteInt == null || daysToCompleteInt <= 0) {
                 ToastUtil.showShort(context, "Please enter a valid number of days")
@@ -704,53 +561,22 @@ class TaskAssignActivity : AppCompatActivity() {
 
             binding.btnSubmitSurvey.isEnabled = false
 
+            // ---- LOCAL SAVE ONLY (no network call) ----
             lifecycleScope.launch {
                 try {
-                    val images = viewModel.surveyImages.value ?: emptyList()
-                    val base64Images = withContext(Dispatchers.IO) {
-                        images.mapNotNull { convertImageToBase64(it.uri) }
-                    }
-
                     val assignedByUserId =
                         sharedPreferences.getLong(Constants.SHARED_PREF_USER_ID, 0L)
-                    val mauzaID =
-                        sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L)
-                    val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+                    val mauzaID = sharedPreferences.getLong(
+                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L
+                    )
 
-                    if (token.isEmpty()) {
-                        ToastUtil.showShort(context, "Please login again")
-                        binding.btnSubmitSurvey.isEnabled = true
-                        return@launch
-                    }
+                    val images = viewModel.surveyImages.value ?: emptyList()
+                    // Store ONLY file paths locally. Base64 conversion is deferred to upload time.
+                    val picData = images.joinToString(",") { it.uri }
 
-                    var successCount = 0
-
-                    for (parcel in selectedParcels) {
-                        val taskDto = TaskSubmitDto(
-                            assignDate = assignDate,
-                            issueType = selectedIssueName,
-                            detail = details,
-                            images = base64Images,
-                            parcelId = parcel.parcelId,
-                            parcelNo = parcel.parcelNo,
-                            mauzaId = mauzaID,
-                            assignedByUserId = assignedByUserId,
-                            assignedToUserId = selectedUser!!.id ?: 0L,
-                            khewatInfo = parcel.khewatInfo,
-                            daysToComplete = daysToCompleteInt,
-                            issueTypeId = selectedIssueTypeId,
-                            pestTypeIds = selectedPestIds.toList(),
-                            diseaseTypeIds = selectedDiseaseIds.toList(),
-                        )
-
-                        Log.d("TaskAssign", "Submitting task for parcel ${parcel.parcelNo}")
-
-                        val response = withContext(Dispatchers.IO) {
-                            serverApi.submitTask("Bearer $token", taskDto)
-                        }
-
-                        if (response.isSuccessful && response.body()?.success == true) {
-                            val picData = images.joinToString(",") { it.uri }
+                    var insertedCount = 0
+                    withContext(Dispatchers.IO) {
+                        for (parcel in selectedParcels) {
                             val taskEntity = TaskEntity(
                                 assignDate = assignDate,
                                 issueType = selectedIssueName,
@@ -763,36 +589,27 @@ class TaskAssignActivity : AppCompatActivity() {
                                 assignedToUserId = selectedUser!!.id ?: 0L,
                                 khewatInfo = parcel.khewatInfo,
                                 createdOn = System.currentTimeMillis(),
-                                isSynced = true,
+                                isSynced = false,     // ⚠️ Key change — never synced at insert time
                                 daysToComplete = daysToCompleteInt,
                                 issueTypeId = selectedIssueTypeId,
-                                pestTypeIds = if (selectedPestIds.isNotEmpty()) selectedPestIds.joinToString(",") else null,
-                                diseaseTypeIds = if (selectedDiseaseIds.isNotEmpty()) selectedDiseaseIds.joinToString(",") else null,
+                                pestTypeIds = if (selectedPestIds.isNotEmpty())
+                                    selectedPestIds.joinToString(",") else null,
+                                diseaseTypeIds = if (selectedDiseaseIds.isNotEmpty())
+                                    selectedDiseaseIds.joinToString(",") else null,
                             )
-
-                            withContext(Dispatchers.IO) {
-                                database.taskDao().insertTask(taskEntity)
-                            }
-
-                            successCount++
-                        } else {
-                            Log.e(
-                                "TaskAssign",
-                                "Failed for parcel ${parcel.parcelNo}: ${response.body()?.message}"
-                            )
+                            database.taskDao().insertTask(taskEntity)
+                            insertedCount++
                         }
                     }
 
                     ToastUtil.showShort(
                         context,
-                        "Successfully assigned $successCount of ${selectedParcels.size} tasks"
+                        "Saved $insertedCount task(s) locally. Upload when online."
                     )
                     finish()
-
                 } catch (e: Exception) {
-                    Log.e("TaskAssign", "Error: ${e.message}", e)
+                    Log.e("TaskAssign", "Error saving task: ${e.message}", e)
                     ToastUtil.showShort(context, "Error: ${e.localizedMessage}")
-                } finally {
                     binding.btnSubmitSurvey.isEnabled = true
                 }
             }
@@ -801,83 +618,16 @@ class TaskAssignActivity : AppCompatActivity() {
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-
         val datePickerDialog = DatePickerDialog(
             context,
-            { _, selectedYear, selectedMonth, selectedDay ->
-                val formattedDate = String.format(
-                    "%04d-%02d-%02d",
-                    selectedYear,
-                    selectedMonth + 1,
-                    selectedDay
-                )
+            { _, y, m, d ->
+                val formattedDate = String.format("%04d-%02d-%02d", y, m + 1, d)
                 binding.etDate.setText(formattedDate)
             },
-            year,
-            month,
-            day
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
         )
-
         datePickerDialog.show()
-    }
-
-    private fun convertImageToBase64(imagePath: String, maxSizeKB: Int = 60): String? {
-        return try {
-            val file = File(imagePath)
-            if (!file.exists()) {
-                Log.e("ImageConversion", "❌ File not found: $imagePath")
-                return null
-            }
-
-            val fileSizeKB = file.length() / 1024
-            Log.d("ImageConversion", "📁 Input file: $fileSizeKB KB")
-
-            if (fileSizeKB < maxSizeKB) {
-                val bytes = file.readBytes()
-                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-                Log.d("ImageConversion", "✅ Base64 size: ${base64.length / 1024} KB")
-                return base64
-            }
-
-            val options = BitmapFactory.Options().apply {
-                inSampleSize = 2
-                inPreferredConfig = Bitmap.Config.RGB_565
-            }
-
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath, options) ?: return null
-
-            Log.d("ImageConversion", "🖼️ Bitmap for Base64: ${bitmap.width}x${bitmap.height}")
-
-            val stream = ByteArrayOutputStream()
-            var quality = 70
-
-            do {
-                stream.reset()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
-                val currentSizeKB = stream.size() / 1024
-                Log.d("ImageConversion", "🔧 Quality: $quality%, Size: $currentSizeKB KB")
-                quality -= 5
-            } while (stream.size() / 1024 > maxSizeKB && quality > 20)
-
-            bitmap.recycle()
-
-            val base64 =
-                android.util.Base64.encodeToString(
-                    stream.toByteArray(),
-                    android.util.Base64.NO_WRAP
-                )
-            val base64SizeKB = base64.length / 1024
-
-            Log.d("ImageConversion", "✅ Final Base64: $base64SizeKB KB")
-
-            return base64
-
-        } catch (e: Exception) {
-            Log.e("ImageConversion", "❌ Error: ${e.message}", e)
-            null
-        }
     }
 }

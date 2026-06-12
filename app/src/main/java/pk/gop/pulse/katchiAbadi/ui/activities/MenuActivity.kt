@@ -61,6 +61,9 @@ import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaDetail
+import pk.gop.pulse.katchiAbadi.data.repository.LookupRepository
+import pk.gop.pulse.katchiAbadi.data.repository.OfficerRepository
+import pk.gop.pulse.katchiAbadi.data.repository.TaskRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivityMenuBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
@@ -115,6 +118,11 @@ class MenuActivity : BaseActivity() {
     private var downloadComplete: Boolean? = null
 
     private var downloadFileTask: DownloadFileTask? = null
+    @Inject
+    lateinit var taskRepository: TaskRepository
+    @Inject lateinit var officerRepository: OfficerRepository
+    @Inject lateinit var lookupRepository: LookupRepository
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -209,6 +217,21 @@ class MenuActivity : BaseActivity() {
         binding.cvMyTasks.setOnClickListener {
             Intent(this@MenuActivity, TaskListActivity::class.java).apply {
                 startActivity(this)
+            }
+        }
+
+        binding.cvPendingTasks.setOnClickListener {
+            startActivity(Intent(this@MenuActivity, PendingTasksActivity::class.java))
+        }
+
+// Live badge: shows pending count on the tile title
+        lifecycleScope.launch {
+            taskRepository.livePendingCount().collect { count ->
+                binding.tvPendingTasksTitle.text = if (count > 0) {
+                    "PENDING TASKS ($count)"
+                } else {
+                    "PENDING TASKS"
+                }
             }
         }
 
@@ -1743,6 +1766,12 @@ class MenuActivity : BaseActivity() {
         super.onResume()
         // Call the function to check parcels and update UI
         checkParcelsAndUpdateUI()
+        lifecycleScope.launch {
+            if (Utility.checkInternetConnection(this@MenuActivity)) {
+                officerRepository.refreshFromServer()
+                lookupRepository.refreshAll()
+            }
+        }
     }
 
     private fun checkParcelsAndUpdateUI() {

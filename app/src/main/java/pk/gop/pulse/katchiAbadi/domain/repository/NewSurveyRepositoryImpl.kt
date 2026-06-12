@@ -150,47 +150,11 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "App Version: ${Constants.VERSION_NAME}")
             Log.d(TAG, "Survey object: parcelId=${survey.parcelId}, parcelOperation=${survey.parcelOperation}")
 
-            // ===== VALIDATE GROWER CODES =====
-            val hasGrowerCodes = withContext(Dispatchers.IO) {
-                val persons = personDao.getPersonsForSurvey(survey.pkId)
-
-                if (persons.isEmpty()) {
-                    Log.w(TAG, "⚠️ No persons found for survey pkId=${survey.pkId}")
-                    // Only fail if this is not a split parcel operation
-                    val localParcel = activeParcelDao.getParcelById(survey.parcelId)
-                    val isSplitParcel = localParcel != null &&
-                            localParcel.subParcelNo.isNotBlank() &&
-                            localParcel.subParcelNo != "0"
-
-                    if (!isSplitParcel) {
-                        Log.e(TAG, "❌ No persons found for non-split parcel")
-                        return@withContext false
-                    } else {
-                        Log.d(TAG, "ℹ️ Split parcel - may include unsurveyed parcels without persons")
-                        return@withContext true
-                    }
-                }
-
-                val validGrowerCodes = persons.filter { person ->
-                    !person.growerCode.isNullOrBlank() && person.growerCode.trim().isNotEmpty()
-                }
-
-                Log.d(TAG, "Found ${persons.size} persons, ${validGrowerCodes.size} have grower codes")
-                validGrowerCodes.isNotEmpty()
-            }
-
-            if (!hasGrowerCodes) {
-                Log.e(TAG, "❌ UPLOAD BLOCKED: No grower codes found for survey")
-                return Resource.Error("Your grower code data is missing. Please survey again to add grower details.")
-            }
-
-            Log.d(TAG, "✅ Grower code validation passed")
-
-            // ✅ NEW: Track if this is a split parcel being uploaded with "Same" operation
+            // ✅ Track if this is a split parcel being uploaded with "Same" operation
             var isSplitParcelWithSameOperation = false
             var originalParcelIdToDeactivate: Long? = null
 
-            // ===== PROCESS PARCELS BASED ON OPERATION =====
+            // ===== PROCESS PARCELS BASED ON OPERATION (validation se PEHLE) =====
             val subparcels = withContext(Dispatchers.IO) {
                 when (survey.parcelOperation) {
                     "Split" -> {
@@ -262,6 +226,43 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
             Log.d(TAG, "Found ${subparcels.size} parcels to upload")
 
+            // ===== VALIDATE GROWER CODES (subparcels banne ke BAAD) =====
+            val hasGrowerCodes = withContext(Dispatchers.IO) {
+                // Sirf un records ko check karein jo SURVEYED hain (propertyType bhara hai)
+                val surveyedSubparcels = subparcels.filter {
+                    it.pkId > 0 && it.propertyType.isNotBlank()
+                }
+
+                Log.d(TAG, "=== GROWER CODE VALIDATION ===")
+                Log.d(TAG, "Total subparcels: ${subparcels.size}, Surveyed: ${surveyedSubparcels.size}")
+
+                // Agar koi surveyed record hi nahi (sab unsurveyed siblings), to skip
+                if (surveyedSubparcels.isEmpty()) {
+                    Log.w(TAG, "Koi surveyed subparcel nahi — grower code validation skip")
+                    return@withContext true
+                }
+
+                // Har surveyed record me grower code dhoondein
+                surveyedSubparcels.any { sub ->
+                    val persons = personDao.getPersonsForSurvey(sub.pkId)
+                    val viaPk = persons.any { it.growerCode.isNotBlank() }
+
+                    // Fallback: parcelId se bhi check
+                    val viaParcel = personDao.getGrowerCodesForParcel(sub.parcelId)
+                        .any { it.isNotBlank() }
+
+                    Log.d(TAG, "  sub pkId=${sub.pkId}, parcelId=${sub.parcelId}: viaPk=$viaPk, viaParcel=$viaParcel")
+                    viaPk || viaParcel
+                }
+            }
+
+            if (!hasGrowerCodes) {
+                Log.e(TAG, "❌ UPLOAD BLOCKED: No grower codes in any surveyed subparcel")
+                return Resource.Error("Your grower code data is missing. Please survey again to add grower details.")
+            }
+
+            Log.d(TAG, "✅ Grower code validation passed")
+
             // ===== BUILD SURVEY POSTS =====
             val posts = withContext(Dispatchers.IO) {
                 buildSurveyPosts(context, survey, subparcels)
@@ -324,6 +325,198 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Resource.Error(e.message ?: "Unexpected error")
         }
     }
+
+//    override suspend fun uploadSurvey(
+//        context: Context,
+//        survey: NewSurveyNewEntity
+//    ): Resource<Unit> {
+//        return try {
+//            Log.d(TAG, "=== uploadSurvey START ===")
+//            Log.d(TAG, "App Version: ${Constants.VERSION_NAME}")
+//            Log.d(TAG, "Survey object: parcelId=${survey.parcelId}, parcelOperation=${survey.parcelOperation}")
+//
+//            // ===== VALIDATE GROWER CODES =====
+//            val hasGrowerCodes = withContext(Dispatchers.IO) {
+//                var persons = personDao.getPersonsForSurvey(survey.pkId)
+//
+//                Log.d(TAG, "=== GROWER CODE VALIDATION ===")
+//                Log.d(TAG, "survey.pkId=${survey.pkId}, parcelId=${survey.parcelId}")
+//                Log.d(TAG, "Persons via pkId: ${persons.size}")
+//
+//                // FALLBACK 1: agar is pkId pe persons nahi, to is parcel ke kisi bhi survey ke persons dekhein
+//                if (persons.isEmpty()) {
+//                    Log.w(TAG, "⚠️ pkId=${survey.pkId} pe persons nahi. parcelId se grower codes check kar rahe hain...")
+//                    val growerCodesByParcel = personDao.getGrowerCodesForParcel(survey.parcelId)
+//                    Log.w(TAG, "parcelId se grower codes: $growerCodesByParcel")
+//
+//                    val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+//                    val isSplitParcel = localParcel != null &&
+//                            localParcel.subParcelNo.isNotBlank() &&
+//                            localParcel.subParcelNo != "0"
+//
+//                    if (isSplitParcel) {
+//                        return@withContext true
+//                    }
+//                    // parcelId fallback se rescue
+//                    return@withContext growerCodesByParcel.any { it.isNotBlank() }
+//                }
+//
+//                persons.forEachIndexed { i, p ->
+//                    Log.d(TAG, "  Person $i: ${p.firstName}, surveyId=${p.surveyId}, growerCode='${p.growerCode}'")
+//                }
+//
+//                val validGrowerCodes = persons.filter {
+//                    it.growerCode.isNotBlank() && it.growerCode.trim().isNotEmpty()
+//                }
+//                Log.d(TAG, "Valid grower codes: ${validGrowerCodes.size}")
+//                validGrowerCodes.isNotEmpty()
+//            }
+//
+//            if (!hasGrowerCodes) {
+//                Log.e(TAG, "❌ UPLOAD BLOCKED: No grower codes found for survey")
+//                return Resource.Error("Your grower code data is missing. Please survey again to add grower details.")
+//            }
+//
+//            Log.d(TAG, "✅ Grower code validation passed")
+//
+//            // ✅ NEW: Track if this is a split parcel being uploaded with "Same" operation
+//            var isSplitParcelWithSameOperation = false
+//            var originalParcelIdToDeactivate: Long? = null
+//
+//            // ===== PROCESS PARCELS BASED ON OPERATION =====
+//            val subparcels = withContext(Dispatchers.IO) {
+//                when (survey.parcelOperation) {
+//                    "Split" -> {
+//                        originalParcelIdToDeactivate = survey.parcelId
+//                        processSplitParcels(survey)
+//                    }
+//                    "Merge" -> processMergeParcels(survey)
+//                    "Same" -> {
+//                        // ✅ Check if this is actually a split parcel
+//                        val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+//                        if (localParcel != null &&
+//                            localParcel.subParcelNo.isNotBlank() &&
+//                            localParcel.subParcelNo != "0") {
+//
+//                            Log.d(TAG, "⚠️ Detected: Split parcel with 'Same' operation")
+//                            Log.d(TAG, "   This will be treated as a NEW parcel upload")
+//                            Log.d(TAG, "   Need to find and deactivate original parent parcel")
+//
+//                            isSplitParcelWithSameOperation = true
+//
+//                            // Find the original parent parcel (the one with subParcelNo = "0" or blank)
+//                            val allParcelsWithSameNumber = activeParcelDao.getActiveParcelsByMauzaAndArea(
+//                                localParcel.mauzaId,
+//                                localParcel.areaAssigned
+//                            ).filter {
+//                                it.parcelNo == localParcel.parcelNo
+//                            }
+//
+//                            // Find original parent
+//                            val originalParent = allParcelsWithSameNumber.firstOrNull {
+//                                (it.subParcelNo.isBlank() || it.subParcelNo == "0") &&
+//                                        it.isActivate == true
+//                            }
+//
+//                            if (originalParent != null) {
+//                                originalParcelIdToDeactivate = originalParent.id
+//                                Log.d(TAG, "✅ Found original parent parcel to deactivate:")
+//                                Log.d(TAG, "   ID: ${originalParent.id}")
+//                                Log.d(TAG, "   ParcelNo: ${originalParent.parcelNo}")
+//                                Log.d(TAG, "   SubParcelNo: '${originalParent.subParcelNo}'")
+//                                Log.d(TAG, "   isActivate: ${originalParent.isActivate}")
+//                            } else {
+//                                Log.w(TAG, "⚠️ Original parent parcel not found - may already be deactivated")
+//
+//                                // Check if it exists but is inactive
+//                                val inactiveParent = activeParcelDao.getParcelsByMauzaAndArea(
+//                                    localParcel.mauzaId,
+//                                    localParcel.areaAssigned
+//                                ).firstOrNull {
+//                                    it.parcelNo == localParcel.parcelNo &&
+//                                            (it.subParcelNo.isBlank() || it.subParcelNo == "0")
+//                                }
+//
+//                                if (inactiveParent != null) {
+//                                    Log.d(TAG, "   Found inactive parent: ID=${inactiveParent.id}, isActivate=${inactiveParent.isActivate}")
+//                                }
+//                            }
+//                        }
+//                        processSameParcels(survey)
+//                    }
+//                    else -> processOtherParcels(survey)
+//                }
+//            }
+//
+//            if (subparcels.isEmpty()) {
+//                Log.e(TAG, "No parcels found to upload")
+//                return Resource.Error("No parcels found to upload")
+//            }
+//
+//            Log.d(TAG, "Found ${subparcels.size} parcels to upload")
+//
+//            // ===== BUILD SURVEY POSTS =====
+//            val posts = withContext(Dispatchers.IO) {
+//                buildSurveyPosts(context, survey, subparcels)
+//            }
+//
+//            // ===== UPLOAD TO SERVER =====
+//            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+//            Log.d(TAG, "=== UPLOAD SUMMARY ===")
+//            Log.d(TAG, "Total surveys to upload: ${posts.size}")
+//            Log.d(TAG, "Token present: ${token.isNotEmpty()}")
+//
+//            posts.forEachIndexed { index, post ->
+//                Log.d(TAG, "Upload ${index + 1}: ParcelNo=${post.parcelNo}, SubParcel=${post.subParcelNo}, HasGeometry=${post.geomWKT?.isNotEmpty() == true}")
+//            }
+//
+//            val response = api.postSurveyDataNew("Bearer $token", posts)
+//
+//            Log.d(TAG, "=== UPLOAD RESPONSE ===")
+//            Log.d(TAG, "Response successful: ${response.isSuccessful}")
+//            Log.d(TAG, "Response code: ${response.code()}")
+//
+//            when {
+//                response.isSuccessful && response.body() != null -> {
+//                    Log.i(TAG, "Survey upload successful - marking surveys as uploaded")
+//                    withContext(Dispatchers.IO) {
+//                        // Mark surveys as uploaded
+//                        subparcels.forEach { subSurvey ->
+//                            dao.markAsUploaded(subSurvey.pkId)
+//                            Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
+//                        }
+//
+//                        // ✅ ENHANCED: Deactivate original parcel for split operations
+//                        if (survey.parcelOperation == "Split" || isSplitParcelWithSameOperation) {
+//                            if (originalParcelIdToDeactivate != null) {
+//                                Log.d(TAG, "=== DEACTIVATING ORIGINAL PARCEL AFTER SPLIT UPLOAD ===")
+//                                Log.d(TAG, "Reason: ${if (survey.parcelOperation == "Split") "Direct split operation" else "Split parcel with 'Same' operation"}")
+//                                deactivateOriginalParcelWithVerification(originalParcelIdToDeactivate!!)
+//                            } else {
+//                                Log.w(TAG, "⚠️ No original parcel ID found to deactivate")
+//                            }
+//                        }
+//                    }
+//                    Log.i(TAG, "=== UPLOAD COMPLETED SUCCESSFULLY ===")
+//                    Resource.Success(Unit)
+//                }
+//
+//                response.code() == 401 -> handleUnauthorizedResponse(response)
+//                else -> {
+//                    val errorBody = response.errorBody()?.string() ?: "Unknown"
+//                    val errorMessage = "Server error: $errorBody (code ${response.code()})"
+//                    Log.e(TAG, "Upload failed: $errorMessage")
+//                    Resource.Error(errorMessage)
+//                }
+//            }
+//
+//        } catch (e: retrofit2.HttpException) {
+//            handleHttpException(e)
+//        } catch (e: Exception) {
+//            Log.e(TAG, "Exception during survey upload", e)
+//            Resource.Error(e.message ?: "Unexpected error")
+//        }
+//    }
 
     // ===== HELPER: DEACTIVATE ORIGINAL PARCEL WITH VERIFICATION =====
     private suspend fun deactivateOriginalParcelWithVerification(originalParcelId: Long) {
@@ -928,6 +1121,9 @@ class NewSurveyRepositoryImpl @Inject constructor(
             if (parcelData.geomWKT.isEmpty()) {
                 Log.e(TAG, "❌❌ CRITICAL ERROR: Empty geometry for parcel ${subSurvey.parcelNo}-${subSurvey.subParcelNo}")
             }
+            val farmerProfileBase64 = if (isSurveyed) {
+                encodeFarmerProfile(context, subSurvey.farmerProfilePath)
+            } else null
             // Build the survey post
             val surveyPost = buildCleanSurveyPostNew(
                 subSurvey,
@@ -939,7 +1135,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 parcelData.parcelAreaKMF,
                 parcelData.calculatedArea,
                 sowingPersonDtos,
-                100 // distance
+                100, // distance
+                farmerProfileBase64
             )
 
             logSurveyPost(surveyPost, index)
@@ -1005,7 +1202,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
         parcelAreaKMF: String,
         calculatedArea: String,
         sowingPersons: List<SowingPersonPostDto> = emptyList(),
-        distance: Int = 100
+        distance: Int = 100,
+        farmerProfile: String? = null
     ): SurveyPostNew {
 
         Log.d(TAG, "=== SOWING INFO FROM ENTITY ===")
@@ -1045,7 +1243,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
             sowingDate = survey.sowingDate,
             pictures = pictures,
             persons = persons,
-            sowingPersons = sowingPersons
+            sowingPersons = sowingPersons,
+            farmerProfile = farmerProfile
         )
 
         Log.d(TAG, "=== SOWING INFO IN POST ===")
@@ -1127,6 +1326,30 @@ class NewSurveyRepositoryImpl @Inject constructor(
         )
     }
 
+    private fun encodeFarmerProfile(context: Context, path: String?): String? {
+        if (path.isNullOrEmpty()) return null
+        return try {
+            val file = File(path)
+            if (!file.exists()) {
+                Log.w(TAG, "Farmer profile file missing: $path")
+                return null
+            }
+            BitmapFactory.decodeFile(path)?.let { bmp ->
+                ByteArrayOutputStream().use { os ->
+                    var quality = 100
+                    do {
+                        os.reset()
+                        bmp.compress(Bitmap.CompressFormat.JPEG, quality, os)
+                        quality -= 5
+                    } while (os.size() / 1024 > 200 && quality > 75)
+                    Base64.encodeToString(os.toByteArray(), Base64.NO_WRAP)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error encoding farmer profile: ${e.message}", e)
+            null
+        }
+    }
     // ===== HELPER: LOG SURVEY POST ===== //
     private fun logSurveyPost(surveyPost: SurveyPostNew, index: Int) {
         Log.d(TAG, "=== Survey Post ${index + 1} Details ===")

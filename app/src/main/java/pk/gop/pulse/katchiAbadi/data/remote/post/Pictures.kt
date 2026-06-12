@@ -9,5 +9,5 @@ data class Pictures(
     var Longitude: Double? = null,
     var Timestamp: Long? = null,
     var LocationAddress: String? = null,
-    var Bearing: Float? = null
+    var Bearing: Float? = null,
 )
