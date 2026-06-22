@@ -61,12 +61,12 @@ import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaDetail
+import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.LookupRepository
 import pk.gop.pulse.katchiAbadi.data.repository.OfficerRepository
 import pk.gop.pulse.katchiAbadi.data.repository.TaskRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivityMenuBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
-import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.LogoutUseCase
 import pk.gop.pulse.katchiAbadi.presentation.base.BaseActivity
 import pk.gop.pulse.katchiAbadi.presentation.menu.MenuViewModel
@@ -103,7 +103,8 @@ class MenuActivity : BaseActivity() {
     lateinit var logoutUseCase: LogoutUseCase
 
     private val logoutScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
+    @Inject
+    lateinit var jkGrowerRepository: JKGrowerRepositoryImpl
 
 //    @Inject
 //    lateinit var retrofit: Retrofit
@@ -813,6 +814,15 @@ class MenuActivity : BaseActivity() {
             val parcels = response.parcelsData ?: emptyList()
             Log.d("FETCH_DEBUG", "STEP 2 ✅ Got ${parcels.size} parcels")
 
+            val surveyedWithCodes = parcels.filter {
+                it.surveyStatusCode == 2 && !it.growerCodes.isNullOrBlank()
+            }
+            val surveyedTotal = parcels.count { it.surveyStatusCode == 2 }
+            Log.d("FETCH_DEBUG", "Surveyed parcels: $surveyedTotal, with growerCodes: ${surveyedWithCodes.size}")
+            surveyedWithCodes.take(5).forEach {
+                Log.d("FETCH_DEBUG", "  Parcel ${it.parcelNo}: growerCodes='${it.growerCodes}'")
+            }
+
             Log.d("FETCH_DEBUG", "═══ STEP 3: Inserting parcels to DB ═══")
             database.withTransaction {
                 database.activeParcelDao().deleteParcelsByMauzaAndArea(mauzaId, areaName)
@@ -836,85 +846,22 @@ class MenuActivity : BaseActivity() {
                         surveyId = parcelDto.surveyId,
                         isActivate = true,
                         unitId = unitId,
-                        groupId = groupId
+                        groupId = groupId,
+                        growerCodes = parcelDto.growerCodes
                     )
                 }
                 database.activeParcelDao().insertActiveParcels(entities)
             }
-            Log.d("FETCH_DEBUG", "STEP 3 ✅ Parcels inserted")
+            Log.d("FETCH_DEBUG", "STEP 3 Parcels inserted")
 
-            Log.d("FETCH_DEBUG", "═══ STEP 4: About to call owners API ═══")
-            val authToken = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
-            Log.d("FETCH_DEBUG", "Token length: ${authToken.length}")
-            Log.d("FETCH_DEBUG", "Token preview: ${authToken.take(20)}...")
-
-            Log.d("FETCH_DEBUG", "═══ STEP 5: Making owners HTTP call ═══")
-
-            val ownerResult = serverApi.getOwnersFromDbOffline("Bearer $authToken")
-            Log.d("FETCH_DEBUG", "Owners response code: ${ownerResult.code()}")
-
-            if (!ownerResult.isSuccessful) {
-                val errorBody = ownerResult.errorBody()?.string() ?: "Unknown error"
-                Log.e("FETCH_DEBUG", "Owners error body: $errorBody")
-                return Resource.Error("Owners fetch failed: $errorBody")
-            }
-
-            val rawJson = ownerResult.body()?.string() ?: ""
-            Log.d("OWNER_RAW", "Raw JSON: $rawJson")  // ← Check this log!
-
-            val ownerResponses: List<OwnerResponse> = try {
-                when {
-                    rawJson.isBlank() -> emptyList()
-                    rawJson.trimStart().startsWith("[") -> {
-                        // It's a bare array
-                        Gson().fromJson(rawJson, object : TypeToken<List<OwnerResponse>>() {}.type)
-                    }
-                    rawJson.trimStart().startsWith("{") -> {
-                        // It's a wrapped object — adjust "data" key to match your actual response
-                        val jsonObj = Gson().fromJson(rawJson, JsonObject::class.java)
-                        val dataArray = jsonObj.getAsJsonArray("data") // ← change key if needed
-                        Gson().fromJson(dataArray, object : TypeToken<List<OwnerResponse>>() {}.type)
-                    }
-                    else -> {
-                        Log.w("OWNER_RAW", "Unexpected response: $rawJson")
-                        emptyList()
-                    }
-                }
+            // STEP 4: JK growers ko mauza-wise sync karo (offline ke liye)
+            Log.d("FETCH_DEBUG", "═══ STEP 4: Syncing JK growers ═══")
+            try {
+                val growers = jkGrowerRepository.syncGrowersForMouza(mauzaName, forceRefresh = true)
+                Log.d("FETCH_DEBUG", "STEP 4 ✅ Synced ${growers.size} JK growers")
             } catch (e: Exception) {
-                Log.e("FETCH_PARCELS", "Failed to parse owners: ${e.message}")
-                emptyList()
-            }
-
-            Log.d("FETCH_PARCELS", "Fetched ${ownerResponses.size} owners")
-
-            Log.d("FETCH_PARCELS", "Fetched ${ownerResponses.size} owners")
-
-
-            val persons = ownerResponses.map { detail ->
-                SurveyPersonEntity(
-                    surveyId = 0,
-                    ownershipType = "Owner",
-                    personId = detail.person_ID,
-                    firstName = detail.first_Name.orEmpty(),
-                    lastName = detail.last_Name.orEmpty(),
-                    gender = "",
-                    relation = detail.relation.orEmpty(),
-                    religion = detail.caste.orEmpty(),
-                    mobile = detail.mobile.orEmpty(),
-                    nic = detail.nic.orEmpty(),
-                    growerCode = detail.grower_Code.orEmpty(),
-                    personArea = detail.area_KMF.orEmpty(),
-                    extra1 = detail.extra1.orEmpty(),
-                    extra2 = detail.extra2.orEmpty(),
-                    mauzaId = detail.mauza_Id,
-                    mauzaName = detail.mauza_Name.orEmpty()
-                )
-            }
-
-            database.withTransaction {
-                database.personDao().deleteByMauzaId(mauzaId)
-                database.personDao().insertAll(persons)
-                Log.d("FETCH_PARCELS", "Inserted ${persons.size} persons")
+                Log.e("FETCH_DEBUG", "STEP 4 ⚠️ JK growers sync failed: ${e.message}")
+                // Sirf growers ki wajah se poora download fail mat karo
             }
 
             sharedPreferences.edit()

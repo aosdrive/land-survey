@@ -10,7 +10,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.data.local.SurveyWithKhewat
+import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonPost
 import pk.gop.pulse.katchiAbadi.domain.use_case.survey_form.main.NewSurveyUseCase
 import javax.inject.Inject
@@ -85,6 +87,21 @@ class NewSurveyViewModel @Inject constructor(
                 mauzaName = p.mauzaName,
                 address = p.address
             )
+        }
+    }
+
+    suspend fun getImagesBySurvey(surveyId: Long): List<SurveyImage> {
+        return try {
+            useCase.getImagesBySurvey(surveyId)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    suspend fun getActiveParcelById(parcelId: Long): ActiveParcelEntity? {
+        return try {
+            useCase.getActiveParcelById(parcelId)
+        } catch (e: Exception) {
+            null
         }
     }
 }

@@ -19,5 +19,7 @@ data class ActiveParcelDto(
     @SerializedName("Unit_ID")
     val unitId: Long?,
     @SerializedName("Group_ID")
-    val groupId: Long?
+    val groupId: Long?,
+    @SerializedName("growerCodes")
+    val growerCodes: String? = ""
 )

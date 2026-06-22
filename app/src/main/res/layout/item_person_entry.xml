@@ -156,7 +156,7 @@
             app:boxCornerRadiusTopStart="8dp"
             app:boxStrokeColor="@color/forest_green"
             app:hintTextColor="@color/forest_green"
-            app:prefixText="+92 "
+            app:prefixText=""
             app:startIconDrawable="@android:drawable/stat_sys_phone_call"
             app:startIconTint="@color/forest_green">
 

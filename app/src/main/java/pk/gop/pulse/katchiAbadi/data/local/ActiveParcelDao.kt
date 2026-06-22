@@ -124,6 +124,8 @@ interface ActiveParcelDao {
     @Query("SELECT * FROM active_parcels WHERE parcelNo = :parcelNo AND mauzaId = :mauzaId AND areaAssigned = :areaName AND isActivate = 1")
     suspend fun getActiveParcelsByNumber(parcelNo: Long, mauzaId: Long, areaName: String): List<ActiveParcelEntity>
 
+    @Query("UPDATE active_parcels SET growerCodes = :growerCodes WHERE id = :parcelId")
+    suspend fun updateParcelGrowerCodes(parcelId: Long, growerCodes: String): Int
     // Also add this method to track the original parcel ID during split
 
     // Transaction method to handle parcel splitting

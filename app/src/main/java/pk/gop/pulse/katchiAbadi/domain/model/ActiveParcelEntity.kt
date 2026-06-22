@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class ActiveParcelEntity(
     @PrimaryKey(autoGenerate = true)
     val pkid: Long = 0,  // <-- Let Room assign this val id: Long,
-    val id: Long ,
+    val id: Long,
     val parcelNo: Long,
     val subParcelNo: String,
     val mauzaId: Long,
@@ -24,7 +24,8 @@ data class ActiveParcelEntity(
     val surveyId: Int?,
     val isActivate: Boolean = true,  // Added IsActivate attribute with default value
     val unitId: Long? = null,
-    val groupId: Long? = null
+    val groupId: Long? = null,
+    val growerCodes: String? = null
 
 )
 

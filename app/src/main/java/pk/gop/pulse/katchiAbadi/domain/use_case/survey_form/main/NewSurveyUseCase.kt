@@ -7,6 +7,7 @@ import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.data.local.SurveyWithKhewat
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.repository.NewSurveyRepository
 import javax.inject.Inject
@@ -66,6 +67,10 @@ class NewSurveyUseCase @Inject constructor(
                 )
             }
         }
+    }
+
+    suspend fun getImagesBySurvey(surveyId: Long): List<SurveyImage> {
+        return repository.getImagesBySurvey(surveyId)
     }
 
 }

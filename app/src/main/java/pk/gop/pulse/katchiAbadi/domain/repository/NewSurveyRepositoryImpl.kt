@@ -227,39 +227,39 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "Found ${subparcels.size} parcels to upload")
 
             // ===== VALIDATE GROWER CODES (subparcels banne ke BAAD) =====
-            val hasGrowerCodes = withContext(Dispatchers.IO) {
-                // Sirf un records ko check karein jo SURVEYED hain (propertyType bhara hai)
-                val surveyedSubparcels = subparcels.filter {
-                    it.pkId > 0 && it.propertyType.isNotBlank()
-                }
-
-                Log.d(TAG, "=== GROWER CODE VALIDATION ===")
-                Log.d(TAG, "Total subparcels: ${subparcels.size}, Surveyed: ${surveyedSubparcels.size}")
-
-                // Agar koi surveyed record hi nahi (sab unsurveyed siblings), to skip
-                if (surveyedSubparcels.isEmpty()) {
-                    Log.w(TAG, "Koi surveyed subparcel nahi — grower code validation skip")
-                    return@withContext true
-                }
-
-                // Har surveyed record me grower code dhoondein
-                surveyedSubparcels.any { sub ->
-                    val persons = personDao.getPersonsForSurvey(sub.pkId)
-                    val viaPk = persons.any { it.growerCode.isNotBlank() }
-
-                    // Fallback: parcelId se bhi check
-                    val viaParcel = personDao.getGrowerCodesForParcel(sub.parcelId)
-                        .any { it.isNotBlank() }
-
-                    Log.d(TAG, "  sub pkId=${sub.pkId}, parcelId=${sub.parcelId}: viaPk=$viaPk, viaParcel=$viaParcel")
-                    viaPk || viaParcel
-                }
-            }
-
-            if (!hasGrowerCodes) {
-                Log.e(TAG, "❌ UPLOAD BLOCKED: No grower codes in any surveyed subparcel")
-                return Resource.Error("Your grower code data is missing. Please survey again to add grower details.")
-            }
+//            val hasGrowerCodes = withContext(Dispatchers.IO) {
+//                // Sirf un records ko check karein jo SURVEYED hain (propertyType bhara hai)
+//                val surveyedSubparcels = subparcels.filter {
+//                    it.pkId > 0 && it.propertyType.isNotBlank()
+//                }
+//
+//                Log.d(TAG, "=== GROWER CODE VALIDATION ===")
+//                Log.d(TAG, "Total subparcels: ${subparcels.size}, Surveyed: ${surveyedSubparcels.size}")
+//
+//                // Agar koi surveyed record hi nahi (sab unsurveyed siblings), to skip
+//                if (surveyedSubparcels.isEmpty()) {
+//                    Log.w(TAG, "Koi surveyed subparcel nahi — grower code validation skip")
+//                    return@withContext true
+//                }
+//
+//                // Har surveyed record me grower code dhoondein
+//                surveyedSubparcels.any { sub ->
+//                    val persons = personDao.getPersonsForSurvey(sub.pkId)
+//                    val viaPk = persons.any { it.growerCode.isNotBlank() }
+//
+//                    // Fallback: parcelId se bhi check
+//                    val viaParcel = personDao.getGrowerCodesForParcel(sub.parcelId)
+//                        .any { it.isNotBlank() }
+//
+//                    Log.d(TAG, "  sub pkId=${sub.pkId}, parcelId=${sub.parcelId}: viaPk=$viaPk, viaParcel=$viaParcel")
+//                    viaPk || viaParcel
+//                }
+//            }
+//
+//            if (!hasGrowerCodes) {
+//                Log.e(TAG, "❌ UPLOAD BLOCKED: No grower codes in any surveyed subparcel")
+//                return Resource.Error("Your grower code data is missing. Please survey again to add grower details.")
+//            }
 
             Log.d(TAG, "✅ Grower code validation passed")
 
@@ -1469,5 +1469,14 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
     suspend fun getGrowerCodesForParcel(parcelId: Long): List<String> {
         return personDao.getGrowerCodesForParcel(parcelId)
+    }
+
+    override suspend fun getImagesBySurvey(surveyId: Long): List<SurveyImage> {
+        return try {
+            imageDao.getImagesBySurvey(surveyId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading images for survey $surveyId: ${e.message}", e)
+            emptyList()
+        }
     }
 }

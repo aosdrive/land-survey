@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.data.local.SurveyWithKhewat
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 
 interface NewSurveyRepository {
@@ -24,4 +25,6 @@ interface NewSurveyRepository {
 
     suspend fun getAllSurveys(): List<NewSurveyNewEntity>
     suspend fun getActiveParcelById(parcelId: Long): ActiveParcelEntity?
+
+    suspend fun getImagesBySurvey(surveyId: Long): List<SurveyImage>
 }

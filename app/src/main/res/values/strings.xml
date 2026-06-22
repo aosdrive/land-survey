@@ -3,7 +3,7 @@
     <string name="government_of_punjab">Government of the Punjab</string>
     <string name="password">Password</string>
 
-    <string name="error_username_field_empty">CNIC field can\'t be empty</string>
+    <string name="error_username_field_empty">Username field can\'t be empty</string>
     <string name="error_otp_field_empty">OTP field can\'t be empty</string>
     <string name="error_password_field_empty">Password field can\'t be empty</string>
     <string name="invalid_password">Password must be at least 8 characters.</string>
@@ -340,5 +340,6 @@
     <string name="respondent_mobile">Respondent Mobile:</string>
     <string name="respondent_relation_status">Respondent Status:</string>
     <string name="theme">theme</string>
+    <string name="username">Username</string>
 
 </resources>

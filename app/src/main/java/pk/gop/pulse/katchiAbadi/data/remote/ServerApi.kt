@@ -26,6 +26,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.request.OnboardingUploadDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.JKGrowerDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.LookupItemDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
@@ -225,4 +226,16 @@ interface ServerApi {
     @GET("api/DiseaseType/GetAllDiseaseTypes")
     suspend fun getDiseaseTypes(
     ): Response<List<LookupItemDto>>
+
+    @GET("api/MobileData/GetJKGrowersByMouza/{mouzaCode}")
+    suspend fun getJKGrowersByMouza(
+        @Path("mouzaCode") mouzaCode: String,
+        @Header("Authorization") token: String
+    ): Response<List<JKGrowerDto>>
+
+//    @GET("MobileData/GetJKGrowersByMouzaCircle/{mouzaName}")
+//    suspend fun getJKGrowersByMouzaCircle(
+//        @Path("mouzaName") mouzaName: String,
+//        @Header("Authorization") token: String
+//    ): Response<List<JKGrowerDto>>
 }

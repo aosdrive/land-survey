@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="6dp"
+    android:baselineAligned="false"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/tvKey"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.42"
+        android:textColor="#667085"
+        android:textSize="13sp"
+        tools:text="Property Type" />
+
+    <TextView
+        android:id="@+id/tvValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.58"
+        android:gravity="end"
+        android:textColor="#101828"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        tools:text="Farm Survey" />
+</LinearLayout>

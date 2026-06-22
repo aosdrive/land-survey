@@ -3,6 +3,7 @@ package pk.gop.pulse.katchiAbadi.data.local
 import android.content.Context
 import android.text.Editable
 import android.text.InputFilter
+import android.text.InputType
 import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
@@ -48,15 +49,43 @@ class PersonEntryHelper(
         // --- CNIC: XXXXX-XXXXXXX-X (5-7-1) with auto-dashes ---
         setupCnicFormatting(binding)
 
-        // --- Mobile Number Validation: 11 digits only ---
-        binding.etMobile.filters = arrayOf(InputFilter.LengthFilter(11))
-        binding.etMobile.doAfterTextChanged { text ->
-            if (text?.length != 11 || !text.all { it.isDigit() }) {
-                binding.etMobile.error = "Enter valid 11-digit mobile number"
-            } else {
-                binding.etMobile.error = null
+        // --- Mobile Number: PK format 923XXXXXXXXX (12 digits, starts with 92) ---
+        binding.etMobile.inputType = InputType.TYPE_CLASS_NUMBER
+        binding.etMobile.filters = arrayOf(InputFilter.LengthFilter(12))
+
+        var isMobileFormatting = false
+        binding.etMobile.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (isMobileFormatting || s == null) return
+                isMobileFormatting = true
+
+                var digits = s.toString().filter { it.isDigit() }
+
+                if (digits.startsWith("0")) {
+                    digits = "92" + digits.drop(1)
+                }
+                if (!digits.startsWith("92")) {
+                    digits = "92" + digits
+                }
+
+                digits = digits.take(12)
+
+                if (digits != s.toString()) {
+                    binding.etMobile.setText(digits)
+                    binding.etMobile.setSelection(digits.length)
+                }
+
+                binding.etMobile.error = when {
+                    digits.length < 12 -> "Enter full number e.g. 923224345678"
+                    !digits.startsWith("92") -> "Must start with 92"
+                    else -> null
+                }
+
+                isMobileFormatting = false
             }
-        }
+        })
 
         // Spinners setup
         val relationAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, relationOptions)
@@ -72,12 +101,20 @@ class PersonEntryHelper(
         binding.spinnerOwnership.setSelection(ownershipOptions.indexOf(data?.ownershipType).takeIf { it >= 0 } ?: 0)
 
         // Enable/disable all fields
+        // ⚠️ NOTE: etGrowerCode ko is list se NIKAAL diya hai — woh hamesha readonly rahega.
         listOf(
             binding.etFirstName, binding.etLastName, binding.etMobile, binding.etNic, binding.etAddress,
-            binding.etGrowerCode, binding.etExtra1, binding.etExtra2,
+            binding.etExtra1, binding.etExtra2,
             binding.etMauzaId, binding.etMauzaName,
             binding.spinnerRelation, binding.spinnerGender, binding.spinnerOwnership
         ).forEach { it.isEnabled = editable }
+
+        // ✅ Grower Code HAMESHA readonly — value dikhao lekin edit na hone do
+        binding.etGrowerCode.isEnabled = false
+        binding.etGrowerCode.isFocusable = false
+        binding.etGrowerCode.isFocusableInTouchMode = false
+        binding.etGrowerCode.isCursorVisible = false
+        binding.etGrowerCode.keyListener = null   // pakka readonly (typing block)
 
         // Remove button
         binding.btnRemove.isEnabled = editable
@@ -92,11 +129,11 @@ class PersonEntryHelper(
     }
 
     private fun setupGrowerCodeFormatting(binding: ItemPersonEntryBinding) {
-        // Format: 12-344-56789 (2 digits - 3 digits - 5 digits)
-        val growerCodePattern = Regex("""^\d{2}-\d{3}-\d{5}$""")
+        // Format: 11-01-00001 (2 digits - 2 digits - 5 digits = 9 digits, 11 chars)
+        val growerCodePattern = Regex("""^\d{2}-\d{2}-\d{5}$""")
 
-        // Max length: "12-344-56789" = 12 chars
-        binding.etGrowerCode.filters = arrayOf(InputFilter.LengthFilter(12))
+        // "11-01-00001" = 11 chars
+        binding.etGrowerCode.filters = arrayOf(InputFilter.LengthFilter(11))
 
         var isFormatting = false
         binding.etGrowerCode.addTextChangedListener(object : TextWatcher {
@@ -107,13 +144,13 @@ class PersonEntryHelper(
                 if (isFormatting || s == null) return
                 isFormatting = true
 
-                // Strip everything except digits — 10 digits total (2+3+5)
-                val digits = s.toString().filter { it.isDigit() }.take(10)
+                // 9 digits total (2+2+5)
+                val digits = s.toString().filter { it.isDigit() }.take(9)
 
-                // Rebuild with dashes: 12-344-56789
+                // Rebuild with dashes: 11-01-00001 — dash 2 aur 4 ke baad
                 val formatted = buildString {
                     for (i in digits.indices) {
-                        if (i == 2 || i == 5) append('-')   // dash 2 aur 5 ke baad
+                        if (i == 2 || i == 4) append('-')
                         append(digits[i])
                     }
                 }
@@ -123,12 +160,11 @@ class PersonEntryHelper(
                     binding.etGrowerCode.setSelection(formatted.length)
                 }
 
-                // Validate
                 when {
                     formatted.isEmpty() -> binding.etGrowerCode.error = null
-                    formatted.length < 12 -> binding.etGrowerCode.error = null // still typing
+                    formatted.length < 11 -> binding.etGrowerCode.error = null // abhi type kar raha hai
                     !growerCodePattern.matches(formatted) ->
-                        binding.etGrowerCode.error = "Format: 12-344-56789"
+                        binding.etGrowerCode.error = "Format: 11-01-00001"
                     else -> binding.etGrowerCode.error = null
                 }
 

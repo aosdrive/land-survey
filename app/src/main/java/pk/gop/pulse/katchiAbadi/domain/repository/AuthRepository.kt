@@ -15,7 +15,7 @@ interface AuthRepository {
     suspend fun checkAppVersion(appVersion: String): Resource<VersionCheckResponse>
 
     suspend fun login(
-        cnic: String,
+        username: String,
         password: String,
     ): Resource<LoginDto>
 

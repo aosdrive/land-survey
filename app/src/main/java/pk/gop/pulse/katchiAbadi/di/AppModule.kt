@@ -22,6 +22,7 @@ import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.local.DiseaseTypeDao
 import pk.gop.pulse.katchiAbadi.data.local.IssueTypeDao
+import pk.gop.pulse.katchiAbadi.data.local.JKGrowerDao
 import pk.gop.pulse.katchiAbadi.data.local.PestTypeDao
 import pk.gop.pulse.katchiAbadi.data.local.SowingPersonDao
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
@@ -29,6 +30,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.data.repository.AuthRepositoryImpl
+import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.MenuRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NAHRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NewSurveyRepositoryImpl
@@ -589,6 +591,11 @@ object AppModule {
     fun provideDiseaseTypeDao(db: AppDatabase): DiseaseTypeDao {
         return db.diseaseTypeDao()
     }
+    @Provides
+    @Singleton
+    fun provideJKGrowerDao(db: AppDatabase): JKGrowerDao {
+        return db.jkGrowerDao()
+    }
 
     // Provide your repository with all dependencies injected
     @Provides
@@ -611,6 +618,15 @@ object AppModule {
             sharedPreferences,
             activeParcelDao,
         )
+    }
+    @Provides
+    @Singleton
+    fun provideJKGrowerRepository(
+        api: ServerApi,
+        jkGrowerDao: JKGrowerDao,
+        sharedPreferences: SharedPreferences
+    ): JKGrowerRepositoryImpl {
+        return JKGrowerRepositoryImpl(api, jkGrowerDao, sharedPreferences)
     }
 
 

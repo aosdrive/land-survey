@@ -1,7 +1,6 @@
 // SurveyActivity.kt
 package pk.gop.pulse.katchiAbadi.ui.activities
 
-import OwnerSelectionDialog
 import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
@@ -63,9 +62,12 @@ import java.io.File
 import javax.inject.Inject
 import com.google.android.gms.location.Priority
 import com.google.android.material.textfield.TextInputEditText
+import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
+import pk.gop.pulse.katchiAbadi.domain.model.JKGrowerEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntry
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
+import pk.gop.pulse.katchiAbadi.presentation.util.JKGrowerSelectionDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -96,7 +98,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
     @Inject
     lateinit var dropdownRepository: DropdownRepository
-
+    @Inject
+    lateinit var jkGrowerRepository: JKGrowerRepositoryImpl
 
     private var cropList = mutableListOf<String>()
     private var cropTypeList = mutableListOf<String>()
@@ -194,6 +197,58 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         setupSubmit(parcelId, parcelNo, subParcelNo)
         loadSharedMouzaData()
         syncUnsyncedData()
+        loadJKGrowers()
+    }
+
+    private fun loadJKGrowers() {
+        lifecycleScope.launch {
+            try {
+                val mouzaName = sharedPreferences.getString(
+                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                    Constants.SHARED_PREF_DEFAULT_STRING
+                ).orEmpty()
+
+                val growers = withContext(Dispatchers.IO) {
+                    jkGrowerRepository.syncGrowersForMouza(mouzaName, forceRefresh = false)
+                }
+
+                Log.d("SurveyActivity", "Loaded ${growers.size} JK growers for mouza $mouzaName")
+                // populate your UI / selection dialog here
+            } catch (e: Exception) {
+                Log.e("SurveyActivity", "Error loading JK growers: ${e.message}")
+            }
+        }
+    }
+
+    private fun jkGrowerToPerson(grower: JKGrowerEntity): SurveyPersonEntity {
+        val mauzaName = sharedPreferences.getString(
+            Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+            Constants.SHARED_PREF_DEFAULT_STRING
+        ).orEmpty()
+
+        val mauzaId = sharedPreferences.getLong(
+            Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0
+        )
+        return SurveyPersonEntity(
+            id = 0,
+            personId = 0,
+            surveyId = 0,
+            firstName = grower.growerName,
+            lastName = grower.fatherName,   // no father field; using lastName. Move to extra1 if you prefer
+            gender = "",
+            relation = "",
+            religion = "",
+            mobile = grower.mobileNo,
+            nic = grower.cnicNo,
+            growerCode = grower.passbookNo,                // JK_Growers has no grower code; leave blank for surveyor to fill
+            personArea = "",
+            ownershipType = "",
+            address = "",
+            extra1 = "",     // stash PassbookNo somewhere; extra1 is a reasonable spot
+            extra2 = "",
+            mauzaId = mauzaId,
+            mauzaName = mauzaName
+        )
     }
 
     private fun setupSowingSection() {
@@ -791,12 +846,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
 
         binding.btnSelectOwner.setOnClickListener {
-            // Check current ownership status
             val ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString()
-            val currentPersons = personEntryHelper.getAllPersons()
-            val currentPersonCount = currentPersons.size
+            val currentPersonCount = personEntryHelper.getAllPersons().size
 
-            // Validate based on ownership status
             if (ownershipStatus == "Self" && currentPersonCount >= 1) {
                 AlertDialog.Builder(this)
                     .setTitle("Limit Reached")
@@ -805,7 +857,6 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     .show()
                 return@setOnClickListener
             }
-
             if (ownershipStatus == "On Lease" && currentPersonCount >= 2) {
                 AlertDialog.Builder(this)
                     .setTitle("Limit Reached")
@@ -816,19 +867,22 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
 
             lifecycleScope.launch {
-                val mauzaId =
-                    sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
-                Toast.makeText(context, "MauzaID: $mauzaId", Toast.LENGTH_SHORT).show()
-                val owners = withContext(Dispatchers.IO) {
-//                    database.personDao().getPersonsForCurrentMouza(mauzaId) ////to show owner only in a desired mouza
-                    database.personDao().getallPersons()
+                val mouzaName = sharedPreferences.getString(
+                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                    Constants.SHARED_PREF_DEFAULT_STRING
+                ).orEmpty()
+
+                // ✅ syncGrowersForMouza: cache hai to cache se, warna server se laa kar Room me save
+                val growers = withContext(Dispatchers.IO) {
+                    jkGrowerRepository.syncGrowersForMouza(mouzaName, forceRefresh = false)
                 }
 
-                if (owners.isEmpty()) {
-                    ToastUtil.showShort(context, "No owner data found.")
+                if (growers.isEmpty()) {
+                    ToastUtil.showShort(context, "No grower data found for this mouza.")
                 } else {
-                    OwnerSelectionDialog(context, owners) { selectedPerson ->
-                        personEntryHelper.addPersonView(selectedPerson, editable = true)
+                    JKGrowerSelectionDialog(context, growers) { selectedGrower ->
+                        val person = jkGrowerToPerson(selectedGrower)
+                        personEntryHelper.addPersonView(person, editable = true)
                     }.show()
                 }
             }
@@ -1198,33 +1252,33 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
 
             // ===== VALIDATION: Check for valid Grower Code (strict 12-34-56789 format) =====
-            val growerCodePattern = Regex("""^\d{2}-\d{3}-\d{5}$""")
+//            val growerCodePattern = Regex("""^\d{2}-\d{2}-\d{5}$""")
 
-            val personsWithoutGrowerCode = rawPersons.filter { person ->
-                val growerCode = person.growerCode?.replace("\\s".toRegex(), "")?.trim()
-                growerCode.isNullOrBlank() || !growerCodePattern.matches(growerCode)
-            }
+//            val personsWithoutGrowerCode = rawPersons.filter { person ->
+//                val growerCode = person.growerCode?.replace("\\s".toRegex(), "")?.trim()
+//                growerCode.isNullOrBlank() || !growerCodePattern.matches(growerCode)
+//            }
 
-            if (personsWithoutGrowerCode.isNotEmpty()) {
-                binding.btnSubmitSurvey.isEnabled = true
-                val invalidCodes = mutableListOf<String>()
-                personsWithoutGrowerCode.forEachIndexed { index, person ->
-                    val name = person.firstName ?: "Person ${index + 1}"
-                    val code = person.growerCode?.trim() ?: "Empty"
-                    invalidCodes.add("$name: $code")
-                }
-
-                AlertDialog.Builder(this)
-                    .setTitle("Invalid Grower Code")
-                    .setMessage(
-                        "Please Enter Valid Grower Code — format: 12-344-56789 (2-3-5 digits, total 10 numbers).\n\nInvalid codes:\n${
-                            invalidCodes.joinToString("\n")
-                        }"
-                    )
-                    .setPositiveButton("OK", null)
-                    .show()
-                return@setOnClickListener
-            }
+//            if (personsWithoutGrowerCode.isNotEmpty()) {
+//                binding.btnSubmitSurvey.isEnabled = true
+//                val invalidCodes = mutableListOf<String>()
+//                personsWithoutGrowerCode.forEachIndexed { index, person ->
+//                    val name = person.firstName ?: "Person ${index + 1}"
+//                    val code = person.growerCode?.trim() ?: "Empty"
+//                    invalidCodes.add("$name: $code")
+//                }
+//
+//                AlertDialog.Builder(this)
+//                    .setTitle("Invalid Grower Code")
+//                    .setMessage(
+//                        "Please Enter Valid Grower Code — format: 12-34-56789 (2-2-5 digits, total 9 numbers).\n\nInvalid codes:\n${
+//                            invalidCodes.joinToString("\n")
+//                        }"
+//                    )
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//            }
 
             // ===== VALIDATION: Check for valid CNIC (strict 12345-1234567-1 format) =====
             val cnicPattern = Regex("""^\d{5}-\d{7}-\d{1}$""")
@@ -1410,6 +1464,17 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                         database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, parcelId)
 
+                        val growerCodesText = rawPersons
+                            .mapNotNull { it.growerCode?.trim() }
+                            .filter { it.isNotEmpty() }
+                            .distinct()
+                            .joinToString(", ")
+
+                        if (growerCodesText.isNotEmpty()) {
+                            database.activeParcelDao().updateParcelGrowerCodes(parcelId, growerCodesText)
+                            Log.d("SurveyActivity", "Saved grower codes to parcel $parcelId: $growerCodesText")
+                        }
+
                         val log = TempSurveyLogEntity(
                             parcelId = parcelId,
                             parcelNo = parcelNo,
@@ -1426,6 +1491,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                             parcelIdList.forEach { id ->
                                 database.activeParcelDao().updateParcelSurveyStatus(2, surveyId, id)
+                                if (growerCodesText.isNotEmpty()) {
+                                    database.activeParcelDao().updateParcelGrowerCodes(id, growerCodesText)
+                                }
                             }
                         }
                     }

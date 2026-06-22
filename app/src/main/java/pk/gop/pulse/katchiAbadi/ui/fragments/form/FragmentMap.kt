@@ -1556,16 +1556,17 @@ class FragmentMap : Fragment() {
     }
 
     private fun addGraphics(parcel: ActiveParcelEntity, polygon: Polygon, gson: Gson) {
-        val areaSqFt  = GeometryEngine.areaGeodetic(
+        val areaSqFt = GeometryEngine.areaGeodetic(
             polygon,
             AreaUnit(AreaUnitId.SQUARE_FEET),
             GeodeticCurveType.NORMAL_SECTION
         ).roundToInt()
         val areaAcres = areaSqFt / 43560.0
+        val areaText = String.format(Locale.US, "%.2f Acres", areaAcres)
+
         val myPolygonCenterLatLon = polygon.extent.center
         var isRejected = 0
         val symbol: SimpleFillSymbol
-        val highlightColor: Int
         val textColor: Int
         val isHarvested = isParcelHarvested(parcel.id)
 
@@ -1581,17 +1582,14 @@ class FragmentMap : Fragment() {
                         Color.WHITE,
                         SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
                     )
-                    highlightColor = Color.WHITE
                     textColor = Color.BLACK
                 } else {
                     symbol = surveyedBlocks
-                    highlightColor = Color.BLACK
                     textColor = ContextCompat.getColor(context, R.color.parcel_green)
                 }
             }
             else -> {
                 symbol = unSurveyedBlocks
-                highlightColor = Color.YELLOW
                 textColor = ContextCompat.getColor(context, R.color.parcel_red)
             }
         }
@@ -1610,7 +1608,29 @@ class FragmentMap : Fragment() {
         attr["unit_id"] = parcel.unitId ?: 0L
         attr["group_id"] = parcel.groupId ?: 0L
 
-        val labelText = "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}"
+        // ✅ Grower codes ab seedha parcel se (resync ke baad bhi available)
+        val growerText = parcel.growerCodes?.trim().orEmpty()
+        val isSurveyed = parcel.surveyStatusCode == 2
+
+        // ✅ Label banao: ParcelNo + Khewat + (GrowerCode + Area SIRF surveyed par)
+        val labelText = buildString {
+            append(parcel.parcelNo)
+            val khewat = parcel.khewatInfo?.trim().orEmpty()
+            if (khewat.isNotEmpty()) {
+                append("\n")
+                append(khewat)
+            }
+            // Grower code + Area SIRF surveyed parcels par
+            if (isSurveyed) {
+                if (growerText.isNotEmpty()) {
+                    append("\n")
+                    append(growerText)
+                }
+                append("\n")
+                append(areaText)
+            }
+        }
+
         val polyLabelSymbol = TextSymbol().apply {
             text = labelText
             size = 16f
@@ -1624,7 +1644,6 @@ class FragmentMap : Fragment() {
         val labelGraphic = Graphic(myPolygonCenterLatLon, polyLabelSymbol)
         val parcelId = parcel.pkid
 
-        // Store initial symbol and label
         originalGraphicSymbols[parcelId] = symbol
 
         val attrLabel = labelGraphic.attributes
@@ -1640,95 +1659,12 @@ class FragmentMap : Fragment() {
         attrLabel["isRejected"] = isRejected
         attrLabel["unit_id"] = parcel.unitId ?: 0L
         attrLabel["group_id"] = parcel.groupId ?: 0L
-        attrLabel["growerCodes"] = ""
+        attrLabel["growerCodes"] = growerText
 
-        // Add graphics to overlays first
         surveyParcelsGraphics.graphics.add(parcelGraphic)
         surveyLabelGraphics.graphics.add(labelGraphic)
 
-        // Load grower codes for surveyed parcels
-        if (parcel.surveyStatusCode == 2) {
-            CoroutineScope(Dispatchers.IO).launch {
-                val surveyId = parcel.surveyId
-                val codes = if (surveyId != null && surveyId > 0) {
-                    try {
-                        val persons = database.personDao().getPersonsBySurveyId(surveyId)
-                        persons.mapNotNull { it.growerCode?.takeIf { code -> code.isNotBlank() } }
-                    } catch (e: Exception) {
-                        Log.e("AddGraphics", "Error loading grower codes: ${e.message}")
-                        emptyList()
-                    }
-                } else {
-                    emptyList()
-                }
-
-                val growerText = if (codes.isNotEmpty()) {
-                    codes.joinToString(", ")
-                } else {
-                    ""
-                }
-
-                withContext(Dispatchers.Main) {
-                    // ✅ SAFE: Use find instead of indexOfFirst to avoid index issues
-                    val existingLabel = surveyLabelGraphics.graphics.firstOrNull {
-                        it.attributes["parcel_id"] == parcel.id
-                    }
-
-                    if (existingLabel != null) {
-                        try {
-                            // ✅ Store grower codes in attributes
-                            existingLabel.attributes["growerCodes"] = growerText
-
-                            // Create updated label text
-                            val updatedLabelText = if (growerText.isNotEmpty()) {
-                                "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}\n$growerText"
-                            } else {
-                                "${parcel.parcelNo}\n${parcel.khewatInfo ?: ""}"
-                            }
-
-                            val updatedPolyLabelSymbol = TextSymbol().apply {
-                                text = updatedLabelText
-                                size = 16f
-                                color = textColor
-                                horizontalAlignment = TextSymbol.HorizontalAlignment.CENTER
-                                verticalAlignment = TextSymbol.VerticalAlignment.MIDDLE
-                                haloWidth = 1f
-                                fontWeight = TextSymbol.FontWeight.BOLD
-                            }
-
-                            val myPolygonCenterLatLon = polygon.extent.center
-                            val updatedLabelGraphic = Graphic(myPolygonCenterLatLon, updatedPolyLabelSymbol)
-
-                            // Copy all attributes including grower codes
-                            existingLabel.attributes.forEach { (key, value) ->
-                                updatedLabelGraphic.attributes[key] = value
-                            }
-
-                            // ✅ SAFE: Remove and add only if label still exists in the list
-                            val currentIndex = surveyLabelGraphics.graphics.indexOf(existingLabel)
-                            if (currentIndex >= 0 && currentIndex < surveyLabelGraphics.graphics.size) {
-                                surveyLabelGraphics.graphics.remove(existingLabel)
-                                surveyLabelGraphics.graphics.add(currentIndex, updatedLabelGraphic)
-
-                                // ✅ Update the stored original label
-                                originalLabelGraphics[parcelId] = updatedLabelGraphic
-
-                                Log.d("AddGraphics", "✅ Updated grower codes for parcel ${parcel.id}: $growerText")
-                            } else {
-                                Log.w("AddGraphics", "Label index out of bounds, skipping update for parcel ${parcel.id}")
-                            }
-                        } catch (e: Exception) {
-                            Log.e("AddGraphics", "Error updating label for parcel ${parcel.id}: ${e.message}", e)
-                        }
-                    } else {
-                        Log.w("AddGraphics", "Label not found for parcel ${parcel.id}")
-                    }
-                }
-            }
-        } else {
-            // ✅ For unsurveyed parcels, store the label immediately
-            originalLabelGraphics[parcelId] = labelGraphic
-        }
+        originalLabelGraphics[parcelId] = labelGraphic
     }
     private fun restoreOriginalGraphics() {
         Log.d("RESTORE_DEBUG", "Starting graphics restoration...")
@@ -1757,21 +1693,18 @@ class FragmentMap : Fragment() {
         for (graphic in surveyParcelsGraphics.graphics) {
             val parcelId = graphic.attributes["parcel_id"] as? Long ?: continue
 
-            // ✅ Try to get the stored original label first
             val originalLabel = originalLabelGraphics[parcelId]
 
             if (originalLabel != null) {
-                // ✅ Use the stored label which already has grower codes
                 surveyLabelGraphics.graphics.add(originalLabel)
                 Log.d("RESTORE_DEBUG", "Restored original label for parcel_id: $parcelId")
             } else {
-                // Create new label if no original exists
                 val parcelNo = graphic.attributes["parcel_no"]?.toString() ?: ""
                 val subParcelNo = graphic.attributes["sub_parcel_no"]?.toString() ?: ""
                 val khewatInfo = graphic.attributes["khewatInfo"]?.toString() ?: ""
                 val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
-                // ✅ Try to get stored grower codes from attributes
                 val storedGrowerCodes = graphic.attributes["growerCodes"]?.toString() ?: ""
+                val isSurveyed = surveyStatus == 2
 
                 val displayText = if (subParcelNo.isBlank() || subParcelNo == "0") {
                     parcelNo
@@ -1789,11 +1722,21 @@ class FragmentMap : Fragment() {
                     else -> Color.YELLOW
                 }
 
-                // ✅ Include stored grower codes if available
-                val labelText = if (storedGrowerCodes.isNotEmpty()) {
-                    "$displayText\n$khewatInfo\n$storedGrowerCodes"
-                } else {
-                    "$displayText\n$khewatInfo"
+                val areaSqFt = graphic.attributes["area"]?.toString()?.toIntOrNull() ?: 0
+                val areaText = String.format(Locale.US, "%.2f Acres", areaSqFt / 43560.0)
+
+                // ✅ Area + GrowerCode SIRF surveyed par
+                val labelText = buildString {
+                    append(displayText)
+                    if (khewatInfo.isNotEmpty()) {
+                        append("\n"); append(khewatInfo)
+                    }
+                    if (isSurveyed) {
+                        if (storedGrowerCodes.isNotEmpty()) {
+                            append("\n"); append(storedGrowerCodes)
+                        }
+                        append("\n"); append(areaText)
+                    }
                 }
 
                 val polyLabelSymbol = TextSymbol().apply {
@@ -1816,7 +1759,6 @@ class FragmentMap : Fragment() {
 
                 val newLabel = Graphic(centerPoint, polyLabelSymbol)
 
-                // Copy all attributes including grower codes
                 graphic.attributes.forEach { (key, value) ->
                     newLabel.attributes[key] = value
                 }
