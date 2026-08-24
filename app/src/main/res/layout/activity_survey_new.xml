@@ -1,63 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Survey form, ZD language.
+     Saare ids barqarar hain (SurveyActivity + ViewBinding):
+       formRoot, layoutHeader, tvParcelInfo,
+       spinnerPropertyStatus, spinnerOwnershipStatus, etCrop, etCropType, etVariety,
+       etYear, cbGeometryCorrect, etSowingDate, etRemarks,
+       btnSelectOwner, btnAddNewPerson, layoutPersonEntries,
+       spinnerImageType, btnTakePhoto, recyclerPictures, layoutEmptyState,
+       layoutLoadingState, progressBarImageLoading,
+       btnFarmerCapture, ivFarmerProfileImage, layoutFarmerEmptyState,
+       btnSubmitSurvey, etPropertyType (gone), btnAddImage (gone) -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
-    android:fillViewport="true">
+    android:background="@drawable/auth_field_gradient"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:id="@+id/formRoot"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="24dp">
+        android:paddingBottom="28dp">
 
-        <!-- Header Card (keep as before) -->
+        <!-- ================= HEADER: parcel identity ================= -->
+        <LinearLayout
+            android:id="@+id/layoutHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="6dp">
+
+<!--            <LinearLayout-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:gravity="center_vertical"-->
+<!--                android:orientation="horizontal">-->
+
+<!--                <View-->
+<!--                    android:layout_width="16dp"-->
+<!--                    android:layout_height="2dp"-->
+<!--                    android:background="#A5D6A7" />-->
+
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_marginStart="7dp"-->
+<!--                    android:fontFamily="sans-serif-medium"-->
+<!--                    android:letterSpacing="0.17"-->
+<!--                    android:text="NEW SURVEY"-->
+<!--                    android:textColor="#A5D6A7"-->
+<!--                    android:textSize="9sp"-->
+<!--                    android:textStyle="bold" />-->
+<!--            </LinearLayout>-->
+
+<!--            <TextView-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginTop="7dp"-->
+<!--                android:fontFamily="serif"-->
+<!--                android:letterSpacing="-0.03"-->
+<!--                android:text="Land Survey"-->
+<!--                android:textColor="#FFFFFF"-->
+<!--                android:textSize="26sp"-->
+<!--                android:textStyle="bold" />-->
+
+            <!-- parcel details: code isme spannable text daalta hai -->
+            <TextView
+                android:id="@+id/tvParcelInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/zd_glass_pill"
+                android:lineSpacingExtra="5dp"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="12dp"
+                android:textColor="#E8F5E9"
+                android:textSize="12.5sp"
+                tools:text="P/N: 2759/1    GC= 263-14-3    Area: 12034    ID: 9681486" />
+        </LinearLayout>
+
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardBackgroundColor="@color/forest_green"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
-
-            <LinearLayout
-                android:id="@+id/layoutHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/tvParcelInfo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:lineSpacingExtra="4dp"
-                    android:text="Parcel Info will be shown here"
-                    android:textColor="@color/white"
-                    android:textSize="16sp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Property Information Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
-                <!-- Section Title -->
+                <!-- Property Information -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -66,29 +108,30 @@
                     android:paddingBottom="16dp">
 
                     <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@color/forest_green" />
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#2E7D32" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
                         android:layout_weight="1"
-                        android:text="Property Information"
-                        android:textColor="@color/forest_green"
-                        android:textSize="18sp"
+                        android:letterSpacing="0.15"
+                        android:text="PROPERTY INFORMATION"
+                        android:textColor="#2E7D32"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Property Type Spinner (keep as before) -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
                     android:paddingBottom="6dp"
-                    android:text="Property Type"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:text="PROPERTY TYPE"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -96,19 +139,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/spinner_selector"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="44dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
 
-                <!-- Ownership Status Spinner (keep as before) -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
                     android:paddingBottom="6dp"
-                    android:text="Parcel Ownership"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:text="PARCEL OWNERSHIP"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -116,19 +161,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/spinner_selector"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="44dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
 
-                <!-- Crop Spinner (keep as before) -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
                     android:paddingBottom="6dp"
-                    android:text="Crop"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:text="CROP"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -136,19 +183,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/spinner_selector"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="44dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
 
-                <!-- Crop Type Spinner (keep as before) -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
                     android:paddingBottom="6dp"
-                    android:text="Crop Type"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:text="CROP TYPE"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -156,19 +205,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/spinner_selector"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="44dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
 
-                <!-- Variety Spinner (keep as before) -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
                     android:paddingBottom="6dp"
-                    android:text="Variety"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:text="VARIETY"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -176,46 +227,12 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/spinner_selector"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="44dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
-
-                <!-- Year and Area in Row with TextInputLayout -->
-
-
-                <!-- Year Input - Full Width -->
-                <!--                <com.google.android.material.textfield.TextInputLayout-->
-                <!--                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"-->
-                <!--                    android:layout_width="match_parent"-->
-                <!--                    android:layout_height="wrap_content"-->
-                <!--                    android:layout_marginBottom="16dp"-->
-                <!--                    android:hint="Address"-->
-                <!--                    app:boxBackgroundMode="outline"-->
-                <!--                    app:boxCornerRadiusBottomEnd="8dp"-->
-                <!--                    app:boxCornerRadiusBottomStart="8dp"-->
-                <!--                    app:boxCornerRadiusTopEnd="8dp"-->
-                <!--                    app:boxCornerRadiusTopStart="8dp"-->
-                <!--                    app:boxStrokeColor="@color/forest_green"-->
-                <!--                    app:boxStrokeErrorColor="#D32F2F"-->
-                <!--                    app:helperText="Enter complete address"-->
-                <!--                    app:helperTextTextColor="#999999"-->
-                <!--                    app:hintTextColor="@color/forest_green"-->
-                <!--                    app:startIconDrawable="@android:drawable/ic_menu_mylocation"-->
-                <!--                    app:startIconTint="@color/forest_green">-->
-
-                <!--                    <com.google.android.material.textfield.TextInputEditText-->
-                <!--                        android:id="@+id/etAddress"-->
-                <!--                        android:layout_width="match_parent"-->
-                <!--                        android:layout_height="wrap_content"-->
-                <!--                        android:inputType="textPostalAddress|textCapSentences"-->
-                <!--                        android:maxLength="200"-->
-                <!--                        android:minLines="2"-->
-                <!--                        android:maxLines="4"-->
-                <!--                        android:gravity="start|top"-->
-                <!--                        android:textColor="#333333"-->
-                <!--                        android:textSize="15sp" />-->
-                <!--                </com.google.android.material.textfield.TextInputLayout>-->
 
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -223,163 +240,117 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:hint="Year"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxStrokeColor="@color/forest_green"
-                    app:boxStrokeErrorColor="#D32F2F"
-                    app:hintTextColor="@color/forest_green"
-                    app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
-                    app:startIconTint="@color/forest_green">
+                    app:boxBackgroundColor="#F6FAF6"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="#2E7D32"
+                    app:boxStrokeErrorColor="#C62828"
+                    app:hintTextColor="#2E7D32">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etYear"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:textColor="#1B5E20"
+                        android:textSize="15sp"
                         android:inputType="number"
-                        android:maxLines="1"
-                        android:textColor="#333333"
-                        android:textSize="15sp" />
+                        android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Area Input - Full Width -->
-                <!--                <com.google.android.material.textfield.TextInputLayout-->
-                <!--                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"-->
-                <!--                    android:layout_width="match_parent"-->
-                <!--                    android:layout_height="wrap_content"-->
-                <!--                    android:layout_marginBottom="16dp"-->
-                <!--                    android:hint="Area (Kanal/Marla, Max: 100)"-->
-                <!--                    app:boxBackgroundMode="outline"-->
-                <!--                    app:boxCornerRadiusBottomEnd="8dp"-->
-                <!--                    app:boxCornerRadiusBottomStart="8dp"-->
-                <!--                    app:boxCornerRadiusTopEnd="8dp"-->
-                <!--                    app:boxCornerRadiusTopStart="8dp"-->
-                <!--                    app:boxStrokeColor="@color/forest_green"-->
-                <!--                    app:boxStrokeErrorColor="#D32F2F"-->
-                <!--                    app:counterEnabled="false"-->
-                <!--                    app:helperTextTextColor="#999999"-->
-                <!--                    app:hintTextColor="@color/forest_green"-->
-                <!--                    app:startIconDrawable="@android:drawable/ic_dialog_map"-->
-                <!--                    app:startIconTint="@color/forest_green">-->
+                <!-- Solar Available -->
+<!--                <LinearLayout-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_marginBottom="16dp"-->
+<!--                    android:background="@drawable/zd_check_box"-->
+<!--                    android:orientation="vertical">-->
 
-                <!--                    <com.google.android.material.textfield.TextInputEditText-->
-                <!--                        android:id="@+id/etArea"-->
-                <!--                        android:layout_width="match_parent"-->
-                <!--                        android:layout_height="wrap_content"-->
-                <!--                        android:inputType="numberDecimal"-->
-                <!--                        android:maxLines="1"-->
-                <!--                        android:textColor="#333333"-->
-                <!--                        android:textSize="15sp" />-->
-                <!--                </com.google.android.material.textfield.TextInputLayout>-->
+<!--                    <CheckBox-->
+<!--                        android:id="@+id/cbGeometryCorrect"-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:buttonTint="#2E7D32"-->
+<!--                        android:padding="14dp"-->
+<!--                        android:text="Solar Available"-->
+<!--                        android:textColor="#1B5E20"-->
+<!--                        android:textSize="14sp"-->
+<!--                        android:textStyle="bold" />-->
+<!--                </LinearLayout>-->
 
-                <!-- Solar Available Checkbox -->
-                <androidx.cardview.widget.CardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="#E8F5E9"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/forest_green"
-                    app:strokeWidth="1dp">
-
-                    <CheckBox
-                        android:id="@+id/cbGeometryCorrect"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="12dp"
-                        android:text="Solar Available"
-                        android:textColor="@color/forest_green"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-                </androidx.cardview.widget.CardView>
-
-
-                <!-- Sowing Date (Optional) -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
                     android:layout_marginBottom="16dp"
                     android:hint="Sowing Date (Optional)"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxStrokeColor="@color/forest_green"
-                    app:boxStrokeErrorColor="#D32F2F"
-                    app:endIconMode="clear_text"
-                    app:hintTextColor="@color/forest_green"
-                    app:startIconDrawable="@android:drawable/ic_menu_my_calendar"
-                    app:startIconTint="@color/forest_green">
+                    app:boxBackgroundColor="#F6FAF6"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="#2E7D32"
+                    app:boxStrokeErrorColor="#C62828"
+                    app:hintTextColor="#2E7D32">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etSowingDate"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:textColor="#1B5E20"
+                        android:textSize="15sp"
                         android:clickable="true"
                         android:cursorVisible="false"
                         android:focusable="false"
-                        android:inputType="none"
-                        android:textColor="#333333"
-                        android:textSize="15sp" />
+                        android:inputType="none" />
                 </com.google.android.material.textfield.TextInputLayout>
-                <!-- Remarks Input - SIMPLIFIED VERSION -->
+
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
                     android:hint="Remarks (Optional)"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxStrokeColor="@color/forest_green"
-                    app:boxStrokeErrorColor="#D32F2F"
-                    app:counterEnabled="true"
-                    app:counterMaxLength="500"
-                    app:helperText="Add any additional notes here"
-                    app:helperTextTextColor="#999999"
-                    app:hintTextColor="@color/forest_green"
-                    app:startIconContentDescription="Edit icon"
-                    app:startIconDrawable="@android:drawable/ic_menu_edit"
-                    app:startIconTint="@color/forest_green">
+                    app:boxBackgroundColor="#F6FAF6"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="#2E7D32"
+                    app:boxStrokeErrorColor="#C62828"
+                    app:hintTextColor="#2E7D32">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etRemarks"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:textColor="#1B5E20"
+                        android:textSize="15sp"
                         android:inputType="textMultiLine|textCapSentences"
                         android:maxLines="5"
-                        android:paddingTop="12dp"
-                        android:textColor="#333333"
-                        android:textSize="15sp" />
+                        android:paddingTop="10dp" />
                 </com.google.android.material.textfield.TextInputLayout>
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Owner Information Card (keep as before) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
+                <!-- Owner / Leasee Information -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -388,57 +359,72 @@
                     android:paddingBottom="16dp">
 
                     <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@color/forest_green" />
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#2E7D32" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
                         android:layout_weight="1"
-                        android:text="Owner / Leasee Information"
-                        android:textColor="@color/forest_green"
-                        android:textSize="18sp"
+                        android:letterSpacing="0.15"
+                        android:text="OWNER / LEASEE INFORMATION"
+                        android:textColor="#2E7D32"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
+                    android:orientation="horizontal">
 
+                    <!-- weight 1.45: "Select from List" + icon ko poori jagah chahiye,
+                         warna text kat jata hai -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSelectOwner"
                         android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
+                        android:layout_height="54dp"
+                        android:layout_marginEnd="5dp"
+                        android:layout_weight="1.45"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
                         android:text="Select from List"
-                        android:textColor="@color/white"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp"
                         android:textStyle="bold"
-                        app:backgroundTint="@color/forest_green"
-                        app:cornerRadius="8dp"
+                        app:backgroundTint="#1B5E20"
+                        app:cornerRadius="14dp"
                         app:icon="@android:drawable/ic_menu_search"
                         app:iconGravity="textStart"
-                        app:iconTint="@color/white" />
+                        app:iconPadding="5dp"
+                        app:iconSize="17dp"
+                        app:iconTint="#FFFFFF" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAddNewPerson"
                         android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_marginStart="8dp"
+                        android:layout_height="54dp"
+                        android:layout_marginStart="5dp"
                         android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
                         android:text="Add New"
-                        android:textColor="@color/white"
+                        android:textAllCaps="false"
+                        android:textColor="#2E5A2E"
+                        android:textSize="12.5sp"
                         android:textStyle="bold"
-                        app:backgroundTint="@color/dark_green"
-                        app:cornerRadius="8dp"
+                        app:backgroundTint="#F1F6F1"
+                        app:cornerRadius="14dp"
                         app:icon="@android:drawable/ic_input_add"
                         app:iconGravity="textStart"
-                        app:iconTint="@color/white" />
+                        app:iconPadding="5dp"
+                        app:iconSize="17dp"
+                        app:iconTint="#2E5A2E"
+                        app:strokeColor="#C8E6C9"
+                        app:strokeWidth="1dp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -446,28 +432,27 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingTop="16dp" />
+                    android:paddingTop="14dp" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Pictures Card -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
+                <!-- Pictures / Documents -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -476,28 +461,30 @@
                     android:paddingBottom="16dp">
 
                     <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@color/Chocolate" />
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#2E7D32" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
                         android:layout_weight="1"
-                        android:text="Pictures / Documents"
-                        android:textColor="@color/Chocolate"
-                        android:textSize="18sp"
+                        android:letterSpacing="0.15"
+                        android:text="PICTURES / DOCUMENTS"
+                        android:textColor="#2E7D32"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
                     android:paddingBottom="6dp"
-                    android:text="Document Type"
-                    android:textColor="#666666"
-                    android:textSize="13sp"
+                    android:text="DOCUMENT TYPE"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
 
                 <Spinner
@@ -505,165 +492,169 @@
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
                     android:layout_marginBottom="16dp"
-                    android:background="@drawable/spinner_selector"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="44dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnTakePhoto"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
+                    android:layout_height="54dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:letterSpacing="0.05"
                     android:text="Capture Image"
-                    android:textColor="@color/white"
-                    android:textSize="15sp"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
                     android:textStyle="bold"
-                    app:backgroundTint="@color/Chocolate"
-                    app:cornerRadius="8dp"
+                    app:backgroundTint="#2E7D32"
+                    app:cornerRadius="14dp"
                     app:icon="@android:drawable/ic_menu_camera"
                     app:iconGravity="textStart"
-                    app:iconTint="@color/white" />
+                    app:iconSize="19dp"
+                    app:iconTint="#FFFFFF" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp"
-                    android:background="#FFF3E0"
-                    android:orientation="vertical"
-                    android:padding="12dp">
+                    android:background="@drawable/zd_revisit_chip"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginTop="1dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_warn_14" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="⚠️ Important"
-                        android:textColor="#FF6F00"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:lineSpacingExtra="2dp"
                         android:text="Wait for all pictures to load completely before submitting. Otherwise, they will not be saved."
-                        android:textColor="#666666"
-                        android:textSize="12sp" />
+                        android:textColor="#8A5B0A"
+                        android:textSize="11.5sp" />
                 </LinearLayout>
 
-
-                <!-- Image Container with Empty State and Loading -->
-                <androidx.cardview.widget.CardView
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardBackgroundColor="#FAFAFA"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="1dp">
+                    android:background="@drawable/zd_media_well"
+                    android:minHeight="150dp">
 
-                    <FrameLayout
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerPictures"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="150dp">
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:padding="10dp"
+                        android:scrollbars="none"
+                        android:visibility="gone" />
 
-                        <!-- RecyclerView for Images -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/recyclerPictures"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:padding="8dp"
-                            android:visibility="gone" />
+                    <LinearLayout
+                        android:id="@+id/layoutEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="18dp">
 
-                        <!-- Empty State -->
-                        <LinearLayout
-                            android:id="@+id/layoutEmptyState"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:visibility="visible">
+                        <FrameLayout
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:background="@drawable/zd_dashed_ring">
 
                             <ImageView
-                                android:layout_width="48dp"
-                                android:layout_height="48dp"
-                                android:alpha="0.4"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
                                 android:src="@android:drawable/ic_menu_gallery"
-                                app:tint="#999999" />
+                                app:tint="#8CB69A" />
+                        </FrameLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="No images attached"
-                                android:textColor="#999999"
-                                android:textSize="14sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="No images attached"
+                            android:textColor="#4C7A4C"
+                            android:textSize="13.5sp" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Tap 'Capture Image' to add photos"
-                                android:textColor="#CCCCCC"
-                                android:textSize="12sp" />
-                        </LinearLayout>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Tap Capture Image to add photos"
+                            android:textColor="#8CA893"
+                            android:textSize="11.5sp" />
+                    </LinearLayout>
 
-                        <!-- Loading Indicator -->
-                        <LinearLayout
-                            android:id="@+id/layoutLoadingState"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="#F0FFFFFF"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp"
-                            android:visibility="gone">
+                    <LinearLayout
+                        android:id="@+id/layoutLoadingState"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#F2FFFFFF"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:padding="18dp"
+                        android:visibility="gone">
 
-                            <ProgressBar
-                                android:id="@+id/progressBarImageLoading"
-                                android:layout_width="40dp"
-                                android:layout_height="40dp"
-                                android:indeterminateTint="@color/Chocolate" />
+                        <ProgressBar
+                            android:id="@+id/progressBarImageLoading"
+                            android:layout_width="38dp"
+                            android:layout_height="38dp"
+                            android:indeterminateTint="#2E7D32" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
-                                android:text="Processing image..."
-                                android:textColor="#666666"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Processing image..."
+                            android:textColor="#1B5E20"
+                            android:textSize="13.5sp" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="Please wait"
-                                android:textColor="#999999"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-
-                    </FrameLayout>
-                </androidx.cardview.widget.CardView>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Please wait"
+                            android:textColor="#8CA893"
+                            android:textSize="11.5sp" />
+                    </LinearLayout>
+                </FrameLayout>
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Farmer Profile Picture Card (Optional) -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/white"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp">
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="18dp">
 
+                <!-- Farmer Profile Picture -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -672,139 +663,157 @@
                     android:paddingBottom="16dp">
 
                     <View
-                        android:layout_width="4dp"
-                        android:layout_height="24dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@color/forest_green" />
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#2E7D32" />
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
                         android:layout_weight="1"
-                        android:text="Farmer Profile Picture (Optional)"
-                        android:textColor="@color/forest_green"
-                        android:textSize="18sp"
+                        android:letterSpacing="0.15"
+                        android:text="FARMER PROFILE PICTURE"
+                        android:textColor="#2E7D32"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Camera button -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnFarmerCapture"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
-                    android:layout_marginTop="12dp"
+                    android:layout_height="54dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:letterSpacing="0.05"
                     android:text="Capture Image"
-                    android:textSize="15sp"
-                    android:textColor="@color/white"
-                    app:backgroundTint="@color/forest_green"
-                    app:cornerRadius="8dp"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#2E7D32"
+                    app:cornerRadius="14dp"
                     app:icon="@android:drawable/ic_menu_camera"
                     app:iconGravity="textStart"
-                    app:iconTint="@color/white" />
+                    app:iconSize="19dp"
+                    app:iconTint="#FFFFFF" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:layout_marginBottom="12dp"
-                    android:background="#FFF3E0"
-                    android:orientation="vertical"
-                    android:padding="12dp">
+                    android:background="@drawable/zd_revisit_chip"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginTop="1dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_warn_14" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="⚠️ Important"
-                        android:textColor="#FF6F00"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Wait for all pictures to load completely before submitting. Otherwise, they will not be saved."
-                        android:textColor="#666666"
-                        android:textSize="12sp" />
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Wait for the picture to load completely before submitting. Otherwise, it will not be saved."
+                        android:textColor="#8A5B0A"
+                        android:textSize="11.5sp" />
                 </LinearLayout>
-
 
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
-                    android:layout_marginTop="12dp">
+                    android:background="@drawable/zd_media_well">
 
-                    <!-- The actual captured image -->
                     <ImageView
                         android:id="@+id/ivFarmerProfileImage"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:contentDescription="@null"
                         android:scaleType="centerCrop"
                         android:visibility="gone" />
 
-                    <!-- Placeholder shown only when no image -->
                     <LinearLayout
                         android:id="@+id/layoutFarmerEmptyState"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:padding="16dp"
-                        android:visibility="visible">
+                        android:padding="18dp">
 
-                        <ImageView
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:alpha="0.4"
-                            android:src="@android:drawable/ic_menu_gallery"
-                            app:tint="#999999" />
+                        <FrameLayout
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:background="@drawable/zd_dashed_ring">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:src="@android:drawable/ic_menu_gallery"
+                                app:tint="#8CB69A" />
+                        </FrameLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="12dp"
+                            android:fontFamily="sans-serif-medium"
                             android:text="No image attached"
-                            android:textColor="#999999"
-                            android:textSize="14sp" />
+                            android:textColor="#4C7A4C"
+                            android:textSize="13.5sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="Tap 'Camera' to add photo"
-                            android:textColor="#CCCCCC"
-                            android:textSize="12sp" />
+                            android:layout_marginTop="3dp"
+                            android:text="Optional - tap Capture Image to add"
+                            android:textColor="#8CA893"
+                            android:textSize="11.5sp" />
                     </LinearLayout>
                 </FrameLayout>
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Submit Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSubmitSurvey"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="22dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:letterSpacing="0.08"
             android:text="Submit Survey"
-            android:textColor="@color/white"
+            android:textAllCaps="false"
+            android:textColor="#2E5A2E"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/forest_green"
-            app:cornerRadius="12dp"
-            app:elevation="4dp"
+            app:backgroundTint="#FFFFFF"
+            app:cornerRadius="16dp"
             app:icon="@android:drawable/ic_menu_upload"
             app:iconGravity="textStart"
-            app:iconTint="@color/white" />
+            app:iconTint="#1B5E20"
+            app:strokeWidth="0dp"
+            tools:ignore="TextContrastCheck" />
 
-        <!-- Hidden Views -->
+        <!-- Hidden views: code inhe reference karta hai -->
         <EditText
             android:id="@+id/etPropertyType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:visibility="gone"
+            tools:ignore="LabelFor" />
 
         <Button
             android:id="@+id/btnAddImage"

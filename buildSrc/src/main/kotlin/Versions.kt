@@ -3,7 +3,7 @@ object Versions {
     const val kotlin = "1.9.24"
 
     // Essentials
-    const val material = "1.10.0"
+    const val material = "1.12.0"
     const val splashScreen = "1.0.1"
     const val appCompat = "1.6.1"
     const val constraitLayout = "2.1.4"

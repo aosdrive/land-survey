@@ -63,7 +63,8 @@ class NewSurveyUseCase @Inject constructor(
                 val parcel = getActiveParcelById(survey.parcelId)
                 SurveyWithKhewat(
                     survey = survey,
-                    khewatInfo = parcel?.khewatInfo ?: "N/A"
+                    khewatInfo = parcel?.khewatInfo ?: "N/A",
+                    growerCodes = parcel?.growerCodes
                 )
             }
         }

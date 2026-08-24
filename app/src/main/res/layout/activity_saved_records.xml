@@ -4,58 +4,183 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/album_card_bg"
+    android:background="@drawable/auth_field_gradient"
     tools:context=".ui.activities.SavedRecordsActivity">
 
-    <TextView
-        android:id="@+id/tv_details"
+    <!-- MenuActivity ki tarah: field gradient + leaf decorations -->
+    <ImageView
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:layout_marginTop="-40dp"
+        android:layout_marginEnd="-40dp"
+        android:alpha="0.12"
+        android:contentDescription="@null"
+        android:rotation="25"
+        android:src="@drawable/ic_leaf_decoration"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_marginStart="-60dp"
+        android:layout_marginBottom="-60dp"
+        android:alpha="0.08"
+        android:contentDescription="@null"
+        android:rotation="-45"
+        android:src="@drawable/ic_leaf_decoration"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Header. tv_details is set from code, so it stays the summary line. -->
+    <LinearLayout
+        android:id="@+id/ll_header"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_weight="9"
-        android:background="@color/listitem_text_activated"
-        android:gravity="center"
-        android:minHeight="50dp"
-        android:padding="10dp"
-        android:textColor="@color/black"
-        android:textSize="@dimen/margin_14sp"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="14dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="16dp"
+                android:layout_height="2dp"
+                android:background="#A5D6A7" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.17"
+                android:text="WAITING TO UPLOAD"
+                android:textColor="#A5D6A7"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
+            android:fontFamily="serif"
+            android:letterSpacing="-0.03"
+            android:text="Saved Records"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#A5C9AE"
+            android:textSize="12sp"
+            tools:text="Chak 42 JB (Block A) · 4 records" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingBottom="20dp"
+        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_details"
+        app:layout_constraintTop_toBottomOf="@+id/ll_header"
         tools:listitem="@layout/cardview_saved_records" />
 
+    <!-- Empty state -->
     <LinearLayout
         android:id="@+id/noRecordLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/white"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:gravity="center"
         android:orientation="vertical"
+        android:paddingHorizontal="38dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <FrameLayout
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:background="@drawable/zd_dashed_ring_dark">
+
+            <ImageView
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_upload_16"
+                app:tint="#A5D6A7" />
+        </FrameLayout>
+
         <TextView
             android:id="@+id/noRecordText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:fontFamily="serif"
             android:gravity="center"
+            android:letterSpacing="-0.02"
             android:text="@string/no_records_to_display"
-            android:textColor="#706f6f"
-            android:textSize="15sp" />
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp"
+            android:text="Everything you have surveyed is already uploaded."
+            android:textColor="#A5C9AE"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="20dp"
+                android:layout_height="1dp"
+                android:background="#4C7A4C" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.2"
+                android:text="ALL CAUGHT UP"
+                android:textColor="#81A881"
+                android:textSize="9sp" />
+
+            <View
+                android:layout_width="20dp"
+                android:layout_height="1dp"
+                android:background="#4C7A4C" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

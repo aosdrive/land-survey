@@ -4,323 +4,342 @@
     android:id="@+id/layout_parent"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@drawable/auth_field_gradient">
 
-    <LinearLayout
-        android:id="@+id/layout_page_header"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:visibility="gone"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toStartOf="parent"
+    <!-- Organic leaf decoration top-right -->
+    <ImageView
+        android:id="@+id/decoration_leaf_top"
+        android:layout_width="180dp"
+        android:layout_height="180dp"
+        android:alpha="0.12"
+        android:rotation="25"
+        android:src="@drawable/ic_leaf_decoration"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="-40dp"
+        android:layout_marginEnd="-40dp" />
+
+    <!-- Organic leaf decoration bottom-left -->
+    <ImageView
+        android:id="@+id/decoration_leaf_bottom"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:alpha="0.08"
+        android:rotation="-45"
+        android:src="@drawable/ic_leaf_decoration"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:id="@+id/tv_header"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:background="@color/forest_green"
-            android:gravity="center"
-            android:padding="10dp"
-            android:text="@string/this_application_is_not_intended_for_general_public_access"
-            android:textColor="@color/white"
-            android:textSize="@dimen/margin_12sp" />
-
-    </LinearLayout>
-
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="-60dp"
+        android:layout_marginBottom="-60dp" />
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:background="@color/white"
+        android:layout_height="match_parent"
         android:fillViewport="true"
         android:scrollbars="none"
-        app:layout_constraintBottom_toTopOf="@+id/layout_page_footer"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layout_page_header">
+        android:overScrollMode="never"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
         <LinearLayout
-            android:id="@+id/surveyForm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="48dp"
+            android:paddingBottom="32dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
+            <!-- GOVERNMENT BRANDING BAR (prominent) -->
             <LinearLayout
-                android:id="@+id/logoLayout"
+                android:id="@+id/gov_branding_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="@dimen/margin_20dp"
-                android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/gov_badge_bg"
+                android:padding="12dp">
 
+                <androidx.cardview.widget.CardView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    app:cardCornerRadius="22dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="#FFFFFF">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_logo_pulse_cropped"
+                        android:contentDescription="@string/government_of_punjab" />
+                </androidx.cardview.widget.CardView>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ZARAAT DOST"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.08"
+                        android:fontFamily="sans-serif-medium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/program_department_name"
+                        android:textColor="#E8F5E9"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.05"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
+
+                <!-- Subtle verified indicator -->
                 <ImageView
-                    android:layout_width="60dp"
-                    android:layout_height="80dp"
-                    android:layout_marginTop="@dimen/margin_10dp"
-                    android:contentDescription="@string/government_of_punjab"
-                    android:gravity="center"
-                    android:scaleType="fitXY"
-                    android:src="@drawable/ic_logo_pulse_cropped" />
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_verified_badge"
+                    app:tint="#A5D6A7" />
+            </LinearLayout>
+
+            <!-- HERO SECTION -->
+            <LinearLayout
+                android:id="@+id/hero_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="24dp"
+                android:paddingBottom="16dp">
+
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/program_department_name"
-                    android:textAllCaps="true"
-                    android:textColor="@color/dark_green"
-                    android:textSize="@dimen/text_size_normal"
+                    android:text="Welcome"
+                    android:textColor="#FFFFFF"
+                    android:textSize="42sp"
+                    android:fontFamily="serif"
+                    android:letterSpacing="-0.03"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="@string/program_government_name"
-                    android:textAllCaps="true"
-                    android:textColor="@color/black"
-                    android:textSize="@dimen/text_size_normal" />
+                    android:text="back to the field"
+                    android:textColor="#C8E6C9"
+                    android:textSize="40sp"
+                    android:fontFamily="serif"
+                    android:letterSpacing="-0.03"
+                    android:textStyle="italic" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Sign in to continue your land survey"
+                    android:textColor="#B0CCB5"
+                    android:textSize="14sp"
+                    android:letterSpacing="0.01"
+                    android:fontFamily="sans-serif" />
             </LinearLayout>
 
-            <LinearLayout
+            <!-- LOGIN CARD -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/login_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="50dp"
-                android:background="@android:drawable/dialog_holo_light_frame"
-                android:elevation="0dp"
-                android:orientation="vertical">
+                app:cardCornerRadius="28dp"
+                app:cardElevation="24dp"
+                app:cardBackgroundColor="#FFFFFF"
+                android:clipChildren="false">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/group_top"
-                    android:padding="13dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:shadowColor="#908d8f8b"
-                        android:shadowDx="2"
-                        android:shadowDy="2"
-                        android:shadowRadius="4"
-                        android:text="@string/login"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/cardview_main_title_size"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingStart="@dimen/margin_5dp"
-                        android:shadowColor="#908d8f8b"
-                        android:shadowDx="2"
-                        android:shadowDy="2"
-                        android:shadowRadius="4"
-                        android:text="@string/to_your_account"
-                        android:textColor="@color/white"
-                        android:textSize="@dimen/cardview_sub_title_size" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/album_card_form_bg"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="28dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <TableLayout
+                    <!-- Section label -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="2dp">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="24dp">
 
-                        <TableRow>
+                        <View
+                            android:layout_width="24dp"
+                            android:layout_height="2dp"
+                            android:background="#2E7D32" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="start"
-                                android:text="@string/asterisk"
-                                android:textColor="@color/textCompulsoryColor"
-                                android:textSize="@dimen/edittext_title_size" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="SECURE LOGIN"
+                            android:textColor="#2E7D32"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.15" />
+                    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/username"
-                                android:textColor="@color/Black"
-                                android:textSize="@dimen/edittext_title_size" />
-                        </TableRow>
+                    <!-- CNIC field -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Username"
+                        android:textColor="#2E5A2E"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:fontFamily="sans-serif-medium" />
 
-                        <TableRow android:layout_marginTop="5dp">
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_username"
+                        style="@style/ModernTextInputLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        app:startIconDrawable="@drawable/ic_person_outline"
+                        app:startIconTint="@color/input_icon_tint"
+                        app:hintEnabled="false">
 
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="@dimen/edittext_height"
-                                android:layout_weight="1"
-                                android:background="@drawable/textfield_area_bg">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_username"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:digits="0123456789"
+                            android:imeOptions="actionNext"
+                            android:inputType="number"
+                            android:maxLength="13"
+                            android:textColor="#1B5E20"
+                            android:textSize="15sp"
+                            android:textColorHint="#A5B8A5"
+                            android:hint="00000-0000000-0"
+                            android:fontFamily="monospace" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                                <androidx.appcompat.widget.AppCompatEditText
-                                    android:id="@+id/et_username"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_gravity="center"
-                                    android:layout_margin="5dp"
-                                    android:background="@android:color/transparent"
-                                    android:digits="0123456789"
-                                    android:focusable="true"
-                                    android:focusableInTouchMode="true"
-                                    android:imeOptions="actionNext"
-                                    android:inputType="number"
-                                    android:maxLength="13"
-                                    android:padding="2dp"
-                                    android:textColor="@color/Black"
-                                    android:textSize="@dimen/edittext_input_size" />
-                            </LinearLayout>
-                        </TableRow>
+                    <!-- Password field -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="PASSWORD"
+                        android:textColor="#2E5A2E"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:fontFamily="sans-serif-medium" />
 
-                        <TableRow android:layout_marginTop="10dp">
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/til_password"
+                        style="@style/ModernTextInputLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        app:startIconDrawable="@drawable/ic_lock_outline"
+                        app:startIconTint="@color/input_icon_tint"
+                        app:passwordToggleEnabled="true"
+                        app:passwordToggleTint="@color/input_icon_tint"
+                        app:hintEnabled="false">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="start"
-                                android:text="@string/asterisk"
-                                android:textColor="@color/textCompulsoryColor"
-                                android:textSize="@dimen/edittext_title_size" />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_password"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:inputType="textPassword"
+                            android:maxLength="80"
+                            android:textColor="#1B5E20"
+                            android:textSize="15sp"
+                            android:textColorHint="#A5B8A5"
+                            android:hint="Enter password" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/password"
-                                android:textColor="@color/Black"
-                                android:textSize="@dimen/edittext_title_size" />
-                        </TableRow>
+                    <!-- Forgot password -->
+                    <TextView
+                        android:id="@+id/tv_forgot_password"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="14dp"
+                        android:padding="6dp"
+                        android:text="@string/forgot_password"
+                        android:textColor="#2E7D32"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:background="?android:attr/selectableItemBackground"
+                        android:visibility="gone" />
 
-                        <TableRow android:layout_marginTop="10dp">
+                    <!-- Login button -->
+                    <com.github.leandroborgesferreira.loadingbutton.customViews.CircularProgressButton
+                        android:id="@+id/btn_login"
+                        android:layout_width="match_parent"
+                        android:layout_height="58dp"
+                        android:layout_marginTop="24dp"
+                        android:background="@drawable/btn_login_modern"
+                        android:text="SIGN IN"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.2"
+                        app:spinning_bar_color="#FFFFFF" />
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/til_password"
-                                android:layout_width="0dp"
-                                android:layout_height="@dimen/edittext_height"
-                                android:layout_gravity="center"
-                                android:layout_weight="1"
-                                android:background="@drawable/textfield_area_bg"
-                                app:hintEnabled="false"
-                                app:passwordToggleEnabled="true">
+                    <!-- Decorative tagline -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="20dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/et_password"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_gravity="center"
-                                    android:layout_marginHorizontal="@dimen/margin_5dp"
-                                    android:background="@android:color/transparent"
-                                    android:focusable="true"
-                                    android:focusableInTouchMode="true"
-                                    android:gravity="center_vertical"
-                                    android:inputType="textPassword"
-                                    android:maxLength="80"
-                                    android:padding="2dp"
-                                    android:textColor="@color/Black"
-                                    android:textSize="@dimen/edittext_input_size" />
-                            </com.google.android.material.textfield.TextInputLayout>
-                        </TableRow>
+                        <View
+                            android:layout_width="24dp"
+                            android:layout_height="1dp"
+                            android:background="#C8E6C9" />
 
-                        <TableRow android:layout_marginTop="10dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="10dp"
+                            android:text="CULTIVATING DIGITAL LAND RECORDS"
+                            android:textColor="#81A881"
+                            android:textSize="9sp"
+                            android:letterSpacing="0.2"
+                            android:fontFamily="sans-serif-medium" />
 
-                            <LinearLayout
-                                android:id="@+id/ll_forgot_password"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="end">
-
-                                <TextView
-                                    android:id="@+id/tv_forgot_password"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="end"
-                                    android:layout_marginHorizontal="@dimen/margin_5dp"
-                                    android:gravity="end"
-                                    android:text="@string/forgot_password"
-                                    android:textAllCaps="false"
-                                    android:textColor="@color/black"
-                                    android:textSize="@dimen/text_size_large"
-                                    android:visibility="gone" />
-                            </LinearLayout>
-
-
-                        </TableRow>
-
-                        <TableRow
-                            android:layout_marginTop="10dp"
-                            android:layout_marginBottom="10dp">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:layout_weight="1"
-                                android:gravity="center">
-
-                                <com.github.leandroborgesferreira.loadingbutton.customViews.CircularProgressButton
-                                    android:id="@+id/btn_login"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="@dimen/mediumButtonHeight"
-                                    android:background="@drawable/blue_background"
-                                    android:gravity="center"
-                                    android:text="@string/login"
-                                    android:textColor="#fff"
-                                    android:textSize="@dimen/text_size_xxlarge"
-                                    android:textStyle="bold"
-                                    app:spinning_bar_color="@color/white" />
-                            </LinearLayout>
-                        </TableRow>
-
-                    </TableLayout>
+                        <View
+                            android:layout_width="24dp"
+                            android:layout_height="1dp"
+                            android:background="#C8E6C9" />
+                    </LinearLayout>
                 </LinearLayout>
-            </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Footer -->
+            <TextView
+                android:id="@+id/tv_footer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:gravity="center"
+                android:text="@string/footer_main_menu"
+                android:textColor="#80FFFFFF"
+                android:textSize="11sp"
+                android:letterSpacing="0.05" />
         </LinearLayout>
     </ScrollView>
 
-    <LinearLayout
-        android:id="@+id/layout_page_footer"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/margin_45dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-
-        <TextView
-            android:id="@+id/tv_footer"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:paddingEnd="@dimen/margin_5dp"
-            android:text="@string/footer_main_menu"
-            android:textColor="@color/row_heading_background"
-            android:textSize="@dimen/text_size_normal" />
-
-
-    </LinearLayout>
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-

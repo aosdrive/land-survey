@@ -1,312 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Saved record row.
+     Layout map (ids preserved so the adapter keeps compiling):
+       tv_parcel_operation  -> chip on the header right (was Revisit's slot)
+       tv_parcel_ids        -> GROWER CODE chip (left)
+       tv_grower_status     -> NEW: "Grower added" / "No grower" (right)
+       tv_revisit*          -> kept but GONE; adapter still references them -->
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="@dimen/margin_8dp"
-    android:layout_marginTop="@dimen/margin_3dp"
-    android:elevation="@dimen/margin_2dp"
-    app:cardUseCompatPadding="true">
+    android:layout_marginHorizontal="14dp"
+    android:layout_marginTop="10dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="6dp"
+    app:cardUseCompatPadding="false">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <!--        <LinearLayout-->
-        <!--            android:id="@+id/layout_page_header"-->
-        <!--            android:layout_width="0dp"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:background="@color/album_card_header"-->
-        <!--            android:orientation="horizontal"-->
-        <!--            app:layout_constraintEnd_toEndOf="parent"-->
-        <!--            app:layout_constraintStart_toStartOf="parent"-->
-        <!--            app:layout_constraintTop_toTopOf="parent">-->
-
-        <!--            <LinearLayout-->
-        <!--                android:layout_width="0dp"-->
-        <!--                android:layout_height="wrap_content"-->
-        <!--                android:layout_weight="6"-->
-        <!--                android:orientation="horizontal"-->
-        <!--                android:paddingTop="10dp"-->
-        <!--                android:paddingBottom="10dp">-->
-
-        <!--                <TextView-->
-        <!--                    android:id="@+id/tv_parcel_id_caption"-->
-        <!--                    android:layout_width="wrap_content"-->
-        <!--                    android:layout_height="wrap_content"-->
-        <!--                    android:gravity="center_vertical"-->
-        <!--                    android:paddingStart="8dp"-->
-
-        <!--                    android:paddingTop="@dimen/album_title_padding"-->
-        <!--                    android:text="@string/parcel_no"-->
-        <!--                    android:textColor="#000"-->
-        <!--                    android:textSize="16sp"-->
-        <!--                    android:textStyle="bold"-->
-        <!--                    app:layout_constraintStart_toStartOf="parent"-->
-        <!--                    app:layout_constraintTop_toBottomOf="@id/tv_area" />-->
-
-        <!--                <TextView-->
-        <!--                    android:id="@+id/tv_parcel_id"-->
-        <!--                    android:layout_width="wrap_content"-->
-        <!--                    android:layout_height="wrap_content"-->
-        <!--                    android:gravity="center_vertical"-->
-        <!--                    android:paddingStart="@dimen/album_title_padding"-->
-        <!--                    android:paddingTop="@dimen/album_title_padding"-->
-        <!--                    android:text=""-->
-        <!--                    android:textColor="#000"-->
-        <!--                    android:textSize="16sp"-->
-        <!--                    app:layout_constraintStart_toEndOf="@+id/tv_parcel_id_caption"-->
-        <!--                    app:layout_constraintTop_toBottomOf="@+id/tv_area" />-->
-
-        <!--            </LinearLayout>-->
-
-        <!--            <ImageView-->
-        <!--                android:id="@+id/iv_more"-->
-        <!--                android:layout_width="wrap_content"-->
-        <!--                android:layout_height="match_parent"-->
-        <!--                android:layout_marginEnd="@dimen/margin_5dp"-->
-        <!--                android:padding="@dimen/margin_8dp"-->
-        <!--                android:scaleType="centerCrop"-->
-        <!--                android:src="@drawable/baseline_more_vert_24" />-->
-
-        <!--        </LinearLayout>-->
-
-        <TextView
-            android:id="@+id/tv_parcel_id_caption"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_5dp"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text="@string/parcel_no"
-            android:textColor="#000"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tv_parcel_id"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_5dp"
-            android:gravity="center_vertical"
-            android:paddingStart="@dimen/album_title_padding"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text=""
-            android:textColor="#000"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@+id/tv_parcel_id_caption"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tv_parcel_operation_caption"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_3dp"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text="@string/parcel_operation"
-            android:textColor="#000"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_id_caption" />
-
-        <TextView
-            android:id="@+id/tv_parcel_operation"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_3dp"
-            android:gravity="center_vertical"
-            android:paddingStart="@dimen/album_title_padding"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text=""
-            android:textColor="#000"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@+id/tv_parcel_operation_caption"
-            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_id_caption" />
-
-        <TextView
-            android:id="@+id/tv_parcel_ids_caption"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_3dp"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text="@string/parcel_nos"
-            android:textColor="#000"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_operation_caption" />
-
-        <TextView
-            android:id="@+id/tv_parcel_ids"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_3dp"
-            android:gravity="center_vertical"
-            android:paddingStart="@dimen/album_title_padding"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text=""
-            android:textColor="#000"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@+id/tv_parcel_ids_caption"
-            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_operation_caption" />
-
-        <TextView
-            android:id="@+id/tv_date_time_caption"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_3dp"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text="@string/date"
-            android:textColor="#000"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_parcel_ids_caption" />
-
-        <TextView
-            android:id="@+id/tv_date_time"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_3dp"
-            android:gravity="center_vertical"
-            android:paddingStart="@dimen/album_title_padding"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text=""
-            android:textColor="#000"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@+id/tv_date_time_caption"
-            app:layout_constraintTop_toBottomOf="@+id/tv_parcel_ids_caption" />
-
-        <TextView
-            android:id="@+id/tv_revisit_caption"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:paddingStart="8dp"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text="Revisit: "
-            android:textColor="@color/Red"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_date_time_caption" />
-
-        <TextView
-            android:id="@+id/tv_revisit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:paddingStart="@dimen/album_title_padding"
-            android:paddingTop="@dimen/album_title_padding"
-            android:text=""
-            android:textColor="@color/Red"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@+id/tv_revisit_caption"
-            app:layout_constraintTop_toBottomOf="@+id/tv_date_time_caption" />
-
-        <!--        <TextView-->
-        <!--            android:id="@+id/tv_parcel_id_caption"-->
-        <!--            android:layout_width="0dp"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:gravity="center_vertical"-->
-        <!--            android:paddingLeft="8dp"-->
-        <!--            android:paddingTop="@dimen/album_title_padding"-->
-        <!--            android:visibility="gone"-->
-        <!--            android:text="Parcel No: "-->
-        <!--            android:textColor="#000"-->
-        <!--            android:textSize="13sp"-->
-        <!--            android:textStyle="bold"-->
-        <!--            app:layout_constraintStart_toStartOf="parent"-->
-        <!--            app:layout_constraintTop_toBottomOf="@id/tv_area" />-->
-
-        <!--        <TextView-->
-        <!--            android:id="@+id/tv_parcel_id"-->
-        <!--            android:layout_width="0dp"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:gravity="center_vertical"-->
-        <!--            android:paddingLeft="@dimen/album_title_padding"-->
-        <!--            android:paddingTop="@dimen/album_title_padding"-->
-        <!--            android:text="15102"-->
-        <!--            android:visibility="gone"-->
-        <!--            android:textColor="#000"-->
-        <!--            android:textSize="13sp"-->
-        <!--            app:layout_constraintStart_toEndOf="@+id/tv_parcel_id_caption"-->
-        <!--            app:layout_constraintTop_toBottomOf="@+id/tv_area" />-->
-
+        <!-- ================= IDENTITY ================= -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:layout_marginHorizontal="@dimen/margin_2dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_revisit_caption">
+            android:background="#F4F9F4"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="13dp"
+            android:paddingBottom="13dp">
 
-            <Button
-                android:id="@+id/btn_upload_record"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="4dp"
-                android:layout_marginRight="4dp"
-                android:layout_marginBottom="@dimen/margin_6dp"
-                android:layout_weight="4"
-                android:background="@drawable/register_btn"
-                android:minHeight="@dimen/margin_45dp"
-                android:text="@string/upload"
-                android:textColor="#fff"
-                android:textSize="@dimen/text_size_normal" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btn_view_record"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_parcel_id_caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.14"
+                        android:text="@string/parcel_no"
+                        android:textAllCaps="true"
+                        android:textColor="#8CA893"
+                        android:textSize="8.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_parcel_id"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:fontFamily="serif"
+                        android:letterSpacing="-0.02"
+                        android:maxLines="1"
+                        android:textColor="#1B5E20"
+                        android:textSize="26sp"
+                        android:textStyle="bold"
+                        tools:text="1299" />
+                </LinearLayout>
+
+                <!-- operation, moved up here -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/zd_op_chip"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="7dp">
+
+                    <TextView
+                        android:id="@+id/tv_parcel_operation_caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.12"
+                        android:text="@string/parcel_operation"
+                        android:textAllCaps="true"
+                        android:textColor="#6B8A6B"
+                        android:textSize="7.5sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_parcel_operation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="#1B5E20"
+                        android:textSize="13sp"
+                        tools:text="Merge" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- grower code + grower validation.
+                 baselineAligned=false + matchParent children => barabar height -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="4dp"
-                android:layout_marginRight="4dp"
-                android:layout_marginBottom="@dimen/margin_6dp"
-                android:layout_weight="1"
-                android:background="@color/colorPrimary"
-                android:minHeight="@dimen/margin_45dp"
-                android:text="@string/view"
-                android:textColor="#fff"
-                android:textSize="@dimen/text_size_normal" />
+                android:layout_marginTop="11dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btn_delete_record"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/zd_meta_chip"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="8dp">
+
+                    <TextView
+                        android:id="@+id/tv_parcel_ids_caption"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.1"
+                        android:text="GROWER CODE"
+                        android:textColor="#6B8A6B"
+                        android:textSize="8sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_parcel_ids"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:ellipsize="end"
+                        android:fontFamily="sans-serif-medium"
+                        android:maxLines="1"
+                        android:textColor="#1B5E20"
+                        android:textSize="13sp"
+                        tools:text="12-34-56789" />
+                </LinearLayout>
+
+                <!-- validation: background + icon are swapped in the adapter -->
+                <LinearLayout
+                    android:id="@+id/ll_grower_status"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/zd_chip_ok"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <ImageView
+                        android:id="@+id/iv_grower_status"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_check_14" />
+
+                    <TextView
+                        android:id="@+id/tv_grower_status"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:fontFamily="sans-serif-medium"
+                        android:maxLines="1"
+                        android:textColor="#1B5E20"
+                        android:textSize="12sp"
+                        tools:text="Grower added" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Revisit: kept so the adapter's findViewById still resolves -->
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="4dp"
-                android:layout_marginRight="4dp"
-                android:layout_marginBottom="@dimen/margin_6dp"
-                android:layout_weight="1"
-                android:background="@color/DarkRed"
-                android:minHeight="@dimen/margin_45dp"
-                android:text="@string/delete"
-                android:textColor="#fff"
-                android:textSize="@dimen/text_size_normal" />
+                android:layout_marginTop="9dp"
+                android:background="@drawable/zd_revisit_chip"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:visibility="gone">
 
+                <TextView
+                    android:id="@+id/tv_revisit_caption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:text="Revisit"
+                    android:textColor="#B47B12"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
 
+                <TextView
+                    android:id="@+id/tv_revisit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="#8A5B0A"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E8EFE8" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- ================= WHEN ================= -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="11dp">
+
+            <ImageView
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_clock_14" />
+
+            <TextView
+                android:id="@+id/tv_date_time_caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:letterSpacing="0.1"
+                android:text="@string/date"
+                android:textAllCaps="true"
+                android:textColor="#8CA893"
+                android:textSize="8.5sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_date_time"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="7dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="#4C7A4C"
+                android:textSize="12sp"
+                tools:text="12/08/2026 04:15 PM" />
+        </LinearLayout>
+
+        <!-- ================= ACTIONS ================= -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="14dp">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_upload_record"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="2"
+                android:background="@drawable/zd_btn_upload"
+                android:drawableStart="@drawable/ic_upload_16"
+                android:drawablePadding="7dp"
+                android:gravity="center_vertical"
+                android:letterSpacing="0.05"
+                android:paddingStart="18dp"
+                android:paddingEnd="10dp"
+                android:text="@string/upload"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_view_record"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/zd_btn_ghost"
+                android:gravity="center"
+                android:text="@string/view"
+                android:textAllCaps="false"
+                android:textColor="#2E5A2E"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btn_delete_record"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/zd_btn_danger"
+                android:gravity="center"
+                android:text="@string/delete"
+                android:textAllCaps="false"
+                android:textColor="#C62828"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
 </androidx.cardview.widget.CardView>

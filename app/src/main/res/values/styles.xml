@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Modern outlined input with green focus -->
+    <style name="ModernTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeWidth">1.5dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxStrokeColor">@color/input_stroke_selector</item>
+        <item name="boxCornerRadiusTopStart">14dp</item>
+        <item name="boxCornerRadiusTopEnd">14dp</item>
+        <item name="boxCornerRadiusBottomStart">14dp</item>
+        <item name="boxCornerRadiusBottomEnd">14dp</item>
+        <item name="hintTextColor">#2E7D32</item>
+        <item name="boxBackgroundColor">#F9FDF9</item>
+    </style>
+
     <style name="h4">
         <item name="android:fontFamily">@font/poppins_thin</item>
         <item name="android:textColor">@color/g_black</item>
@@ -160,4 +173,23 @@
         <item name="android:layout_marginEnd">18dp</item>
         <item name="android:background">#EAECF0</item>
     </style>
+
+    <!-- Transparent window so zd_dialog_bg ke rounded corners nazar aayen.
+     styles.xml me merge kar dein ya ye file waise hi rakhein. -->
+    <style name="ZdDialog" parent="Theme.MaterialComponents.Light.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+    </style>
+
+    <!-- Bottom sheet: transparent window taake zd_sheet_bg ke rounded corners dikhen -->
+    <style name="ZdBottomSheet" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/ZdBottomSheetStyle</item>
+        <item name="android:backgroundDimAmount">0.55</item>
+    </style>
+
+    <style name="ZdBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+
 </resources>

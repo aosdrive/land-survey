@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Signature element: cadastral parcel boundaries, the same shapes the
+     surveyor sees on the map screen. Drawn as outlines only. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="300dp"
+    android:viewportWidth="400"
+    android:viewportHeight="300">
+
+    <path
+        android:pathData="M-20,74 L96,38 L188,86 L156,150 L34,166 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M188,86 L296,44 L390,92 L362,148 L156,150 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M34,166 L156,150 L164,244 L60,268 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M164,244 L156,150 L362,148 L344,236 Z"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M296,44 L282,-16"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M96,38 L104,-18"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M60,268 L52,318"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M344,236 L356,314"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2" />
+</vector>

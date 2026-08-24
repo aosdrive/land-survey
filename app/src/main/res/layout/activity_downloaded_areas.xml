@@ -1,64 +1,224 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- OPTION B: ghost numeral + slanted edge. Chunein to is file ka naam
+     activity_downloaded_areas.xml kar dein. tv_ghost_count ke liye
+     Kotlin mein ek extra line chahiye (neeche note dekhein). -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/album_card_bg"
-    tools:context=".ui.activities.SavedRecordsActivity">
+    android:background="#F3F6F1"
+    tools:context=".ui.activities.DownloadedAreasActivity">
 
-    <TextView
-        android:id="@+id/tv_header"
+    <!-- Height fixed hai (wrap_content nahi): 140sp ka ghost numeral
+         warna band ko aadhi screen tak phaila deta hai. -->
+    <FrameLayout
+        android:id="@+id/ll_header_band"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_weight="9"
-        android:background="@color/listitem_text_activated"
-        android:gravity="center"
-        android:minHeight="50dp"
-        android:padding="10dp"
-        android:text="Downloaded Areas"
-        android:textColor="@color/white"
-        android:textSize="@dimen/margin_15sp"
+        android:layout_height="124dp"
+        android:background="@drawable/zd_band_slant"
+        android:clipChildren="true"
+        android:clipToPadding="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.14"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            android:src="@drawable/zd_parcel_lines" />
+
+        <!-- oversized ghost numeral -->
+        <TextView
+            android:id="@+id/tv_ghost_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="-40dp"
+            android:layout_marginEnd="-4dp"
+            android:alpha="0.17"
+            android:fontFamily="serif"
+            android:includeFontPadding="false"
+            android:letterSpacing="-0.06"
+            android:textColor="#FFFFFF"
+            android:textSize="140sp"
+            android:textStyle="bold"
+            tools:text="3" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingTop="17dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="26dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="16dp"
+                    android:layout_height="2dp"
+                    android:background="#A5D6A7" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.17"
+                    android:text="STORED OFFLINE"
+                    android:textColor="#A5D6A7"
+                    android:textSize="8.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_slot_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="serif"
+                    android:letterSpacing="-0.03"
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold"
+                    tools:text="3" />
+
+                <TextView
+                    android:id="@+id/tv_slot_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:fontFamily="serif"
+                    android:text="areas ready"
+                    android:textColor="#FFFFFF"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="Downloaded Areas"
+                android:textColor="#9FC5AA"
+                android:textSize="11sp"
+                tools:text="tap an area to make it active" />
+        </LinearLayout>
+    </FrameLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:visibility="visible"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:paddingHorizontal="14dp"
+        android:paddingTop="14dp"
+        android:paddingBottom="20dp"
+        android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_header"
-        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintTop_toBottomOf="@+id/ll_header_band"
+        app:layout_goneMarginTop="0dp"
         tools:listitem="@layout/item_option" />
 
+    <!-- ================= EMPTY STATE ================= -->
     <LinearLayout
         android:id="@+id/noRecordLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@color/white"
         android:gravity="center"
         android:orientation="vertical"
+        android:paddingHorizontal="38dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_header">
+        app:layout_constraintTop_toBottomOf="@+id/ll_header_band"
+        app:layout_goneMarginTop="0dp">
+
+        <FrameLayout
+            android:layout_width="104dp"
+            android:layout_height="104dp"
+            android:background="@drawable/zd_dashed_ring">
+
+            <ImageView
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@android:drawable/ic_dialog_map"
+                app:tint="#8CB69A" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/noRecordText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:fontFamily="serif"
             android:gravity="center"
+            android:letterSpacing="-0.02"
             android:text="@string/no_records_to_display"
-            android:textColor="#706f6f"
-            android:textSize="@dimen/margin_16sp" />
+            android:textColor="#1B5E20"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp"
+            android:text="Go to Download Data on the main menu and pick a mauza to survey."
+            android:textColor="#6B8A6B"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="20dp"
+                android:layout_height="1dp"
+                android:background="#C8E6C9" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="10dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.2"
+                android:text="NOTHING STORED OFFLINE"
+                android:textColor="#81A881"
+                android:textSize="9sp" />
+
+            <View
+                android:layout_width="20dp"
+                android:layout_height="1dp"
+                android:background="#C8E6C9" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

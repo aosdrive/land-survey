@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft light bloom behind the emblem so the canopy reads as depth, not a flat slab. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:centerColor="#26FFFFFF"
+        android:endColor="#00FFFFFF"
+        android:gradientRadius="140dp"
+        android:startColor="#4DFFFFFF"
+        android:type="radial" />
+</shape>

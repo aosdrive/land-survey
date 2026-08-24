@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty-state ring for the dark field background -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#1AFFFFFF" />
+    <stroke
+        android:width="2dp"
+        android:color="#66A5D6A7"
+        android:dashWidth="7dp"
+        android:dashGap="5dp" />
+</shape>

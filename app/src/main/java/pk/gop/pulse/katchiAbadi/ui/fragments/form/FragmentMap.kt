@@ -808,6 +808,8 @@ class FragmentMap : Fragment() {
                         }
 
                         Log.d("SPLIT_DEBUG", "✅ Found original parcel: ${originalParcel.id}")
+                        Log.d("SPLIT_DEBUG", "   ParcelNo: ${originalParcel.parcelNo}")
+                        Log.d("SPLIT_DEBUG", "   AreaAssigned: ${originalParcel.areaAssigned}")
 
                         // ✅ Deactivate original parcel
                         database.activeParcelDao().updateParcelActivationStatus(originalParcel.id, false)
@@ -815,9 +817,23 @@ class FragmentMap : Fragment() {
 
                         cleanupOriginalGraphicsAfterSplit(originalParcelId)
 
-                        // ✅ Get max ID for new parcels
-                        val maxId = database.activeParcelDao().getMaxParcelId() ?: 0L
-                        Log.d("SPLIT_DEBUG", "Current max parcel ID: $maxId")
+                        // ═══════════════════════════════════════════════════════════
+                        // ✅ FIX: local id ab MANFI hai.
+                        //
+                        // Pehle: maxId + i + 1  (maxId = sirf downloaded areas ka max)
+                        // Server par us se aage hazaron parcels hote hain, is liye
+                        // banaya hua id KISI DOOSRE AREA ke asli server id se takra
+                        // jata tha. Upload par wo id parcelOperationValue me chali
+                        // jati thi -> server ghalat parcel ka AreaAssigned utha leta
+                        // tha aur ghalat parcel deactivate kar deta tha.
+                        //
+                        // Server ids hamesha positive hain, is liye manfi ids kabhi
+                        // nahi takratin. Upload par parcelOperation="New" hone se
+                        // buildCleanSurveyPostNew() parcelId = 0 bhejta hai, yani ye
+                        // manfi id server tak pohnchti hi nahi.
+                        // ═══════════════════════════════════════════════════════════
+                        val localIdBase = -System.currentTimeMillis()
+                        Log.d("SPLIT_DEBUG", "Local id base (negative, collision-free): $localIdBase")
 
                         val newParcels = mutableListOf<ActiveParcelEntity>()
 
@@ -853,7 +869,7 @@ class FragmentMap : Fragment() {
                             val newCentroid = splitPolygons[i].extent.center
                             val centroidWKT = String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
 
-                            val newUniqueId = maxId + i + 1
+                            val newUniqueId = localIdBase - i
 
                             val newParcel = originalParcel.copy(
                                 pkid = 0,
@@ -867,14 +883,17 @@ class FragmentMap : Fragment() {
                                 isActivate = true,
                                 unitId = originalUnitId,
                                 groupId = originalGroupId
+                                // areaAssigned / mauzaId / khewatInfo copy() se parent
+                                // se hi aa rahe hain - inhe chhoona nahi
                             )
 
                             newParcels.add(newParcel)
 
                             Log.d("SPLIT_DEBUG", "✅ Created split parcel ${i + 1}:")
-                            Log.d("SPLIT_DEBUG", "   New ID: $newUniqueId")
+                            Log.d("SPLIT_DEBUG", "   New ID (local): $newUniqueId")
                             Log.d("SPLIT_DEBUG", "   ParcelNo: $originalParcelNo")
                             Log.d("SPLIT_DEBUG", "   SubParcelNo: $newSubParcelNo")
+                            Log.d("SPLIT_DEBUG", "   AreaAssigned: ${newParcel.areaAssigned}")
                             Log.d("SPLIT_DEBUG", "   GeomWKT: ${if (newParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY" else "✅ Present (${newParcel.geomWKT?.length} chars)"}")
                             Log.d("SPLIT_DEBUG", "   Centroid: ${newParcel.centroid}")
                         }
@@ -890,6 +909,7 @@ class FragmentMap : Fragment() {
                                 Log.d("SPLIT_DEBUG", "✅ Verify parcel ID ${newParcel.id}:")
                                 Log.d("SPLIT_DEBUG", "   Exists: true")
                                 Log.d("SPLIT_DEBUG", "   isActivate: ${verifyParcel.isActivate}")
+                                Log.d("SPLIT_DEBUG", "   AreaAssigned: ${verifyParcel.areaAssigned}")
                                 Log.d("SPLIT_DEBUG", "   GeomWKT: ${if (verifyParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY/NULL" else "✅ Present (${verifyParcel.geomWKT?.length} chars)"}")
                                 Log.d("SPLIT_DEBUG", "   Centroid: ${verifyParcel.centroid ?: "❌ NULL"}")
 
@@ -1463,7 +1483,9 @@ class FragmentMap : Fragment() {
                     binding.tvUnsurveyedParcelCount.text = "($unSurveyedCount)"
 //                    binding.tvLcckedParcelCount.text = "($lockedCount)"
 //                    binding.tvRevisitParcelCount.text = "($rejectedCount)"
-
+                    val pct = if (parcelsCount > 0) (totalSurveyedCount * 100) / parcelsCount else 0
+                    binding.progressSurveyed.progress = pct
+                    binding.tvProgressPct.text = "$pct%"
                     val tileManager = TileManager(requireContext())
 
                     val levelsOfDetail = listOf(
@@ -1607,7 +1629,7 @@ class FragmentMap : Fragment() {
         attr["isRejected"] = isRejected
         attr["unit_id"] = parcel.unitId ?: 0L
         attr["group_id"] = parcel.groupId ?: 0L
-
+        attr["khewatInfo"] = parcel.khewatInfo.orEmpty()
         // ✅ Grower codes ab seedha parcel se (resync ke baad bhi available)
         val growerText = parcel.growerCodes?.trim().orEmpty()
         val isSurveyed = parcel.surveyStatusCode == 2
@@ -2572,13 +2594,13 @@ class FragmentMap : Fragment() {
         val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
 
 //        val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
-        val btnSolar = dialogView.findViewById<Button>(R.id.btn_solar_panel)
-        val btnDrone = dialogView.findViewById<Button>(R.id.btn_drone_spray)
-        val btnInputs = dialogView.findViewById<Button>(R.id.btn_inputs)
+//        val btnSolar = dialogView.findViewById<Button>(R.id.btn_solar_panel)
+//        val btnDrone = dialogView.findViewById<Button>(R.id.btn_drone_spray)
+//        val btnInputs = dialogView.findViewById<Button>(R.id.btn_inputs)
 
-        val delete = dialogView.findViewById<ImageView>(R.id.delete)
+//        val delete = dialogView.findViewById<ImageView>(R.id.delete)
         val mapLocation = dialogView.findViewById<ImageView>(R.id.mapLocaton)
-        val directions = dialogView.findViewById<ImageView>(R.id.directions)
+//        val directions = dialogView.findViewById<ImageView>(R.id.directions)
 
         val lSplitParcel = dialogView.findViewById<LinearLayout>(R.id.layout_split_parcel)
         val etSplitParcel = dialogView.findViewById<EditText>(R.id.et_split_parcel)
@@ -2589,17 +2611,17 @@ class FragmentMap : Fragment() {
 
         val rgParcel = dialogView.findViewById<RadioGroup>(R.id.rg_parcel)
 
-        btnSolar.setOnClickListener {
-            IntentUtil.startActivity(context,SolarPanelActivity::class.java)
-        }
+//        btnSolar.setOnClickListener {
+//            IntentUtil.startActivity(context,SolarPanelActivity::class.java)
+//        }
 
-        btnDrone.setOnClickListener {
-            IntentUtil.startActivity(context,DroneSprayActivity::class.java)
-        }
-
-        btnInputs.setOnClickListener {
-            IntentUtil.startActivity(context,InputItemsActivity::class.java)
-        }
+//        btnDrone.setOnClickListener {
+//            IntentUtil.startActivity(context,DroneSprayActivity::class.java)
+//        }
+//
+//        btnInputs.setOnClickListener {
+//            IntentUtil.startActivity(context,InputItemsActivity::class.java)
+//        }
 
         rgParcel.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
@@ -2618,10 +2640,24 @@ class FragmentMap : Fragment() {
                     lMergeParcel.visibility = View.VISIBLE
                 }
             }
+            dialogView.post {
+                mCallOut.content = dialogView
+                mCallOut.show()
+            }
         }
 
-        tvParcelNo.text = attr["parcel_no"].toString()
-        tvParcelNoUni.text = attr["khewatInfo"].toString()
+//        tvParcelNo.text = attr["parcel_no"].toString()
+//        tvParcelNoUni.text = attr["khewatInfo"].toString()
+        val parcelNo = attr["parcel_no"]?.toString().orEmpty()
+        val subParcelNo = attr["sub_parcel_no"]?.toString()?.trim().orEmpty()
+
+        tvParcelNo.text = if (subParcelNo.isBlank() || subParcelNo == "0" || subParcelNo == "null") {
+            parcelNo
+        } else {
+            "$parcelNo/$subParcelNo"
+        }
+        tvParcelNoUni.text = attr["khewatInfo"]?.toString()
+            ?.takeIf { it.isNotBlank() && it != "null" } ?: "—"
         val areaSqFt = attr["area"].toString().toDoubleOrNull() ?: 0.0
         val areaKanal = areaSqFt / 5445.0
         tvParcelArea.text = String.format(Locale.US, "%.2f Kanal", areaKanal)
@@ -2657,7 +2693,7 @@ class FragmentMap : Fragment() {
                 btnStartSurvey.visibility = View.VISIBLE
                 btnRevisitSurvey.visibility = View.GONE
                 btnRetakePicturesSurvey.visibility = View.GONE
-                delete.visibility = View.GONE
+//                delete.visibility = View.GONE
             }
 
             2 -> {
@@ -2666,7 +2702,7 @@ class FragmentMap : Fragment() {
                 lMergeParcel.visibility = View.GONE
                 btnStartSurvey.visibility = View.GONE
                 btnRevisitSurvey.visibility = View.GONE
-                delete.visibility = View.GONE
+//                delete.visibility = View.GONE
             }
 
             else -> {
@@ -3227,134 +3263,134 @@ class FragmentMap : Fragment() {
             }
         }
 
-        delete.setOnClickListener {
-            graphicCentoid = graphics
-
-            val builder = AlertDialog.Builder(requireContext())
-                .setTitle("Confirm!")
-                .setCancelable(false)
-                .setMessage("Are you sure, you want to delete this record.")
-
-            builder.setPositiveButton("Proceed") { dialog, _ ->
-                dialog.dismiss()
-
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val centroid = attr["centroid"].toString()
-
-                    val listOfNAHRecords = database.notAtHomeSurveyFormDao()
-                        .getAllSurveyFormWrtCentroid(centroid)
-
-                    if (listOfNAHRecords.isNotEmpty()) {
-                        listOfNAHRecords.forEach { survey ->
-
-                            when (survey.parcelOperation) {
-                                "Split" -> {
-                                    val recordsList = database.notAtHomeSurveyFormDao()
-                                        .getRecord(survey.parcelNo, survey.uniqueId)
-                                    for (record in recordsList) {
-                                        database.parcelDao().updateParcelSurveyStatus(
-                                            record.newStatusId,
-                                            ParcelStatus.DEFAULT,
-                                            record.centroidGeom
-                                        )
-                                        database.surveyDao()
-                                            .updateSurveyStatus(false, record.surveyId)
-                                    }
-                                    database.notAtHomeSurveyFormDao()
-                                        .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
-                                }
-
-                                "Merge" -> {
-                                    if (survey.parcelOperationValue.contains(",")) {
-                                        val parcelNos =
-                                            survey.parcelOperationValue.split(",")
-                                                .toMutableList()
-                                        for (parcelNo in parcelNos) {
-
-                                            val newStatusId =
-                                                database.parcelDao().getNewStatusId(
-                                                    parcelNo.toLong(),
-                                                    survey.kachiAbadiId
-                                                )
-
-                                            database.parcelDao()
-                                                .updateParcelSurveyStatusWrtParcelId(
-                                                    newStatusId,
-                                                    ParcelStatus.DEFAULT,
-                                                    parcelNo.toLong()
-                                                )
-                                        }
-                                    } else {
-                                        val newStatusId =
-                                            database.parcelDao().getNewStatusId(
-                                                survey.parcelOperationValue.toLong(),
-                                                survey.kachiAbadiId
-                                            )
-
-                                        database.parcelDao()
-                                            .updateParcelSurveyStatusWrtParcelId(
-                                                newStatusId,
-                                                ParcelStatus.DEFAULT,
-                                                survey.parcelOperationValue.toLong()
-                                            )
-                                    }
-
-                                    val recordsList = database.notAtHomeSurveyFormDao()
-                                        .getRecord(survey.parcelNo, survey.uniqueId)
-                                    for (record in recordsList) {
-                                        database.parcelDao().updateParcelSurveyStatus(
-                                            record.newStatusId,
-                                            ParcelStatus.DEFAULT,
-                                            record.centroidGeom
-                                        )
-                                        database.surveyDao()
-                                            .updateSurveyStatus(false, record.surveyId)
-                                    }
-                                    database.notAtHomeSurveyFormDao()
-                                        .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
-                                }
-
-                                else -> {
-                                    val recordsList = database.notAtHomeSurveyFormDao()
-                                        .getRecord(survey.parcelNo, survey.uniqueId)
-                                    for (record in recordsList) {
-                                        database.parcelDao().updateParcelSurveyStatus(
-                                            record.newStatusId,
-                                            ParcelStatus.DEFAULT,
-                                            record.centroidGeom
-                                        )
-                                        database.surveyDao()
-                                            .updateSurveyStatus(false, record.surveyId)
-                                    }
-                                    database.notAtHomeSurveyFormDao()
-                                        .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
-                                }
-                            }
-                        }
-
-                        closeCallOut()
-                        ids.clear()
-                        enableNewPoint = true
-                        loadMap(ids, false)
-                    }
-                }
-            }
-
-            builder.setNegativeButton("No") { dialog, _ ->
-                dialog.dismiss()
-            }
-
-            val dialog = builder.create()
-            dialog.show()
-
-            val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-            val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-            positiveButton.textSize = 16f
-            positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-            negativeButton.textSize = 16f
-            negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-        }
+//        delete.setOnClickListener {
+//            graphicCentoid = graphics
+//
+//            val builder = AlertDialog.Builder(requireContext())
+//                .setTitle("Confirm!")
+//                .setCancelable(false)
+//                .setMessage("Are you sure, you want to delete this record.")
+//
+//            builder.setPositiveButton("Proceed") { dialog, _ ->
+//                dialog.dismiss()
+//
+//                viewLifecycleOwner.lifecycleScope.launch {
+//                    val centroid = attr["centroid"].toString()
+//
+//                    val listOfNAHRecords = database.notAtHomeSurveyFormDao()
+//                        .getAllSurveyFormWrtCentroid(centroid)
+//
+//                    if (listOfNAHRecords.isNotEmpty()) {
+//                        listOfNAHRecords.forEach { survey ->
+//
+//                            when (survey.parcelOperation) {
+//                                "Split" -> {
+//                                    val recordsList = database.notAtHomeSurveyFormDao()
+//                                        .getRecord(survey.parcelNo, survey.uniqueId)
+//                                    for (record in recordsList) {
+//                                        database.parcelDao().updateParcelSurveyStatus(
+//                                            record.newStatusId,
+//                                            ParcelStatus.DEFAULT,
+//                                            record.centroidGeom
+//                                        )
+//                                        database.surveyDao()
+//                                            .updateSurveyStatus(false, record.surveyId)
+//                                    }
+//                                    database.notAtHomeSurveyFormDao()
+//                                        .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
+//                                }
+//
+//                                "Merge" -> {
+//                                    if (survey.parcelOperationValue.contains(",")) {
+//                                        val parcelNos =
+//                                            survey.parcelOperationValue.split(",")
+//                                                .toMutableList()
+//                                        for (parcelNo in parcelNos) {
+//
+//                                            val newStatusId =
+//                                                database.parcelDao().getNewStatusId(
+//                                                    parcelNo.toLong(),
+//                                                    survey.kachiAbadiId
+//                                                )
+//
+//                                            database.parcelDao()
+//                                                .updateParcelSurveyStatusWrtParcelId(
+//                                                    newStatusId,
+//                                                    ParcelStatus.DEFAULT,
+//                                                    parcelNo.toLong()
+//                                                )
+//                                        }
+//                                    } else {
+//                                        val newStatusId =
+//                                            database.parcelDao().getNewStatusId(
+//                                                survey.parcelOperationValue.toLong(),
+//                                                survey.kachiAbadiId
+//                                            )
+//
+//                                        database.parcelDao()
+//                                            .updateParcelSurveyStatusWrtParcelId(
+//                                                newStatusId,
+//                                                ParcelStatus.DEFAULT,
+//                                                survey.parcelOperationValue.toLong()
+//                                            )
+//                                    }
+//
+//                                    val recordsList = database.notAtHomeSurveyFormDao()
+//                                        .getRecord(survey.parcelNo, survey.uniqueId)
+//                                    for (record in recordsList) {
+//                                        database.parcelDao().updateParcelSurveyStatus(
+//                                            record.newStatusId,
+//                                            ParcelStatus.DEFAULT,
+//                                            record.centroidGeom
+//                                        )
+//                                        database.surveyDao()
+//                                            .updateSurveyStatus(false, record.surveyId)
+//                                    }
+//                                    database.notAtHomeSurveyFormDao()
+//                                        .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
+//                                }
+//
+//                                else -> {
+//                                    val recordsList = database.notAtHomeSurveyFormDao()
+//                                        .getRecord(survey.parcelNo, survey.uniqueId)
+//                                    for (record in recordsList) {
+//                                        database.parcelDao().updateParcelSurveyStatus(
+//                                            record.newStatusId,
+//                                            ParcelStatus.DEFAULT,
+//                                            record.centroidGeom
+//                                        )
+//                                        database.surveyDao()
+//                                            .updateSurveyStatus(false, record.surveyId)
+//                                    }
+//                                    database.notAtHomeSurveyFormDao()
+//                                        .deleteSavedRecord(survey.parcelNo, survey.uniqueId)
+//                                }
+//                            }
+//                        }
+//
+//                        closeCallOut()
+//                        ids.clear()
+//                        enableNewPoint = true
+//                        loadMap(ids, false)
+//                    }
+//                }
+//            }
+//
+//            builder.setNegativeButton("No") { dialog, _ ->
+//                dialog.dismiss()
+//            }
+//
+//            val dialog = builder.create()
+//            dialog.show()
+//
+//            val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
+//            val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
+//
+//            positiveButton.textSize = 16f
+//            positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+//            negativeButton.textSize = 16f
+//            negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+//        }
 
         mapLocation.setOnClickListener { view: View? ->
             closeCallOut()
@@ -3389,31 +3425,31 @@ class FragmentMap : Fragment() {
             mCallOut.dismiss()
         }
 
-        directions.setOnClickListener { view: View? ->
-            closeCallOut()
-            val projectedPoint =
-                GeometryEngine.project(
-                    mapPoint,
-                    SpatialReferences.getWebMercator()
-                ) as Point
-
-            val geoPoint =
-                GeometryEngine.project(
-                    projectedPoint,
-                    SpatialReferences.getWgs84()
-                ) as Point
-
-            val latitude = geoPoint.y
-            val longitude = geoPoint.x
-
-            println("latitude77=$latitude")
-            println("longitude77=$longitude")
-
-            val uri = "http://maps.google.com/maps?daddr=$latitude,$longitude"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-            intent.setPackage("com.google.android.apps.maps")
-            startActivity(intent)
-        }
+//        directions.setOnClickListener { view: View? ->
+//            closeCallOut()
+//            val projectedPoint =
+//                GeometryEngine.project(
+//                    mapPoint,
+//                    SpatialReferences.getWebMercator()
+//                ) as Point
+//
+//            val geoPoint =
+//                GeometryEngine.project(
+//                    projectedPoint,
+//                    SpatialReferences.getWgs84()
+//                ) as Point
+//
+//            val latitude = geoPoint.y
+//            val longitude = geoPoint.x
+//
+//            println("latitude77=$latitude")
+//            println("longitude77=$longitude")
+//
+//            val uri = "http://maps.google.com/maps?daddr=$latitude,$longitude"
+//            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+//            intent.setPackage("com.google.android.apps.maps")
+//            startActivity(intent)
+//        }
 
         btnCancel.setOnClickListener {
             closeCallOut()
@@ -3421,7 +3457,7 @@ class FragmentMap : Fragment() {
 
         setCalloutDisplayLocation(mapPoint)
         val callOutStyle = Callout.Style(context)
-        callOutStyle.borderColor = R.color.primaryColor
+        callOutStyle.borderColor = ContextCompat.getColor(context, R.color.forest_green)
         callOutStyle.borderWidth = 2
         mCallOut.style = callOutStyle
         mCallOut.location = mapPoint

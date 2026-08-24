@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Person ka compact row. Bottom sheet band hone par container me yehi dikhta hai.
+     ids: llPersonRow, tvPersonInitials, tvPersonName, tvPersonMeta,
+          llGrowerChip, tvPersonGrower, btnEditPerson, btnDeletePerson -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/llPersonRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/zd_row_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="12dp">
+
+    <FrameLayout
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:background="@drawable/zd_avatar_disc">
+
+        <TextView
+            android:id="@+id/tvPersonInitials"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="serif"
+            android:textColor="#1B5E20"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            tools:text="AA" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvPersonName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:textColor="#1B5E20"
+            android:textSize="14.5sp"
+            tools:text="Ahmad Ali" />
+
+        <TextView
+            android:id="@+id/tvPersonMeta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#8CA893"
+            android:textSize="11.5sp"
+            tools:text="Owner · 12345-1234567-1" />
+
+        <LinearLayout
+            android:id="@+id/llGrowerChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/zd_chip_ok"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp">
+
+            <ImageView
+                android:layout_width="11dp"
+                android:layout_height="11dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_check_14" />
+
+            <TextView
+                android:id="@+id/tvPersonGrower"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#1B5E20"
+                android:textSize="10.5sp"
+                tools:text="11-01-00001" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/btnEditPerson"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/zd_icon_btn_bg"
+        android:contentDescription="Edit"
+        android:padding="11dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_edit_16" />
+
+    <ImageButton
+        android:id="@+id/btnDeletePerson"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="6dp"
+        android:background="@drawable/zd_icon_btn_bg"
+        android:contentDescription="Delete"
+        android:padding="11dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/baseline_delete_24" />
+</LinearLayout>

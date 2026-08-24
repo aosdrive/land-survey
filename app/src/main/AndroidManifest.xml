@@ -36,6 +36,10 @@
         android:theme="@style/Theme.Survey"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".ui.activities.MapAnalysisActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity
             android:name=".ui.activities.PendingTasksActivity"
             android:exported="false" />
         <activity

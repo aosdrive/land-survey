@@ -25,6 +25,7 @@ import pk.gop.pulse.katchiAbadi.databinding.ActivityDownloadedAreasBinding
 import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import java.io.File
 import javax.inject.Inject
+
 @AndroidEntryPoint
 class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickListener {
 
@@ -55,64 +56,66 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
             adapter = downloadedAreasAdapter
         }
 
+        refreshScreen()
+    }
+
+    /**
+     * Header + list dono ek hi jagah se bharte hain, is liye delete ke baad
+     * count bhi update ho jata hai (pehle stale reh jata tha).
+     */
+    private fun refreshScreen() {
         lifecycleScope.launch {
-            val mauzaId = sharedPreferences.getLong(
-                Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID,
-                Constants.SHARED_PREF_DEFAULT_INT.toLong()
-            )
 
-            val areaName = sharedPreferences.getString(
-                Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name,
-                Constants.SHARED_PREF_DEFAULT_STRING
-            ).orEmpty()
-            val totalPendingRecords = withContext(Dispatchers.IO) {
-//                database.activeParcelDao().getDistinctParcelCount()
-                database.activeParcelDao().getParcelsCountByMauzaAndArea(mauzaId,areaName )
+            val downloadedAreaModels = withContext(Dispatchers.IO) {
+                viewModel.getDownloadedAreas()
             }
+            val storedAreas = downloadedAreaModels.size
 
-            if (totalPendingRecords > 0) {
-                val allowedDownloadableAreas = sharedPreferences.getInt(
-                    Constants.SHARED_PREF_ALLOWED_DOWNLOADABLE_AREAS,
-                    Constants.SHARED_PREF_DEFAULT_DOWNLOADABLE_AREAS
-                )
-                binding.tvHeader.text =
-                    "Downloaded Areas: $totalPendingRecords/$allowedDownloadableAreas"
+            if (storedAreas > 0) {
+                binding.llHeaderBand.visibility = View.VISIBLE
                 binding.tvHeader.visibility = View.VISIBLE
                 binding.recyclerView.visibility = View.VISIBLE
                 binding.noRecordLayout.visibility = View.GONE
                 binding.noRecordText.visibility = View.GONE
+                binding.tvGhostCount.text = storedAreas.toString()
+                binding.tvSlotCount.text = storedAreas.toString()
+                binding.tvSlotLabel.text = if (storedAreas == 1) "area" else "areas"
+                binding.tvHeader.text = "Ready to survey offline"
             } else {
+                binding.llHeaderBand.visibility = View.GONE
                 binding.tvHeader.visibility = View.GONE
                 binding.recyclerView.visibility = View.GONE
                 binding.noRecordLayout.visibility = View.VISIBLE
                 binding.noRecordText.visibility = View.VISIBLE
 
                 sharedPreferences.edit()
-                    .putLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, Constants.SHARED_PREF_DEFAULT_INT.toLong())
-                    .putString(Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME, Constants.SHARED_PREF_DEFAULT_STRING)
-                    .putLong(Constants.SHARED_PREF_USER_SELECTED_AREA_ID, Constants.SHARED_PREF_DEFAULT_INT.toLong())
-                    .putString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, Constants.SHARED_PREF_DEFAULT_STRING)
+                    .putLong(
+                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
+                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                    )
+                    .putString(
+                        Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                        Constants.SHARED_PREF_DEFAULT_STRING
+                    )
+                    .putLong(
+                        Constants.SHARED_PREF_USER_SELECTED_AREA_ID,
+                        Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                    )
+                    .putString(
+                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
+                        Constants.SHARED_PREF_DEFAULT_STRING
+                    )
                     .apply()
 
+                // Sirf tab chalta hai jab waqai kuch bhi stored na ho.
                 File(context.filesDir, "MapTiles").deleteRecursively()
             }
-
-            // Load downloaded areas
-            val downloadedAreaModels = withContext(Dispatchers.IO) {
-                viewModel.getDownloadedAreas()
-            }
-
-//            val selectedItemId = getSelectedItem()
-//            downloadedAreaModels.forEach {
-//                it.isSelected = it.mauzaId == selectedItemId
-//            }
 
             val selectedItemId = getSelectedMauzaId()
             val selectedAreaName = getSelectedAreaName()
             downloadedAreaModels.forEach {
                 it.isSelected = it.mauzaId == selectedItemId && it.areaAssigned == selectedAreaName
             }
-
 
             downloadedAreasAdapter.setData(downloadedAreaModels)
         }
@@ -121,17 +124,14 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                // Navigate back or finish the activity
-//                onBackPressedDispatcher.onBackPressed()
                 IntentUtil.startActivity(this, MenuActivity::class.java)
                 finish()
-
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
-
 
     override fun onDeleteItemClicked(survey: MauzaAreaEntry) {
         val builder = AlertDialog.Builder(this)
@@ -140,7 +140,8 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
             .setMessage("Are you sure, you want to delete this record?")
             .setPositiveButton("Proceed") { _, _ ->
                 lifecycleScope.launch {
-                    database.activeParcelDao().deleteParcelsByMauzaAndArea(survey.mauzaId, survey.areaAssigned)
+                    database.activeParcelDao()
+                        .deleteParcelsByMauzaAndArea(survey.mauzaId, survey.areaAssigned)
                     //database.surveyDao().deleteAllSurveysWrtArea(survey.mauzaId)
 
                     val areaName = survey.areaAssigned
@@ -155,6 +156,9 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
                     File(context.filesDir, mapFolder).deleteRecursively()
 
                     downloadedAreasAdapter.deleteItem(survey, sharedPreferences)
+
+                    // header ka count aur slot meter dobara bhar dein
+                    refreshScreen()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -176,13 +180,6 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
         saveSelectedItem(survey)
     }
 
-//    private fun getSelectedItem(): Long {
-//        return sharedPreferences.getLong(
-//            Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
-//            Constants.SHARED_PREF_DEFAULT_INT.toLong()
-//        )
-//    }
-
     private fun getSelectedMauzaId(): Long {
         return sharedPreferences.getLong(
             Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
@@ -197,7 +194,6 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
         ) ?: ""
     }
 
-
     private fun saveSelectedItem(survey: MauzaAreaEntry) {
         sharedPreferences.edit()
             .putLong(Constants.SHARED_PREF_USER_DOWNLOADED_MAUZA_ID, survey.mauzaId)
@@ -207,20 +203,14 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
             .putString(Constants.SHARED_PREF_USER_DOWNLOADED_AREA_Name, survey.areaAssigned)
             .putString(Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, survey.areaAssigned)
             .apply()
-
-
-
     }
-
 }
-
 
 
 interface DownloadedAreasItemClickListener {
     fun onDeleteItemClicked(survey: MauzaAreaEntry)
     fun onSelectItemClicked(survey: MauzaAreaEntry)
 }
-
 
 
 data class MauzaAreaEntry(

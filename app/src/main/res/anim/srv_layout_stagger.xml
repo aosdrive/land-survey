@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Attach with android:layoutAnimation - no Kotlin changes needed. -->
+<layoutAnimation xmlns:android="http://schemas.android.com/apk/res/android"
+    android:animation="@anim/srv_item_rise"
+    android:animationOrder="normal"
+    android:delay="14%" />

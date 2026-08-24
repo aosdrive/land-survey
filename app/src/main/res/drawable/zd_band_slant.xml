@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Slanted bottom edge with the auth_field_gradient colours.
+     A shape drawable cannot do angles, so this is a vector; gradients inside
+     vectors need aapt:attr (works down-level because build.gradle has
+     vectorDrawables { useSupportLibrary = true }). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="300dp"
+    android:height="120dp"
+    android:viewportWidth="300"
+    android:viewportHeight="120">
+
+    <!-- base: same 135-degree field gradient -->
+    <path android:pathData="M0,0 L300,0 L300,90 L0,120 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="300"
+                android:endY="120">
+                <item android:offset="0" android:color="#0F3D0F" />
+                <item android:offset="0.5" android:color="#1B5E20" />
+                <item android:offset="1" android:color="#2E6B2F" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- soft bloom, same as auth_field_gradient's second layer -->
+    <path android:pathData="M0,0 L300,0 L300,90 L0,120 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="250"
+                android:centerY="20"
+                android:gradientRadius="260">
+                <item android:offset="0" android:color="#20C8E6C9" />
+                <item android:offset="1" android:color="#00000000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

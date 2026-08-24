@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners
+        android:bottomLeftRadius="40dp"
+        android:bottomRightRadius="40dp" />
+    <gradient
+        android:angle="135"
+        android:centerColor="@color/srv_canopy_mid"
+        android:endColor="@color/srv_canopy_end"
+        android:startColor="@color/srv_canopy_start"
+        android:type="linear" />
+</shape>

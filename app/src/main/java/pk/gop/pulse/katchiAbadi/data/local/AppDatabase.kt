@@ -43,7 +43,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
         DiseaseTypeEntity::class,
         OfficerEntity::class,
         JKGrowerEntity::class],
-    version = 22,
+    version = 23,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -99,6 +99,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration16to17)
                     .addMigrations(migration17to18)
                     .addMigrations(migration18to19)
+                    .addMigrations(migration19to20)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -276,5 +277,12 @@ val migration17to18 = object : Migration(17, 18) {
 val migration18to19 = object : Migration(18, 19) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE active_parcels ADD COLUMN growerCodes TEXT")
+    }
+}
+val migration19to20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE new_surveys ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0"
+        )
     }
 }

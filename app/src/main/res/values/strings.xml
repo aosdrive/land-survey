@@ -342,4 +342,13 @@
     <string name="theme">theme</string>
     <string name="username">Username</string>
 
+
+    <string name="srv_login_eyebrow">Surveyor sign-in</string>
+    <string name="srv_login_sub">Use your CNIC and the password issued to you</string>
+    <string name="srv_label_cnic">CNIC / Username</string>
+    <string name="srv_offline_note">Works offline once your mauza is downloaded</string>
+    <string name="srv_section_field">Field work</string>
+    <string name="srv_section_data">Data and records</string>
+    <string name="srv_assigned">Assigned mauza</string>
+    <string name="srv_selected">Selected territory</string>
 </resources>

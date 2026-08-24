@@ -58,11 +58,13 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
                 adapter.submitList(surveysWithKhewat)
 
                 if (surveysWithKhewat.isNotEmpty()) {
+                    binding.llHeader.visibility = android.view.View.VISIBLE
                     binding.recyclerView.visibility = android.view.View.VISIBLE
                     binding.noRecordLayout.visibility = android.view.View.GONE
                     binding.tvDetails.text = "Total Count: ${surveysWithKhewat.size}"
                     binding.tvDetails.visibility = android.view.View.VISIBLE
                 } else {
+                    binding.llHeader.visibility = android.view.View.GONE
                     binding.recyclerView.visibility = android.view.View.GONE
                     binding.noRecordLayout.visibility = android.view.View.VISIBLE
                     binding.tvDetails.visibility = android.view.View.GONE

@@ -602,7 +602,6 @@ class NewSurveyRepositoryImpl @Inject constructor(
         Log.d(TAG, "   ParcelNo: ${originalParcel.parcelNo}")
         Log.d(TAG, "   SubParcelNo: ${originalParcel.subParcelNo}")
         Log.d(TAG, "   isActivate: ${originalParcel.isActivate}")
-        Log.d(TAG, "   This parcel ID will be sent to server for deactivation")
 
         val mauzaId = originalParcel.mauzaId
         val areaName = originalParcel.areaAssigned
@@ -616,6 +615,38 @@ class NewSurveyRepositoryImpl @Inject constructor(
                     it.subParcelNo != "0"
         }.sortedBy { it.subParcelNo }
 
+        // ══════════════════════════════════════════════════════════════════
+        // ✅ CHANGE 1: Asli PARENT parcel dhoondein (subParcelNo blank ya "0").
+        //
+        // Pehle survey.parcelId bheja jata tha. Agar surveyor ne split CHILD par
+        // tap kiya ho to wo id child ki hoti hai - aur child ki id local generated
+        // hai, jo kisi doosre area ke asli server id se takra sakti hai. Server us
+        // par bharosa kar ke ghalat parcel ka AreaAssigned utha leta tha aur ghalat
+        // parcel deactivate kar deta tha. Parent ko naam se dhoondna is se bachata hai.
+        //
+        // isActivate ka filter NAHI - createSplitParcels() parent ko locally pehle
+        // hi deactivate kar deta hai, is liye wo inactive milega.
+        // ══════════════════════════════════════════════════════════════════
+        val parentParcel = activeParcelDao.getParcelsByMauzaAndArea(mauzaId, areaName)
+            .firstOrNull {
+                it.parcelNo == originalParcel.parcelNo &&
+                        (it.subParcelNo.isBlank() || it.subParcelNo == "0")
+            }
+
+        val parentIdStr = parentParcel?.id?.toString() ?: ""
+
+        Log.d(TAG, "=== PARENT PARCEL FOR DEACTIVATION ===")
+        if (parentParcel != null) {
+            Log.d(TAG, "   ID: ${parentParcel.id}")
+            Log.d(TAG, "   ParcelNo: ${parentParcel.parcelNo}")
+            Log.d(TAG, "   SubParcelNo: '${parentParcel.subParcelNo}'")
+            Log.d(TAG, "   AreaAssigned: ${parentParcel.areaAssigned}")
+            Log.d(TAG, "   isActivate: ${parentParcel.isActivate}")
+        } else {
+            Log.e(TAG, "   ❌ NOT FOUND - server parent ko deactivate nahi karega")
+            Log.e(TAG, "   Dekhein: mauzaId=$mauzaId, areaName='$areaName', parcelNo=${originalParcel.parcelNo}")
+        }
+
         Log.d(TAG, "=== SPLIT PARCELS FOUND ===")
         Log.d(TAG, "Total split parcels to upload: ${splitParcels.size}")
 
@@ -626,6 +657,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "   SubParcelNo: ${parcel.subParcelNo}")
             Log.d(TAG, "   SurveyStatus: ${parcel.surveyStatusCode}")
             Log.d(TAG, "   isActivate: ${parcel.isActivate}")
+            Log.d(TAG, "   AreaAssigned: ${parcel.areaAssigned}")
             Log.d(TAG, "   GeomWKT: ${if (parcel.geomWKT.isNullOrEmpty()) "❌ NULL/EMPTY" else "✅ Present (${parcel.geomWKT.length} chars)"}")
         }
 
@@ -633,27 +665,37 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
         // ✅ Upload ALL split parcels (surveyed and unsurveyed)
         splitParcels.forEach { splitParcel ->
-            // ✅ CRITICAL FIX: Use splitParcel.id so geometry lookup works
             val splitSurvey = survey.copy(
                 pkId = 0,
-                parcelId = splitParcel.id,                   // ✅ Use split parcel's local ID
-                parcelNo = splitParcel.parcelNo.toString(),  // ✅ Use split parcel number
-                subParcelNo = splitParcel.subParcelNo,       // ✅ Use split parcel's subParcelNo
+                parcelId = splitParcel.id,                   // geometry lookup local id se
+                parcelNo = splitParcel.parcelNo.toString(),
+                subParcelNo = splitParcel.subParcelNo,
                 parcelOperation = "New",
-                parcelOperationValue = survey.parcelId.toString() // ✅ Original parcel ID for server to deactivate
+
+                // ══════════════════════════════════════════════════════════
+                // ✅ CHANGE 2: survey.parcelId.toString() ki jagah parentIdStr
+                // ══════════════════════════════════════════════════════════
+                parcelOperationValue = parentIdStr,
+
+                // areaName wohi rahe jo parcel ka areaAssigned hai - server ka
+                // fallback isi par chalta hai jab parent na mile
+                areaName = splitParcel.areaAssigned
             )
             splitSurveys.add(splitSurvey)
+
             Log.d(TAG, "✅ Created survey record:")
             Log.d(TAG, "   ParcelId: ${splitParcel.id}")
             Log.d(TAG, "   SubParcel: ${splitParcel.subParcelNo}")
             Log.d(TAG, "   Operation: New")
-            Log.d(TAG, "   OriginalParcelID: ${survey.parcelId}")
+            Log.d(TAG, "   ParentIdToDeactivate: ${parentIdStr.ifBlank { "(none)" }}")
+            Log.d(TAG, "   AreaName: ${splitParcel.areaAssigned}")
         }
 
         Log.d(TAG, "=== SPLIT PARCEL PROCESSING COMPLETE ===")
         Log.d(TAG, "Created ${splitSurveys.size} survey records (including unsurveyed split parcels)")
         return splitSurveys
     }
+
     // ===== PROCESS MERGE PARCELS =====
 // ===== PROCESS MERGE PARCELS (FINAL CORRECT FIX) =====
     //

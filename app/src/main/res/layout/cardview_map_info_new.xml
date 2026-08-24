@@ -1,492 +1,526 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-
 <androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
 
     <FrameLayout
         android:id="@+id/card_root"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:background="@android:color/transparent">
 
         <LinearLayout
-            android:layout_width="260dp"
+            android:layout_width="278dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            tools:ignore="MissingConstraints">
+            android:background="@drawable/zd_callout_bg"
+            android:orientation="vertical">
 
+            <!-- ================= HEADER: tinted band, edge to edge ================= -->
             <LinearLayout
                 android:id="@+id/layout_parcel_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/white"
+                android:background="@drawable/zd_header_band"
                 android:orientation="vertical"
-                android:paddingHorizontal="10dp">
+                android:paddingHorizontal="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_weight="9"
-                        android:gravity="center"
-                        android:orientation="horizontal">
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
                         <TextView
                             android:id="@+id/tv_parcel_id_caption"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="right"
-                            android:text="Parcel No: "
-                            android:textColor="@color/black"
-                            android:textSize="@dimen/margin_18sp"
+                            android:letterSpacing="0.14"
+                            android:text="PARCEL NO"
+                            android:textColor="#4C7A4C"
+                            android:textSize="9sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/tv_parcel_no_value"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:gravity="left"
-                            android:text=""
-                            android:textColor="@color/black"
-                            android:textSize="@dimen/margin_18sp"
-                            android:textStyle="bold" />
-
-
+                            android:fontFamily="serif"
+                            android:letterSpacing="-0.02"
+                            android:textColor="#1B5E20"
+                            android:textSize="30sp"
+                            android:textStyle="bold"
+                            tools:text="412" />
                     </LinearLayout>
 
+                    <!-- open in maps: lives with the parcel identity, not the actions -->
                     <ImageView
-                        android:id="@+id/delete"
-                        android:layout_width="5dp"
-                        android:layout_height="35dp"
-                        android:layout_weight="0.7"
-                        android:src="@drawable/baseline_delete_24"
-                        android:visibility="visible" />
+                        android:id="@+id/mapLocaton"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:background="@drawable/zd_icon_btn_bg"
+                        android:contentDescription="Open in maps"
+                        android:padding="11dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_map_pin_20" />
+
+                    <!-- delete: proper 40dp touch target -->
+                    <!--                    <FrameLayout-->
+                    <!--                        android:layout_width="40dp"-->
+                    <!--                        android:layout_height="40dp"-->
+                    <!--                        android:layout_marginStart="8dp"-->
+                    <!--                        android:background="@drawable/zd_icon_btn_bg">-->
+
+                    <!--                        <ImageView-->
+                    <!--                            android:id="@+id/delete"-->
+                    <!--                            android:layout_width="20dp"-->
+                    <!--                            android:layout_height="20dp"-->
+                    <!--                            android:layout_gravity="center"-->
+                    <!--                            android:contentDescription="Delete record"-->
+                    <!--                            android:src="@drawable/baseline_delete_24" />-->
+                    <!--                    </FrameLayout>-->
                 </LinearLayout>
 
-
+                <!-- meta chips: grower code + area -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
+                    android:layout_marginTop="12dp"
                     android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/tv_parcel_no_uni_caption"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="right"
-                        android:text="Unique Id: "
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/margin_10sp" />
+                        android:layout_marginEnd="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/zd_meta_chip"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="8dp">
 
-                    <TextView
-                        android:id="@+id/tv_parcel_no_uni_value"
-                        android:layout_width="wrap_content"
+                        <TextView
+                            android:id="@+id/tv_parcel_no_uni_caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.1"
+                            android:text="KHEWAT"
+                            android:textColor="#6B8A6B"
+                            android:textSize="8sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_parcel_no_uni_value"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-medium"
+                            android:maxLines="1"
+                            android:textColor="#1B5E20"
+                            android:textSize="13sp"
+                            tools:text="12-34-56789" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="left"
-                        android:text=""
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/margin_10sp" />
+                        android:layout_marginStart="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/zd_meta_chip"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="8dp">
+
+                        <TextView
+                            android:id="@+id/tv_parcel_area_caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.1"
+                            android:text="AREA"
+                            android:textColor="#6B8A6B"
+                            android:textSize="8sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tv_parcel_area_value"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:ellipsize="end"
+                            android:fontFamily="sans-serif-medium"
+                            android:maxLines="1"
+                            android:textColor="#1B5E20"
+                            android:textSize="13sp"
+                            tools:text="2.14 Kanal" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@drawable/zd_hairline" />
+
+            <!-- ================= BODY ================= -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="16dp">
+
+                <!-- OPERATION: segmented control -->
+                <LinearLayout
+                    android:id="@+id/layout_parcel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="18dp"
+                            android:layout_height="2dp"
+                            android:background="#2E7D32" />
+
+                        <TextView
+                            android:id="@+id/rg_parcel_caption"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="7dp"
+                            android:letterSpacing="0.14"
+                            android:text="OPERATION"
+                            android:textColor="#2E7D32"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <RadioGroup
+                        android:id="@+id/rg_parcel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rb_same"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:buttonTint="#2E7D32"
+                            android:checked="true"
+                            android:paddingStart="4dp"
+                            android:text="Same"
+                            android:textColor="#1B5E20"
+                            android:textSize="13sp" />
+
+                        <RadioButton
+                            android:id="@+id/rb_merge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="20dp"
+                            android:buttonTint="#2E7D32"
+                            android:paddingStart="4dp"
+                            android:text="Merge"
+                            android:textColor="#1B5E20"
+                            android:textSize="13sp" />
+                    </RadioGroup>
                 </LinearLayout>
 
+                <!-- Split (hidden, ids preserved) -->
+                <LinearLayout
+                    android:id="@+id/layout_split_parcel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
+                    <TextView
+                        android:id="@+id/tv_split_caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.1"
+                        android:text="SUB-PARCELS"
+                        android:textColor="#6B8A6B"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.AppCompatEditText
+                        android:id="@+id/et_split_parcel"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/zd_field_soft"
+                        android:digits="0123456789"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:gravity="center_vertical"
+                        android:inputType="number"
+                        android:maxLength="2"
+                        android:paddingHorizontal="12dp"
+                        android:textColor="#1B5E20"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- Merge selection -->
+                <LinearLayout
+                    android:id="@+id/layout_merge_parcel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tv_merge_caption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.1"
+                        android:text="PARCELS TO MERGE"
+                        android:textColor="#6B8A6B"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_merge_parcel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/zd_field_soft"
+                        android:gravity="center_vertical"
+                        android:hint="Tap parcels on the map"
+                        android:minHeight="44dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="8dp"
+                        android:textColor="#1B5E20"
+                        android:textColorHint="#A5B8A5"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tv_merge_parcel_hi"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:background="@drawable/zd_field_soft"
+                        android:gravity="center_vertical"
+                        android:minHeight="44dp"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="8dp"
+                        android:textColor="#1B5E20"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- PRIMARY ACTION -->
+                <LinearLayout
+                    android:id="@+id/layout_action_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical">
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btn_start_survey"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:background="@drawable/zd_btn_green"
+                        android:gravity="center"
+                        android:letterSpacing="0.08"
+                        android:text="Start Survey"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btn_revisit_survey"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="7dp"
+                        android:background="@drawable/zd_btn_green"
+                        android:gravity="center"
+                        android:letterSpacing="0.08"
+                        android:text="@string/revisit"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btn_retake_pictures_survey"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="7dp"
+                        android:background="@drawable/zd_btn_green"
+                        android:gravity="center"
+                        android:letterSpacing="0.08"
+                        android:text="@string/continued"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <!-- ACTIONS: cancel + assign task on one line -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
+                    android:layout_marginTop="9dp"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/tv_parcel_area_caption"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="right"
-                        android:text="Area: "
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/margin_10sp" />
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btn_cancel"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/zd_btn_outline"
+                        android:gravity="center"
+                        android:text="Cancel"
+                        android:textAllCaps="false"
+                        android:textColor="#2E5A2E"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tv_parcel_area_value"
-                        android:layout_width="wrap_content"
+                    <FrameLayout
+                        android:id="@+id/layout_Assign_action_buttons"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="left"
-                        android:text=""
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/margin_10sp" />
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1.35">
+
+                        <androidx.appcompat.widget.AppCompatButton
+                            android:id="@+id/btn_start_task"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:background="@drawable/zd_chip_action"
+                            android:drawableStart="@drawable/ic_task_assign_20"
+                            android:drawablePadding="8dp"
+                            android:gravity="center_vertical"
+                            android:paddingStart="16dp"
+                            android:paddingEnd="8dp"
+                            android:text="Assign task"
+                            android:textAllCaps="false"
+                            android:textColor="#2E5A2E"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </FrameLayout>
                 </LinearLayout>
 
+                <!--                <FrameLayout-->
+                <!--                    android:id="@+id/layout_solar_button"-->
+                <!--                    android:layout_width="0dp"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginStart="4dp"-->
+                <!--                    android:layout_weight="1">-->
+
+                <!--                    <androidx.appcompat.widget.AppCompatButton-->
+                <!--                        android:id="@+id/btn_solar_panel"-->
+                <!--                        android:layout_width="match_parent"-->
+                <!--                        android:layout_height="46dp"-->
+                <!--                        android:background="@drawable/zd_chip_action"-->
+                <!--                        android:drawableStart="@drawable/ic_solar_20"-->
+                <!--                        android:drawablePadding="6dp"-->
+                <!--                        android:gravity="center_vertical"-->
+                <!--                        android:paddingStart="12dp"-->
+                <!--                        android:paddingEnd="6dp"-->
+                <!--                        android:text="Solar"-->
+                <!--                        android:textAllCaps="false"-->
+                <!--                        android:textColor="#2E5A2E"-->
+                <!--                        android:textSize="12sp"-->
+                <!--                        android:textStyle="bold" />-->
+                <!--                </FrameLayout>-->
+
+                <!--            <LinearLayout-->
+                <!--                android:layout_width="match_parent"-->
+                <!--                android:layout_height="wrap_content"-->
+                <!--                android:layout_marginTop="8dp"-->
+                <!--                android:orientation="horizontal">-->
+
+                <!--                <FrameLayout-->
+                <!--                    android:id="@+id/layout_drone_spray_button"-->
+                <!--                    android:layout_width="0dp"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginEnd="4dp"-->
+                <!--                    android:layout_weight="1">-->
+
+                <!--                    <androidx.appcompat.widget.AppCompatButton-->
+                <!--                        android:id="@+id/btn_drone_spray"-->
+                <!--                        android:layout_width="match_parent"-->
+                <!--                        android:layout_height="46dp"-->
+                <!--                        android:background="@drawable/zd_chip_action"-->
+                <!--                        android:drawableStart="@drawable/ic_drone_20"-->
+                <!--                        android:drawablePadding="6dp"-->
+                <!--                        android:gravity="center_vertical"-->
+                <!--                        android:paddingStart="12dp"-->
+                <!--                        android:paddingEnd="6dp"-->
+                <!--                        android:text="Drone"-->
+                <!--                        android:textAllCaps="false"-->
+                <!--                        android:textColor="#2E5A2E"-->
+                <!--                        android:textSize="12sp"-->
+                <!--                        android:textStyle="bold" />-->
+                <!--                </FrameLayout>-->
+
+                <!--                <FrameLayout-->
+                <!--                    android:id="@+id/layout_inputs_button"-->
+                <!--                    android:layout_width="0dp"-->
+                <!--                    android:layout_height="wrap_content"-->
+                <!--                    android:layout_marginStart="4dp"-->
+                <!--                    android:layout_weight="1">-->
+
+                <!--                    <androidx.appcompat.widget.AppCompatButton-->
+                <!--                        android:id="@+id/btn_inputs"-->
+                <!--                        android:layout_width="match_parent"-->
+                <!--                        android:layout_height="46dp"-->
+                <!--                        android:background="@drawable/zd_chip_action"-->
+                <!--                        android:drawableStart="@drawable/ic_inputs_20"-->
+                <!--                        android:drawablePadding="6dp"-->
+                <!--                        android:gravity="center_vertical"-->
+                <!--                        android:paddingStart="12dp"-->
+                <!--                        android:paddingEnd="6dp"-->
+                <!--                        android:text="Inputs"-->
+                <!--                        android:textAllCaps="false"-->
+                <!--                        android:textColor="#2E5A2E"-->
+                <!--                        android:textSize="12sp"-->
+                <!--                        android:textStyle="bold" />-->
+                <!--                </FrameLayout>-->
+                <!--            </LinearLayout>-->
+
+                <!--                <FrameLayout-->
+                <!--                    android:layout_width="46dp"-->
+                <!--                    android:layout_height="46dp"-->
+                <!--                    android:layout_marginStart="8dp"-->
+                <!--                    android:background="@drawable/zd_icon_btn_bg">-->
+
+                <!--                    <ImageView-->
+                <!--                        android:id="@+id/directions"-->
+                <!--                        android:layout_width="22dp"-->
+                <!--                        android:layout_height="22dp"-->
+                <!--                        android:layout_gravity="center"-->
+                <!--                        android:contentDescription="Directions"-->
+                <!--                        android:src="@drawable/ic_directions_20"-->
+                <!--                        android:visibility="gone" />-->
+                <!--                </FrameLayout>-->
 
             </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_parcel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="@dimen/margin_5dp"
-                android:orientation="vertical"
-                android:visibility="visible">
-
-                <TextView
-                    android:id="@+id/rg_parcel_caption"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Operation:"
-                    android:textColor="@android:color/black"
-                    android:textSize="@dimen/margin_12sp"
-                    android:textStyle="bold" />
-
-                <RadioGroup
-                    android:id="@+id/rg_parcel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="5dp"
-                    android:paddingVertical="@dimen/margin_5dp"
-                    android:textColor="@color/black">
-
-
-                    <RadioButton
-                        android:id="@+id/rb_same"
-                        android:layout_width="wrap_content"
-                        android:layout_height="@dimen/margin_24dp"
-                        android:checked="true"
-                        android:text="Same"
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/margin_12sp" />
-
-<!--                    <RadioButton-->
-<!--                        android:id="@+id/rb_split"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="@dimen/margin_24dp"-->
-<!--                        android:layout_marginHorizontal="@dimen/margin_5dp"-->
-<!--                        android:text="Split"-->
-<!--                        android:textColor="@color/black"-->
-<!--                        android:textSize="@dimen/margin_12sp" />-->
-
-                    <RadioButton
-                        android:id="@+id/rb_merge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="@dimen/margin_24dp"
-                        android:text="Merge"
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/margin_12sp"
-                        android:visibility="visible" />
-                </RadioGroup>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_split_parcel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/margin_5dp"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/tv_split_caption"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_5dp"
-                    android:text="Sub-parcels:"
-                    android:textColor="@android:color/black"
-                    android:textSize="@dimen/margin_12sp"
-                    android:textStyle="bold" />
-
-                <androidx.appcompat.widget.AppCompatEditText
-                    android:id="@+id/et_split_parcel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/textfield_area_bg"
-                    android:digits="0123456789"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:inputType="number"
-                    android:maxLength="2"
-                    android:minHeight="@dimen/margin_35dp"
-                    android:paddingHorizontal="@dimen/margin_10dp"
-                    android:paddingVertical="@dimen/margin_2dp"
-                    android:textColor="@color/Black"
-                    android:textSize="@dimen/margin_12sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_merge_parcel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/margin_5dp"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/tv_merge_caption"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin_5dp"
-                    android:text="Parcel to merge:"
-                    android:textColor="@android:color/black"
-                    android:textSize="@dimen/margin_12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tv_merge_parcel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/textfield_area_bg"
-                    android:gravity="center_vertical"
-                    android:minHeight="@dimen/margin_35dp"
-                    android:paddingHorizontal="@dimen/margin_10dp"
-                    android:paddingVertical="@dimen/margin_5dp"
-                    android:text=""
-                    android:textSize="@dimen/margin_12sp" />
-
-                <TextView
-                    android:id="@+id/tv_merge_parcel_hi"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_margin="5dp"
-                    android:background="@drawable/textfield_area_bg"
-                    android:gravity="center_vertical"
-                    android:minHeight="@dimen/margin_35dp"
-                    android:paddingHorizontal="@dimen/margin_10dp"
-                    android:paddingVertical="@dimen/margin_5dp"
-                    android:text=""
-                    android:textSize="@dimen/margin_12sp"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <!--add rest of layout-->
-            <LinearLayout
-                android:id="@+id/layout_action_buttons"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_cancel"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_marginRight="@dimen/margin_3dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/holo_background"
-                    android:gravity="center"
-                    android:text="Cancel"
-                    android:textAllCaps="false"
-                    android:textColor="@color/black"
-                    android:textSize="@dimen/margin_12sp" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_start_survey"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="Start Survey"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/margin_12sp" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_revisit_survey"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="@string/revisit"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:visibility="gone" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_retake_pictures_survey"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="@string/continued"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:visibility="gone" />
-
-                <ImageView
-                    android:id="@+id/mapLocaton"
-                    android:layout_width="5dp"
-                    android:layout_height="35dp"
-                    android:layout_weight="0.7"
-                    android:src="@drawable/map_pointer"
-                    android:visibility="visible" />
-
-                <ImageView
-                    android:id="@+id/directions"
-                    android:layout_width="5dp"
-                    android:layout_height="35dp"
-                    android:layout_weight="0.7"
-                    android:src="@drawable/directions"
-                    android:visibility="gone" />
-            </LinearLayout>
-
-            <!--Harvested layout-->
-<!--            <LinearLayout-->
-<!--                android:id="@+id/layout_Harvested_buttons"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_marginLeft="10dp"-->
-<!--                android:layout_marginTop="10dp"-->
-<!--                android:layout_marginRight="10dp"-->
-<!--                android:gravity="center"-->
-<!--                android:orientation="horizontal">-->
-
-<!--                <androidx.appcompat.widget.AppCompatButton-->
-<!--                    android:id="@+id/btn_Harvested"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="40dp"-->
-<!--                    android:layout_gravity="center"-->
-<!--                    android:layout_margin="@dimen/margin_3dp"-->
-<!--                    android:layout_weight="2"-->
-<!--                    android:background="@color/Orange"-->
-<!--                    android:gravity="center"-->
-<!--                    android:text="Harvested"-->
-<!--                    android:textAllCaps="false"-->
-<!--                    android:textColor="@color/white"-->
-<!--                    android:textSize="@dimen/margin_12sp" />-->
-<!--            </LinearLayout>-->
-
-            <!--Take Action and giving assign task layout-->
-            <LinearLayout
-                android:id="@+id/layout_Assign_action_buttons"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_start_task"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="Task Assign"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/margin_12sp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/layout_solar_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_solar_panel"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="Solar panel"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/margin_12sp" />
-
-            </LinearLayout>
-
-
-            <LinearLayout
-                android:id="@+id/layout_drone_spray_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_drone_spray"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="Drone Spray"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/margin_12sp" />
-
-            </LinearLayout>
-
-
-            <LinearLayout
-                android:id="@+id/layout_inputs_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginRight="10dp"
-                android:gravity="center"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btn_inputs"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="center"
-                    android:layout_margin="@dimen/margin_3dp"
-                    android:layout_weight="2"
-                    android:background="@color/Orange"
-                    android:gravity="center"
-                    android:text="Inputs Items"
-                    android:textAllCaps="false"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/margin_12sp" />
-
-            </LinearLayout>
-
         </LinearLayout>
     </FrameLayout>
 </androidx.appcompat.widget.LinearLayoutCompat>

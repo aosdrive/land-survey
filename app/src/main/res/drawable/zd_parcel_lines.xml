@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cadastral parcel boundaries: the same shapes the map screen draws -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="130dp"
+    android:viewportWidth="300"
+    android:viewportHeight="130">
+    <path android:pathData="M-10,30 L70,12 L112,54 L40,74 Z" android:strokeColor="#FFFFFF" android:strokeWidth="1.4" />
+    <path android:pathData="M112,54 L200,18 L280,44 L250,90 Z" android:strokeColor="#FFFFFF" android:strokeWidth="1.4" />
+    <path android:pathData="M40,74 L112,54 L120,128 L52,140 Z" android:strokeColor="#FFFFFF" android:strokeWidth="1.4" />
+    <path android:pathData="M120,128 L112,54 L250,90 L238,134 Z" android:strokeColor="#FFFFFF" android:strokeWidth="1.4" />
+</vector>

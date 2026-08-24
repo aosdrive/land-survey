@@ -4,5 +4,6 @@ import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 
 data class SurveyWithKhewat(
     val survey: NewSurveyNewEntity,
-    val khewatInfo: String
+    val khewatInfo: String,
+    val growerCodes: String?
 )

@@ -32,7 +32,12 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.VersionCheckResponse
+import pk.gop.pulse.katchiAbadi.domain.model.AnalyticsParcelsResponse
+import pk.gop.pulse.katchiAbadi.domain.model.BoundaryDto
+import pk.gop.pulse.katchiAbadi.domain.model.GrowerFeatureDto
+import pk.gop.pulse.katchiAbadi.domain.model.LookupItem
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
+import pk.gop.pulse.katchiAbadi.domain.model.SugarcaneResponseDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
 import pk.gop.pulse.katchiAbadi.domain.model.TaskResponse
 import pk.gop.pulse.katchiAbadi.domain.model.UserResponse
@@ -227,9 +232,9 @@ interface ServerApi {
     suspend fun getDiseaseTypes(
     ): Response<List<LookupItemDto>>
 
-    @GET("api/MobileData/GetJKGrowersByMouza/{mouzaCode}")
-    suspend fun getJKGrowersByMouza(
-        @Path("mouzaCode") mouzaCode: String,
+    @GET("api/MobileData/GetGrowersByMouzaId/{mauzaId}")
+    suspend fun getJKGrowersByMouzaId(
+        @Path("mauzaId") mauzaId: Long,
         @Header("Authorization") token: String
     ): Response<List<JKGrowerDto>>
 
@@ -238,4 +243,56 @@ interface ServerApi {
 //        @Path("mouzaName") mouzaName: String,
 //        @Header("Authorization") token: String
 //    ): Response<List<JKGrowerDto>>
+
+    @GET("api/SugarcaneIntersection/GetYearListMapAnalysis")
+    suspend fun getAnalysisYears(): List<String?>
+
+    @GET("api/SugarcaneIntersection/GetGroups")
+    suspend fun getAnalysisGroups(
+        @Query("selectedYear") selectedYear: String?
+    ): List<LookupItem>
+
+    @GET("api/SugarcaneIntersection/GetUnits")
+    suspend fun getAnalysisUnits(
+        @Query("groupId") groupId: Int,
+        @Query("selectedYear") selectedYear: String?
+    ): List<LookupItem>
+
+    @GET("api/SugarcaneIntersection/GetCircles")
+    suspend fun getAnalysisCircles(
+        @Query("unitId") unitId: Int,
+        @Query("selectedYear") selectedYear: String?
+    ): List<LookupItem>
+
+    @GET("api/SugarcaneIntersection/GetMauzas")
+    suspend fun getAnalysisMauzas(
+        @Query("circleId") circleId: Int,
+        @Query("selectedYear") selectedYear: String?
+    ): List<LookupItem>
+
+    @GET("api/SugarcaneIntersection/GetBoundaryLayer")
+    suspend fun getBoundaryLayer(
+        @Query("level") level: String,
+        @Query("parentId") parentId: Int?,
+        @Query("selectedYear") selectedYear: String?
+    ): List<BoundaryDto>
+
+    @GET("api/SugarcaneIntersection/GetSugarcaneByMauza")
+    suspend fun getSugarcaneByMauza(
+        @Query("mauzaId") mauzaId: Int,
+        @Query("selectedYear") selectedYear: String?
+    ): SugarcaneResponseDto
+
+    @GET("api/SugarcaneIntersection/GetGrowersGeojsonMapAnalysis")
+    suspend fun getGrowersForAnalysis(
+        @Query("mauzaId") mauzaId: Int?,
+        @Query("selectedYear") selectedYear: String?
+    ): List<GrowerFeatureDto>
+
+
+    @GET("api/SugarcaneIntersection/GetAnalyticsParcels")
+    suspend fun getAnalyticsParcels(
+        @Query("mauzaId") mauzaId: Int,
+        @Query("selectedYear") selectedYear: String?
+    ): AnalyticsParcelsResponse
 }

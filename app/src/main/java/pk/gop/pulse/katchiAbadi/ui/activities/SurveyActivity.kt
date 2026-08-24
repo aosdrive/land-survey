@@ -68,6 +68,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntry
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.presentation.util.JKGrowerSelectionDialog
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -203,16 +204,16 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private fun loadJKGrowers() {
         lifecycleScope.launch {
             try {
-                val mouzaName = sharedPreferences.getString(
-                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
-                    Constants.SHARED_PREF_DEFAULT_STRING
-                ).orEmpty()
+                val mauzaId = sharedPreferences.getLong(
+                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
+                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                )
 
                 val growers = withContext(Dispatchers.IO) {
-                    jkGrowerRepository.syncGrowersForMouza(mouzaName, forceRefresh = false)
+                    jkGrowerRepository.syncGrowersForMouza(mauzaId, forceRefresh = false)
                 }
 
-                Log.d("SurveyActivity", "Loaded ${growers.size} JK growers for mouza $mouzaName")
+                Log.d("SurveyActivity", "Loaded ${growers.size} JK growers for mouza $mauzaId")
                 // populate your UI / selection dialog here
             } catch (e: Exception) {
                 Log.e("SurveyActivity", "Error loading JK growers: ${e.message}")
@@ -584,35 +585,20 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         val propertyTypeList = listOf("Farm Survey", "Other")
         val imageTypeList = listOf("Property", "CNIC", "Other Document", "Discrepancy Pic")
 
-        // Static spinners - FIXED
-        val ownershipAdapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
-            ownershipStatusList
-        )
-        ownershipAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
-        binding.spinnerOwnershipStatus.adapter = ownershipAdapter
-
-        val propertyAdapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
-            propertyTypeList
-        )
-        propertyAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
-        binding.spinnerPropertyStatus.adapter = propertyAdapter
-
-        val imageAdapter = ArrayAdapter(
-            context,
-            android.R.layout.simple_spinner_item,  // Changed from simple_spinner_dropdown_item
-            imageTypeList
-        )
-        imageAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
-        binding.spinnerImageType.adapter = imageAdapter
+        binding.spinnerOwnershipStatus.adapter = zdAdapter(ownershipStatusList)
+        binding.spinnerPropertyStatus.adapter = zdAdapter(propertyTypeList)
+        binding.spinnerImageType.adapter = zdAdapter(imageTypeList)
 
         // Load dynamic spinners from API
         loadCropsFromLocalDb()
         loadCropTypesFromLocalDb()
         loadVarietiesFromLocalDb()
+    }
+
+    private fun zdAdapter(items: List<String>): ArrayAdapter<String> {
+        val adapter = ArrayAdapter(context, R.layout.spinner_item_drop_down, items)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
+        return adapter
     }
 
     private fun loadCropsFromLocalDb() {
@@ -625,13 +611,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 cropList.clear()
                 cropList.addAll(crops)
 
-                val adapter = ArrayAdapter(
-                    context,
-                    android.R.layout.simple_spinner_item,  // Changed
-                    cropList
-                )
-                adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)  // Added
-                binding.etCrop.adapter = adapter
+                binding.etCrop.adapter = zdAdapter(cropList)
 
                 val sugarcanePosition = cropList.indexOf("Sugarcane")
                 if (sugarcanePosition != -1) {
@@ -656,15 +636,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 }
 
                 cropTypeList.clear()
+                cropTypeList.add("Select Crop Type")
                 cropTypeList.addAll(cropTypes)
 
-                val adapter = ArrayAdapter(
-                    context,
-                    android.R.layout.simple_spinner_item,
-                    cropTypeList
-                )
-                adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)  // Added
-                binding.etCropType.adapter = adapter
+                binding.etCropType.adapter = zdAdapter(cropTypeList)
                 setupCropTypeListener()
 
                 Log.d("SurveyActivity", "Loaded ${cropTypes.size} crop types from local DB")
@@ -683,16 +658,11 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 }
 
                 varietyList.clear()
+                varietyList.add("Select Variety")
                 varietyList.addAll(varieties)
                 varietyList.add("Other")
 
-                val adapter = ArrayAdapter(
-                    context,
-                    android.R.layout.simple_spinner_item,  // Changed
-                    varietyList
-                )
-                adapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)  // Added
-                binding.etVariety.adapter = adapter
+                binding.etVariety.adapter = zdAdapter(varietyList)
                 setupVarietyListener()
 
                 Log.d("SurveyActivity", "Loaded ${varieties.size} varieties from local DB")
@@ -712,7 +682,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 id: Long
             ) {
                 if (isSettingSpinnerProgrammatically) return
-
+                if (position == 0) {
+                    selectedVariety = null
+                    return
+                }
                 val selected = parent.getItemAtPosition(position).toString()
 
                 if (selected == "Other") {
@@ -735,7 +708,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 id: Long
             ) {
                 if (isSettingSpinnerProgrammatically) return
-
+                if (position == 0) {
+                    selectedCropType = null
+                    return
+                }
                 val selected = parent.getItemAtPosition(position).toString()
 
                 if (selected == "Other") {
@@ -766,13 +742,21 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     ToastUtil.showShort(this, "Custom variety selected: $customVariety")
                     dialogInterface.dismiss()
                 } else {
-                    AlertDialog.Builder(this)
-                        .setTitle("Required Field")
-                        .setMessage("You must enter a variety name.")
-                        .setPositiveButton("Retry") { _, _ ->
-                            showCustomVarietyInputDialog()
-                        }
-                        .show()
+//                    AlertDialog.Builder(this)
+//                        .setTitle("Required Field")
+//                        .setMessage("You must enter a variety name.")
+//                        .setPositiveButton("Retry") { _, _ ->
+//                            showCustomVarietyInputDialog()
+//                        }
+//                        .show()
+
+                    ZdAlert.error(
+                        this,
+                        "Required Field",
+                        "You must enter a variety name.",
+                        buttonText = "Retry",
+                        onDismiss = { showCustomVarietyInputDialog() }
+                    )
                 }
             }
             .setNegativeButton("Cancel") { _, _ ->
@@ -799,13 +783,21 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     ToastUtil.showShort(this, "Custom crop type selected: $customCrop")
                     dialogInterface.dismiss()
                 } else {
-                    AlertDialog.Builder(this)
-                        .setTitle("Required Field")
-                        .setMessage("You must enter a crop type name.")
-                        .setPositiveButton("Retry") { _, _ ->
-                            showCustomCropInputDialog()
-                        }
-                        .show()
+//                    AlertDialog.Builder(this)
+//                        .setTitle("Required Field")
+//                        .setMessage("You must enter a crop type name.")
+//                        .setPositiveButton("Retry") { _, _ ->
+//                            showCustomCropInputDialog()
+//                        }
+//                        .show()
+
+                    ZdAlert.error(
+                        this,
+                        "Required Field",
+                        "You must enter a crop type name.",
+                        buttonText = "Retry",
+                        onDismiss = { showCustomCropInputDialog() }
+                    )
                 }
             }
             .setNegativeButton("Cancel") { _, _ ->
@@ -850,31 +842,45 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             val currentPersonCount = personEntryHelper.getAllPersons().size
 
             if (ownershipStatus == "Self" && currentPersonCount >= 1) {
-                AlertDialog.Builder(this)
-                    .setTitle("Limit Reached")
-                    .setMessage("You can only add 1 owner for 'Self' ownership status.")
-                    .setPositiveButton("OK", null)
-                    .show()
+//                AlertDialog.Builder(this)
+//                    .setTitle("Limit Reached")
+//                    .setMessage("You can only add 1 owner for 'Self' ownership status.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Limit Reached",
+                    "You can only add 1 owner for 'Self' ownership status."
+                )
                 return@setOnClickListener
             }
             if (ownershipStatus == "On Lease" && currentPersonCount >= 2) {
-                AlertDialog.Builder(this)
-                    .setTitle("Limit Reached")
-                    .setMessage("You can only add 1 owner and 1 lease holder for 'On Lease' status.")
-                    .setPositiveButton("OK", null)
-                    .show()
+//                AlertDialog.Builder(this)
+//                    .setTitle("Limit Reached")
+//                    .setMessage("You can only add 1 owner and 1 lease holder for 'On Lease' status.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Limit Reached",
+                    "You can only add 1 owner and 1 lease holder for 'On Lease' status."
+                )
                 return@setOnClickListener
             }
 
             lifecycleScope.launch {
-                val mouzaName = sharedPreferences.getString(
-                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
-                    Constants.SHARED_PREF_DEFAULT_STRING
-                ).orEmpty()
+                val mauzaId = sharedPreferences.getLong(
+                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
+                    Constants.SHARED_PREF_DEFAULT_INT.toLong()
+                )
 
-                // ✅ syncGrowersForMouza: cache hai to cache se, warna server se laa kar Room me save
+                // syncGrowersForMouza: cache hai to cache se, warna server se laa kar Room me save
                 val growers = withContext(Dispatchers.IO) {
-                    jkGrowerRepository.syncGrowersForMouza(mouzaName, forceRefresh = false)
+                    jkGrowerRepository.syncGrowersForMouza(mauzaId, forceRefresh = false)
                 }
 
                 if (growers.isEmpty()) {
@@ -896,20 +902,34 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
             // Validate based on ownership status
             if (ownershipStatus == "Self" && currentPersonCount >= 1) {
-                AlertDialog.Builder(this)
-                    .setTitle("Limit Reached")
-                    .setMessage("You can only add 1 owner for 'Self' ownership status.")
-                    .setPositiveButton("OK", null)
-                    .show()
+//                AlertDialog.Builder(this)
+//                    .setTitle("Limit Reached")
+//                    .setMessage("You can only add 1 owner for 'Self' ownership status.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Limit Reached",
+                    "You can only add 1 owner for 'Self' ownership status."
+                )
                 return@setOnClickListener
             }
 
             if (ownershipStatus == "On Lease" && currentPersonCount >= 2) {
-                AlertDialog.Builder(this)
-                    .setTitle("Limit Reached")
-                    .setMessage("You can only add 1 owner and 1 lease holder for 'On Lease' status.")
-                    .setPositiveButton("OK", null)
-                    .show()
+//                AlertDialog.Builder(this)
+//                    .setTitle("Limit Reached")
+//                    .setMessage("You can only add 1 owner and 1 lease holder for 'On Lease' status.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Limit Reached",
+                    "You can only add 1 owner and 1 lease holder for 'On Lease' status."
+                )
                 return@setOnClickListener
             }
 
@@ -1228,11 +1248,17 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             // ===== VALIDATION: Check if at least one owner/person has been added =====
             if (rawPersons.isEmpty()) {
                 binding.btnSubmitSurvey.isEnabled = true
-                AlertDialog.Builder(this)
-                    .setTitle("Owner Required")
-                    .setMessage("Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button.")
-                    .setPositiveButton("OK", null)
-                    .show()
+//                AlertDialog.Builder(this)
+//                    .setTitle("Owner Required")
+//                    .setMessage("Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+                ZdAlert.warn(
+                    this,
+                    "Owner Required",
+                    "Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button."
+                )
                 return@setOnClickListener
             }
 
@@ -1288,35 +1314,107 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 cnic.isNullOrBlank() || !cnicPattern.matches(cnic)
             }
 
+//            if (personsWithInvalidCnic.isNotEmpty()) {
+//                binding.btnSubmitSurvey.isEnabled = true
+//                val invalidCnics = mutableListOf<String>()
+//                personsWithInvalidCnic.forEachIndexed { index, person ->
+//                    val name = person.firstName ?: "Person ${index + 1}"
+//                    val cnic = person.nic?.trim().orEmpty().ifBlank { "Empty" }
+//                    invalidCnics.add("$name: $cnic")
+//                }
+//
+//                AlertDialog.Builder(this)
+//                    .setTitle("Invalid CNIC")
+//                    .setMessage(
+//                        "Please provide valid CNIC in format 12345-1234567-1.\n\nInvalid CNICs:\n${
+//                            invalidCnics.joinToString("\n")
+//                        }"
+//                    )
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+//
+//                ZdAlert.error(
+//                    this,
+//                    "Invalid CNIC",
+//                    "CNIC is format me chahiye:  12345-1234567-1",
+//                    details = invalidCnics
+//                )
+//                return@setOnClickListener
+//            }
+
             if (personsWithInvalidCnic.isNotEmpty()) {
                 binding.btnSubmitSurvey.isEnabled = true
-                val invalidCnics = mutableListOf<String>()
-                personsWithInvalidCnic.forEachIndexed { index, person ->
-                    val name = person.firstName ?: "Person ${index + 1}"
+
+                val invalidCnics = personsWithInvalidCnic.mapIndexed { index, person ->
+                    val name = person.firstName?.takeIf { it.isNotBlank() } ?: "Person ${index + 1}"
                     val cnic = person.nic?.trim().orEmpty().ifBlank { "Empty" }
-                    invalidCnics.add("$name: $cnic")
+                    "$name  ->  $cnic"
                 }
 
-                AlertDialog.Builder(this)
-                    .setTitle("Invalid CNIC")
-                    .setMessage(
-                        "Please provide valid CNIC in format 12345-1234567-1.\n\nInvalid CNICs:\n${
-                            invalidCnics.joinToString("\n")
-                        }"
-                    )
-                    .setPositiveButton("OK", null)
-                    .show()
+                ZdAlert.error(
+                    this,
+                    "Invalid CNIC",
+                    "Please provide valid CNIC in format:  12345-1234567-1",
+                    details = invalidCnics
+                )
                 return@setOnClickListener
             }
+
+            // ===== VALIDATION: Crop Type must be selected =====
+            if (selectedCropType.isNullOrBlank()) {
+                binding.btnSubmitSurvey.isEnabled = true
+//                AlertDialog.Builder(this)
+//                    .setTitle("Crop Type Required")
+//                    .setMessage("Please select a crop type before submitting.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Crop Type Required",
+                    "Please select a crop type before submitting."
+                )
+                return@setOnClickListener
+            }
+
+// ===== VALIDATION: Variety must be selected =====
+            if (selectedVariety.isNullOrBlank()) {
+                binding.btnSubmitSurvey.isEnabled = true
+//                AlertDialog.Builder(this)
+//                    .setTitle("Variety Required")
+//                    .setMessage("Please select a variety before submitting.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Variety Required",
+                    "Please select a variety before submitting."
+                )
+                return@setOnClickListener
+
+            }
+
+
 
             // ===== VALIDATION: Check if at least one image has been added =====
             if (viewModel.surveyImages.value.isEmpty()) {
                 binding.btnSubmitSurvey.isEnabled = true
-                AlertDialog.Builder(this)
-                    .setTitle("Image Required")
-                    .setMessage("Please add at least one image before submitting the survey. Use 'Add Image' or 'Take Photo' button.")
-                    .setPositiveButton("OK", null)
-                    .show()
+//                AlertDialog.Builder(this)
+//                    .setTitle("Image Required")
+//                    .setMessage("Please add at least one image before submitting the survey. Use 'Add Image' or 'Take Photo' button.")
+//                    .setPositiveButton("OK", null)
+//                    .show()
+//                return@setOnClickListener
+
+                ZdAlert.warn(
+                    this,
+                    "Image Required",
+                    "Please add at least one image before submitting the survey. Use Capture Image button."
+                )
                 return@setOnClickListener
             }
 
@@ -1336,11 +1434,11 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 subParcelNo = subParcelNo,
                 propertyType = binding.spinnerPropertyStatus.selectedItem.toString(),
                 ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString(),
-                variety = selectedVariety ?: binding.etVariety.selectedItem.toString(),
+                variety = selectedVariety!!,
                 crop = binding.etCrop.selectedItem.toString(),
-                cropType = selectedCropType ?: binding.etCropType.selectedItem.toString(),
+                cropType = selectedCropType!!,
                 year = binding.etYear.text.toString(),
-                isGeometryCorrect = binding.cbGeometryCorrect.isChecked,
+//                isGeometryCorrect = binding.cbGeometryCorrect.isChecked,
                 remarks = binding.etRemarks.text.toString(),
                 parcelOperation = parcelOperation,
                 parcelOperationValue = parcelOperationValue,

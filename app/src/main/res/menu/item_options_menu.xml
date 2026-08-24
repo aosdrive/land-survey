@@ -22,5 +22,17 @@
         android:title="@string/logout"
         app:iconTint="@color/white"
         app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_clear_cache"
+        android:icon="@drawable/ic_clear_cache_24"
+        android:title="Clear Cache"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_clear_data"
+        android:icon="@drawable/ic_clear_cache_24"
+        android:title="Clear All Data"
+        app:showAsAction="never" />
 </menu>
 
