@@ -227,7 +227,7 @@
                             android:textColor="#1B5E20"
                             android:textSize="15sp"
                             android:textColorHint="#A5B8A5"
-                            android:hint="00000-0000000-0"
+                            android:hint="Enter Username"
                             android:fontFamily="monospace" />
                     </com.google.android.material.textfield.TextInputLayout>
 

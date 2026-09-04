@@ -34,6 +34,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclineEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class,
@@ -42,8 +43,9 @@ import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
         PestTypeEntity::class,
         DiseaseTypeEntity::class,
         OfficerEntity::class,
-        JKGrowerEntity::class],
-    version = 23,
+        JKGrowerEntity::class,
+        ParcelDeclineEntity::class],
+    version = 24,
     exportSchema = false
 )
 @TypeConverters(StatusConverter::class)
@@ -69,6 +71,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun diseaseTypeDao(): DiseaseTypeDao
     abstract fun officerDao(): OfficerDao
     abstract fun jkGrowerDao(): JKGrowerDao
+    abstract fun parcelDeclineDao(): ParcelDeclineDao
     companion object {
 
         @Volatile
@@ -100,6 +103,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration17to18)
                     .addMigrations(migration18to19)
                     .addMigrations(migration19to20)
+                    .addMigrations(migration20to21)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -283,6 +287,39 @@ val migration19to20 = object : Migration(19, 20) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
             "ALTER TABLE new_surveys ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0"
+        )
+    }
+}
+
+val migration20to21 = object : Migration(20, 21) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS parcel_declines (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                declineGuid TEXT NOT NULL,
+                mauzaId INTEGER NOT NULL,
+                mauzaName TEXT NOT NULL,
+                areaName TEXT NOT NULL,
+                serverParcelId INTEGER,
+                parcelNo TEXT NOT NULL,
+                subParcelNo TEXT NOT NULL,
+                parcelStatus TEXT NOT NULL,
+                khewatInfo TEXT NOT NULL,
+                remarks TEXT NOT NULL,
+                geomWKT TEXT,
+                centroid TEXT,
+                calculatedArea REAL,
+                latitude REAL,
+                longitude REAL,
+                bearing REAL,
+                pic1Path TEXT NOT NULL,
+                pic2Path TEXT NOT NULL,
+                pic3Path TEXT NOT NULL,
+                createdAt INTEGER NOT NULL,
+                isUploaded INTEGER NOT NULL
+            )
+            """.trimIndent()
         )
     }
 }

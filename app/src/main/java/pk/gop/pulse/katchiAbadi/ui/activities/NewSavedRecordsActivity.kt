@@ -206,6 +206,19 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
         }
     }
 
+    override fun onEditClicked(survey: NewSurveyNewEntity) {
+        startActivity(Intent(this, SurveyActivity::class.java).apply {
+            putExtra("editSurveyId", survey.pkId)
+            putExtra("parcelId", survey.parcelId)
+            putExtra("parcelNo", survey.parcelNo)
+            putExtra("subParcelNo", survey.subParcelNo)
+            putExtra("parcelArea", "")
+            putExtra("khewatInfo", "")
+            putExtra("parcelOperation", survey.parcelOperation)
+            putExtra("parcelOperationValue", survey.parcelOperationValue)
+        })
+    }
+
 //    private fun logSurveyData(survey: NewSurveyNewEntity) {
 //        Log.d("SurveyData", "=== SURVEY RECORD DATA ===")
 //        Log.d("SurveyData", "Primary Key ID: ${survey.pkId}")

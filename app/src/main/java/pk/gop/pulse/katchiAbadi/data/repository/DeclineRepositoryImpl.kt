@@ -1,0 +1,129 @@
+package pk.gop.pulse.katchiAbadi.data.repository
+
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
+import pk.gop.pulse.katchiAbadi.common.Constants
+import pk.gop.pulse.katchiAbadi.common.Resource
+import pk.gop.pulse.katchiAbadi.data.local.ParcelDeclineDao
+import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclineEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclinePostDto
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import javax.inject.Inject
+
+private const val TAG = "DeclineRepo"
+
+class DeclineRepositoryImpl @Inject constructor(
+    private val dao: ParcelDeclineDao,
+    private val api: ServerApi,
+    private val sharedPreferences: SharedPreferences
+) {
+
+    fun livePendingCount(): Flow<Int> = dao.livePendingDeclineCount()
+
+    suspend fun saveDecline(decline: ParcelDeclineEntity): Long =
+        withContext(Dispatchers.IO) {
+            val id = dao.insertDecline(decline)
+            Log.d(TAG, "Decline saved id=$id")
+            id
+        }
+
+    suspend fun uploadDecline(decline: ParcelDeclineEntity): Resource<Unit> {
+        return try {
+            val encoded = withContext(Dispatchers.IO) {
+                listOf(decline.pic1Path, decline.pic2Path, decline.pic3Path)
+                    .map { encodeImage(it) }
+            }
+
+            if (encoded.any { it.isNullOrEmpty() }) {
+                return Resource.Error("Some picture files are missing from the device.")
+            }
+
+            val body = listOf(
+                ParcelDeclinePostDto(
+                    declineGuid       = decline.declineGuid,
+                    mauzaId           = decline.mauzaId,
+                    mauzaName         = decline.mauzaName,
+                    areaName          = decline.areaName,
+                    parcelId          = decline.serverParcelId,
+                    parcelNo          = decline.parcelNo,
+                    subParcelNo       = decline.subParcelNo,
+                    parcelStatus      = decline.parcelStatus,
+                    khewatInfo        = decline.khewatInfo,
+                    remarks           = decline.remarks,
+                    geomWKT           = decline.geomWKT,
+                    centroid          = decline.centroid,
+                    calculatedArea    = decline.calculatedArea,
+                    latitude          = decline.latitude,
+                    longitude         = decline.longitude,
+                    bearing           = decline.bearing,
+                    timestamp         = decline.createdAt,
+                    deviceCreatedDate = SimpleDateFormat(
+                        "yyyy-MM-dd'T'HH:mm:ss", Locale.US
+                    ).format(Date(decline.createdAt)),
+                    pic1 = encoded[0]!!,
+                    pic2 = encoded[1]!!,
+                    pic3 = encoded[2]!!
+                )
+            )
+
+            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+            val response = api.postParcelDeclines("Bearer $token", body)
+
+            if (response.isSuccessful) {
+                withContext(Dispatchers.IO) { dao.markUploaded(decline.id) }
+                Log.d(TAG, "Decline ${decline.id} uploaded")
+                Resource.Success(Unit)
+            } else {
+                val err = response.errorBody()?.string() ?: "Unknown"
+                Resource.Error("Server error: $err (code ${response.code()})")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Upload failed: ${e.message}", e)
+            Resource.Error(e.message ?: "Upload failed")
+        }
+    }
+
+    private fun encodeImage(path: String): String? = try {
+        val file = File(path)
+        if (!file.exists()) null
+        else BitmapFactory.decodeFile(path)?.let { bmp ->
+            ByteArrayOutputStream().use { os ->
+                var quality = 100
+                do {
+                    os.reset()
+                    bmp.compress(Bitmap.CompressFormat.JPEG, quality, os)
+                    quality -= 5
+                } while (os.size() / 1024 > 200 && quality > 75)
+                Base64.encodeToString(os.toByteArray(), Base64.NO_WRAP)
+            }
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Encode failed for $path: ${e.message}")
+        null
+    }
+
+    suspend fun deleteDecline(decline: ParcelDeclineEntity) = withContext(Dispatchers.IO) {
+        // Local picture files bhi hata dein
+        listOf(decline.pic1Path, decline.pic2Path, decline.pic3Path).forEach { path ->
+            try { File(path).delete() } catch (e: Exception) {
+                Log.w(TAG, "Could not delete $path: ${e.message}")
+            }
+        }
+        dao.deleteDecline(decline)
+    }
+
+    suspend fun getPending(): List<ParcelDeclineEntity> = withContext(Dispatchers.IO) {
+        dao.getPendingDeclines()
+    }
+}

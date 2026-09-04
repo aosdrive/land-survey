@@ -30,6 +30,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.data.repository.AuthRepositoryImpl
+import pk.gop.pulse.katchiAbadi.data.repository.DeclineRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.MenuRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NAHRepositoryImpl
@@ -629,5 +630,15 @@ object AppModule {
         return JKGrowerRepositoryImpl(api, jkGrowerDao, sharedPreferences)
     }
 
-
+    @Provides
+    @Singleton
+    fun provideDeclineRepository(
+        database: AppDatabase,
+        api: ServerApi,
+        sharedPreferences: SharedPreferences
+    ): DeclineRepositoryImpl = DeclineRepositoryImpl(
+        database.parcelDeclineDao(),
+        api,
+        sharedPreferences
+    )
 }

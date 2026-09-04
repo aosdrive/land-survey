@@ -351,4 +351,5 @@
     <string name="srv_section_data">Data and records</string>
     <string name="srv_assigned">Assigned mauza</string>
     <string name="srv_selected">Selected territory</string>
+    <string name="edit">Edit</string>
 </resources>

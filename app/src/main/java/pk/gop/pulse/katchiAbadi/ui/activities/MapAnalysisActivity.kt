@@ -1,10 +1,14 @@
 package pk.gop.pulse.katchiAbadi.ui.activities
 
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.esri.arcgisruntime.ArcGISRuntimeEnvironment
@@ -16,10 +20,10 @@ import com.esri.arcgisruntime.geometry.GeometryEngine
 import com.esri.arcgisruntime.geometry.Point
 import com.esri.arcgisruntime.geometry.Polygon
 import com.esri.arcgisruntime.geometry.SpatialReferences
-import com.esri.arcgisruntime.layers.WebTiledLayer
 import com.esri.arcgisruntime.mapping.ArcGISMap
 import com.esri.arcgisruntime.mapping.Basemap
 import com.esri.arcgisruntime.mapping.Viewpoint
+import com.esri.arcgisruntime.mapping.view.DefaultMapViewOnTouchListener
 import com.esri.arcgisruntime.mapping.view.Graphic
 import com.esri.arcgisruntime.mapping.view.GraphicsOverlay
 import com.esri.arcgisruntime.symbology.SimpleFillSymbol
@@ -29,20 +33,23 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.CustomTileLayer
 import pk.gop.pulse.katchiAbadi.common.TileManager
 import pk.gop.pulse.katchiAbadi.common.Utility
+import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.databinding.ActivityMapAnalysisBinding
+import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.AnalyticsParcelDto
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import java.util.Locale
 import javax.inject.Inject
 
 private const val TAG = "MapAnalysis"
 
-/** DB ki Status strings — SurveyAnalyticsParcels.Status se match karti hain. */
 private const val STATUS_UNMAPPED_CANE = "Unmapped cane cells"
 private const val STATUS_CANE_NO_SURVEY = "Cane without a survey"
 
@@ -58,11 +65,17 @@ class MapAnalysisActivity : AppCompatActivity() {
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
+    @Inject
+    lateinit var database: AppDatabase
+
     private lateinit var binding: ActivityMapAnalysisBinding
     private val wgs84 by lazy { SpatialReferences.getWgs84() }
 
     private val parcelOverlay = GraphicsOverlay()
     private val labelOverlay = GraphicsOverlay()
+
+    /** Row + parsed geometry — attributes banane ke liye dono chahiye. */
+    private data class AnalyticsItem(val row: AnalyticsParcelDto, val geom: Geometry)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,11 +121,11 @@ class MapAnalysisActivity : AppCompatActivity() {
 
                 Log.d(TAG, "Analytics parcels received: ${rows.size}")
 
-                val unmapped = mutableListOf<Geometry>()
-                val noSurvey = mutableListOf<Geometry>()
+                val unmapped = mutableListOf<AnalyticsItem>()
+                val noSurvey = mutableListOf<AnalyticsItem>()
                 val labels = mutableListOf<Graphic>()
-//                val allPolys = mutableListOf<Polygon>()
                 var skipped = 0
+
                 withContext(Dispatchers.Default) {
                     rows.forEach { row ->
                         try {
@@ -122,9 +135,13 @@ class MapAnalysisActivity : AppCompatActivity() {
                             val geom = parseWkt(row.geometryWKT) ?: return@forEach
                             if (geom.isEmpty) { skipped++; return@forEach }
 
-                            if (status == STATUS_UNMAPPED_CANE) unmapped.add(geom) else noSurvey.add(geom)
+                            if (status == STATUS_UNMAPPED_CANE) {
+                                unmapped.add(AnalyticsItem(row, geom))
+                            } else {
+                                noSurvey.add(AnalyticsItem(row, geom))
+                            }
 
-                            buildLabel(row, geom)?.let { labels.add(it) }
+                            labels.add(buildLabel(row, geom))
                         } catch (e: Exception) {
                             skipped++
                             Log.w(TAG, "Row skip (ParcelNo=${row.parcelNo}): ${e.message}")
@@ -134,18 +151,22 @@ class MapAnalysisActivity : AppCompatActivity() {
 
                 Log.d(TAG, "unmapped=${unmapped.size} noSurvey=${noSurvey.size} skipped=$skipped")
 
+                parcelOverlay.graphics.clear()
                 drawParcels(unmapped, COLOR_UNMAPPED)
                 drawParcels(noSurvey, COLOR_NO_SURVEY)
 
                 labelOverlay.graphics.clear()
                 labelOverlay.graphics.addAll(labels)
 
-                binding.tvUnmapped.text =
-                    "Unmapped cane cells: ${unmapped.size} · ${"%.2f".format(acresOf(unmapped))} ac"
-                binding.tvNoSurvey.text =
-                    "Cane without a survey: ${noSurvey.size} · ${"%.2f".format(acresOf(noSurvey))} ac"
+                val unmappedGeoms = unmapped.map { it.geom }
+                val noSurveyGeoms = noSurvey.map { it.geom }
 
-                val all = unmapped + noSurvey
+                binding.tvUnmapped.text =
+                    "Unmapped cane cells: ${unmapped.size} · ${"%.2f".format(acresOf(unmappedGeoms))} ac"
+                binding.tvNoSurvey.text =
+                    "Cane without a survey: ${noSurvey.size} · ${"%.2f".format(acresOf(noSurveyGeoms))} ac"
+
+                val all = unmappedGeoms + noSurveyGeoms
                 Log.d(TAG, "Drawable geometries: ${all.size}")
 
                 if (all.isEmpty()) {
@@ -165,8 +186,6 @@ class MapAnalysisActivity : AppCompatActivity() {
 
     // ================= MAP + OFFLINE TILES =================
 
-    // ================= MAP + OFFLINE TILES (FragmentMap jaisa) =================
-
     private fun setupMapImagery(geoms: List<Geometry>) {
         try {
             val mauzaId = sharedPreferences.getLong(
@@ -181,14 +200,11 @@ class MapAnalysisActivity : AppCompatActivity() {
             val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
             val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
 
-            // --- extent: union -> buffer -> WebMercator (FragmentMap jaisa) ---
             val combinedGeometry = GeometryEngine.union(geoms)
-            val combinedExtent = combinedGeometry.extent
-            val bufferDistance = 0.0001
-            val bufferedGeometry = GeometryEngine.buffer(combinedExtent, bufferDistance) as Polygon
-            val bufferedExtent = bufferedGeometry.extent
+            val bufferedGeometry =
+                GeometryEngine.buffer(combinedGeometry.extent, 0.0001) as Polygon
             val webMercatorEnvelope = GeometryEngine.project(
-                bufferedExtent,
+                bufferedGeometry.extent,
                 SpatialReferences.getWebMercator()
             ) as Envelope
 
@@ -215,11 +231,7 @@ class MapAnalysisActivity : AppCompatActivity() {
                 96,
                 TileInfo.ImageFormat.PNG24,
                 levelsOfDetail,
-                Point(
-                    -20037508.3427892,
-                    20037508.3427892,
-                    SpatialReferences.getWebMercator()
-                ),
+                Point(-20037508.3427892, 20037508.3427892, SpatialReferences.getWebMercator()),
                 SpatialReferences.getWebMercator(),
                 256,
                 256
@@ -229,15 +241,9 @@ class MapAnalysisActivity : AppCompatActivity() {
                 Constants.SHARED_PREF_MAP_MIN_SCALE,
                 Constants.SHARED_PREF_DEFAULT_MIN_SCALE
             )
-            val maxZoomLevel = 16
 
             val customTileLayer = CustomTileLayer(
-                tileInfo,
-                webMercatorEnvelope,
-                tileManager,
-                folderKey,
-                minZoomLevel,
-                maxZoomLevel
+                tileInfo, webMercatorEnvelope, tileManager, folderKey, minZoomLevel, 16
             )
 
             customTileLayer.addDoneLoadingListener {
@@ -250,6 +256,7 @@ class MapAnalysisActivity : AppCompatActivity() {
             ArcGISRuntimeEnvironment.setLicense(
                 "runtimelite,1000,rud5883837740,none,ZZ0RJAY3FLCB0YRJD136"
             )
+
             binding.mapView.map = map
             binding.mapView.isAttributionTextVisible = false
 
@@ -257,28 +264,236 @@ class MapAnalysisActivity : AppCompatActivity() {
             binding.mapView.graphicsOverlays.add(parcelOverlay)
             binding.mapView.graphicsOverlays.add(labelOverlay)
 
-            Log.d(TAG, "Imagery setup done, folderKey=$folderKey, extent=$webMercatorEnvelope")
+            // ⚠️ Touch listener SAB SE AAKHIR ME — map set hone ke baad
+            attachTouchListener()
+
+            Log.d(TAG, "Imagery setup done, folderKey=$folderKey, graphics=${parcelOverlay.graphics.size}")
         } catch (e: Exception) {
             Log.e(TAG, "Map setup failed: ${e.message}", e)
             ToastUtil.showShort(this, "Map load nahi hui.")
         }
     }
 
-    private fun drawParcels(geoms: List<Geometry>, color: Int) {
-        if (geoms.isEmpty()) return
+    private fun attachTouchListener() {
+        binding.mapView.onTouchListener =
+            object : DefaultMapViewOnTouchListener(this, binding.mapView) {
+                override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                    Log.d(TAG, "TAP at ${e.x}, ${e.y}")
+                    val screenPoint = android.graphics.Point(e.x.toInt(), e.y.toInt())
+                    val future = binding.mapView
+                        .identifyGraphicsOverlayAsync(parcelOverlay, screenPoint, 20.0, false)
+
+                    future.addDoneListener {
+                        try {
+                            val result = future.get()
+                            Log.d(TAG, "Identify hits = ${result.graphics.size}")
+                            if (result.graphics.isNotEmpty()) {
+                                val g = result.graphics[0]
+                                runOnUiThread { showParcelActionCard(g) }
+                            }
+                        } catch (ex: Exception) {
+                            Log.e(TAG, "Identify failed: ${ex.message}", ex)
+                        }
+                    }
+                    return true
+                }
+            }
+        Log.d(TAG, "Touch listener attached")
+    }
+
+    private fun drawParcels(items: List<AnalyticsItem>, color: Int) {
+        if (items.isEmpty()) return
         val symbol = SimpleFillSymbol(
             SimpleFillSymbol.Style.SOLID,
             Color.argb(110, Color.red(color), Color.green(color), Color.blue(color)),
             SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, color, 1.6f)
         )
-        geoms.forEach { parcelOverlay.graphics.add(Graphic(it, symbol)) }
+        items.forEach { item ->
+            val g = Graphic(item.geom, symbol)
+            g.attributes["server_parcel_id"] = item.row.parcelId.toLong()
+            g.attributes["mauza_id"] = item.row.mauzaId.toLong()
+            g.attributes["parcel_no"] = item.row.parcelNo.orEmpty()
+            g.attributes["khewat"] = item.row.khewat.orEmpty()
+            g.attributes["status"] = item.row.status?.trim().orEmpty()
+            g.attributes["acres"] = (item.row.parcelAcres ?: item.row.computedAcres ?: 0.0)
+            g.attributes["geom_wkt"] = item.row.geometryWKT.orEmpty()
+            val c = item.geom.extent.center
+            g.attributes["centroid"] = String.format(Locale.US, "POINT(%.8f %.8f)", c.x, c.y)
+            parcelOverlay.graphics.add(g)
+        }
     }
 
-    /** MapFragment jaisa label: ParcelNo + Khewat + Acres */
+    // ================= ACTION CARD =================
+
+    private fun showParcelActionCard(graphic: Graphic) {
+        val attr = graphic.attributes
+        val parcelNo = attr["parcel_no"]?.toString().orEmpty()
+        val khewat = attr["khewat"]?.toString().orEmpty()
+        val status = attr["status"]?.toString().orEmpty()
+        val acres = attr["acres"]?.toString()?.toDoubleOrNull() ?: 0.0
+
+        val view = layoutInflater.inflate(R.layout.dialog_parcel_action, null)
+        val dialog = AlertDialog.Builder(this, R.style.ZdDialog)
+            .setView(view)
+            .setCancelable(true)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        view.findViewById<TextView>(R.id.tv_action_status).text = status.uppercase(Locale.US)
+        view.findViewById<TextView>(R.id.tv_action_parcel).text = "Parcel $parcelNo"
+        view.findViewById<TextView>(R.id.tv_action_details).text = buildString {
+            if (khewat.isNotBlank()) append("Khewat: $khewat\n")
+            append(String.format(Locale.US, "%.2f Acres", acres))
+        }
+        view.findViewById<View>(R.id.view_status_dot).setBackgroundColor(
+            if (status == STATUS_UNMAPPED_CANE) COLOR_UNMAPPED else COLOR_NO_SURVEY
+        )
+
+        val acceptBtn = view.findViewById<TextView>(R.id.btn_action_accept)
+        if (status == STATUS_UNMAPPED_CANE) {
+            acceptBtn.alpha = 0.4f
+            acceptBtn.setOnClickListener {
+                ToastUtil.showShort(this, "Accept for unmapped cells is not available yet.")
+            }
+        } else {
+            acceptBtn.setOnClickListener {
+                dialog.dismiss()
+                handleAccept(graphic)
+            }
+        }
+
+        view.findViewById<View>(R.id.btn_action_decline).setOnClickListener {
+            dialog.dismiss()
+            handleDecline(graphic)
+        }
+        view.findViewById<View>(R.id.btn_action_cancel).setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
+    }
+
+    private fun handleAccept(graphic: Graphic) {
+        val attr = graphic.attributes
+
+        val serverParcelId = attr["server_parcel_id"]?.toString()?.toLongOrNull() ?: 0L
+        val parcelNoStr = attr["parcel_no"]?.toString().orEmpty()
+        val parcelNoLong = parcelNoStr.toLongOrNull()
+        val geomWkt = attr["geom_wkt"]?.toString().orEmpty()
+        val centroid = attr["centroid"]?.toString().orEmpty()
+        val khewat = attr["khewat"]?.toString().orEmpty()
+        val acres = attr["acres"]?.toString()?.toDoubleOrNull() ?: 0.0
+        val mauzaId = attr["mauza_id"]?.toString()?.toLongOrNull() ?: 0L
+
+        if (parcelNoLong == null || serverParcelId <= 0) {
+            ToastUtil.showShort(this, "Parcel information is incomplete.")
+            return
+        }
+        if (geomWkt.isBlank()) {
+            ToastUtil.showShort(this, "Parcel geometry not available.")
+            return
+        }
+
+        val mauzaName = sharedPreferences.getString(
+            Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+            Constants.SHARED_PREF_DEFAULT_STRING
+        ).orEmpty()
+        val areaName = sharedPreferences.getString(
+            Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
+            Constants.SHARED_PREF_DEFAULT_STRING
+        ).orEmpty()
+
+        lifecycleScope.launch {
+            busy(true, "Preparing survey...")
+            try {
+                val ready = withContext(Dispatchers.IO) {
+                    val existing = database.activeParcelDao().getParcelById(serverParcelId)
+                    if (existing != null) {
+                        if (existing.surveyStatusCode == 2) return@withContext "ALREADY_SURVEYED"
+                        return@withContext "OK"
+                    }
+
+                    val parcel = ActiveParcelEntity(
+                        pkid = 0,
+                        id = serverParcelId,
+                        parcelNo = parcelNoLong,
+                        subParcelNo = "",
+                        mauzaId = mauzaId,
+                        mauzaName = mauzaName,
+                        khewatInfo = khewat,
+                        areaAssigned = areaName,
+                        geomWKT = geomWkt,
+                        centroid = centroid,
+                        distance = 0,
+                        parcelType = "",
+                        parcelAreaKMF = "",
+                        parcelAreaAbadiDeh = "0",
+                        surveyStatusCode = 1,
+                        surveyId = null,
+                        isActivate = true,
+                        unitId = 0L,
+                        groupId = 0L,
+                        growerCodes = null
+                    )
+                    database.activeParcelDao().insertActiveParcels(listOf(parcel))
+                    Log.d(TAG, "Inserted parcel $serverParcelId from analytics")
+                    "OK"
+                }
+
+                if (ready == "ALREADY_SURVEYED") {
+                    ZdAlert.warn(
+                        this@MapAnalysisActivity,
+                        "Already Surveyed",
+                        "This parcel has already been surveyed on this device."
+                    )
+                    return@launch
+                }
+
+                val areaSqFt = (acres * 43560.0).toInt()
+
+                startActivity(
+                    Intent(this@MapAnalysisActivity, SurveyActivity::class.java).apply {
+                        putExtra("parcelId", serverParcelId)
+                        putExtra("parcelNo", parcelNoStr)
+                        putExtra("subParcelNo", "")
+                        putExtra("parcelArea", areaSqFt.toString())
+                        putExtra("khewatInfo", khewat)
+                        putExtra("parcelOperation", "Same")
+                        putExtra("parcelOperationValue", "")
+                        putExtra("parcelOperationValueHi", "")
+                        putExtra("unitId", 0L)
+                        putExtra("groupId", 0L)
+                        putExtra("mauzaName", mauzaName)
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Accept failed: ${e.message}", e)
+                ToastUtil.showShort(this@MapAnalysisActivity, "Failed: ${e.message}")
+            } finally {
+                busy(false)
+            }
+        }
+    }
+
+    private fun handleDecline(graphic: Graphic) {
+        val attr = graphic.attributes
+        startActivity(
+            Intent(this, DeclineCaptureActivity::class.java).apply {
+                putExtra("serverParcelId", attr["server_parcel_id"]?.toString()?.toLongOrNull() ?: 0L)
+                putExtra("mauzaId", attr["mauza_id"]?.toString()?.toLongOrNull() ?: 0L)
+                putExtra("parcelNo", attr["parcel_no"]?.toString().orEmpty())
+                putExtra("khewat", attr["khewat"]?.toString().orEmpty())
+                putExtra("status", attr["status"]?.toString().orEmpty())
+                putExtra("acres", attr["acres"]?.toString()?.toDoubleOrNull() ?: 0.0)
+                putExtra("geomWkt", attr["geom_wkt"]?.toString().orEmpty())
+                putExtra("centroid", attr["centroid"]?.toString().orEmpty())
+            }
+        )
+    }
+
+    // ================= HELPERS =================
+
     private fun buildLabel(row: AnalyticsParcelDto, geom: Geometry): Graphic {
-
-
-        val color = if (row.status?.trim() == STATUS_UNMAPPED_CANE) COLOR_UNMAPPED else COLOR_NO_SURVEY
+        val color =
+            if (row.status?.trim() == STATUS_UNMAPPED_CANE) COLOR_UNMAPPED else COLOR_NO_SURVEY
 
         val text = buildString {
             append(row.parcelNo.orEmpty())
@@ -303,8 +518,6 @@ class MapAnalysisActivity : AppCompatActivity() {
 
         return Graphic(geom.extent.center, symbol)
     }
-
-    // ================= HELPERS =================
 
     private fun parseWkt(wkt: String?): Geometry? {
         if (wkt.isNullOrBlank()) return null

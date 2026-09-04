@@ -26,6 +26,8 @@ class NewSurveyAdapter(
         fun onUploadClicked(survey: NewSurveyNewEntity)
         fun onItemClicked(survey: NewSurveyNewEntity)
         fun onDeleteClicked(survey: NewSurveyNewEntity)
+        fun onEditClicked(survey: NewSurveyNewEntity)
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NewSurveyViewHolder {
@@ -54,6 +56,7 @@ class NewSurveyAdapter(
         private val btnUpload: Button = itemView.findViewById(R.id.btn_upload_record)
         private val btnView: Button = itemView.findViewById(R.id.btn_view_record)
         private val btnDelete: Button = itemView.findViewById(R.id.btn_delete_record)
+        private val btnEdit: Button = itemView.findViewById(R.id.btn_edit_record)
 
         fun bind(surveyWithKhewat: SurveyWithKhewat) {
             val survey = surveyWithKhewat.survey
@@ -110,6 +113,8 @@ class NewSurveyAdapter(
             btnView.setOnClickListener { listener.onItemClicked(survey) }
             btnDelete.setOnClickListener { listener.onDeleteClicked(survey) }
             itemView.setOnClickListener { listener.onItemClicked(survey) }
+            btnEdit.setOnClickListener { listener.onEditClicked(survey) }
+
         }
     }
 

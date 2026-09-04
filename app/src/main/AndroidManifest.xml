@@ -36,9 +36,17 @@
         android:theme="@style/Theme.Survey"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".ui.activities.PendingDeclinesActivity"
+            android:exported="false"
+            android:label="Pending Declines"
+            android:theme="@style/Theme.Survey" />
+        <activity
+            android:name=".ui.activities.DeclineCaptureActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.activities.MapAnalysisActivity"
             android:exported="false"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
         <activity
             android:name=".ui.activities.PendingTasksActivity"
             android:exported="false" />

@@ -144,6 +144,7 @@ dependencies {
 //    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.activity:activity:1.8.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("com.google.android.material:material:1.12.0")
 //    implementation("com.google.android.material:material:1.14.0")
     kapt(Dependencies.hiltCompiler)
 

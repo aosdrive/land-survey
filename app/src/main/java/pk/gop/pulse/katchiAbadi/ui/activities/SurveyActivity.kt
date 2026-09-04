@@ -123,6 +123,12 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
 //    private val sowingPersonViews = mutableListOf<View>()
     private var selectedSowingDate: String? = null
+    private var editSurveyId: Long = 0L
+    private val isEditMode get() = editSurveyId > 0L
+
+
+
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("tempImagePath", tempImagePath)
@@ -164,9 +170,21 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         val khewatInfo = intent.getStringExtra("khewatInfo") ?: ""
         val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
         val parcelOperationValue = intent.getStringExtra("parcelOperationValue") ?: ""
-        parcelMauzaName = intent.getStringExtra("mauzaName") ?: ""
-
+//        parcelMauzaName = intent.getStringExtra("mauzaName") ?: ""
 //        val parcelInfoText = "Parcel #$parcelNo-$subParcelNo\nArea: $parcelArea\nID: $parcelId"
+
+        editSurveyId = intent.getLongExtra("editSurveyId", 0L)
+
+        parcelMauzaName = intent.getStringExtra("mauzaName")
+            ?: sharedPreferences.getString(
+                Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
+                Constants.SHARED_PREF_DEFAULT_STRING
+            ).orEmpty()
+
+        if (isEditMode) {
+            supportActionBar?.title = "Edit Survey"
+            binding.btnSubmitSurvey.text = "Update Survey"
+        }
         val parcelInfoText = SpannableStringBuilder()
 
 // Bold "Parcel:"
@@ -197,8 +215,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         setupFarmerProfile()
         setupSubmit(parcelId, parcelNo, subParcelNo)
         loadSharedMouzaData()
-        syncUnsyncedData()
+//        syncUnsyncedData()
         loadJKGrowers()
+        if (!isEditMode) syncUnsyncedData()
     }
 
     private fun loadJKGrowers() {
@@ -590,9 +609,80 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         binding.spinnerImageType.adapter = zdAdapter(imageTypeList)
 
         // Load dynamic spinners from API
-        loadCropsFromLocalDb()
-        loadCropTypesFromLocalDb()
-        loadVarietiesFromLocalDb()
+        lifecycleScope.launch {
+            loadCropsFromLocalDb()
+            loadCropTypesFromLocalDb()
+            loadVarietiesFromLocalDb()
+            if (isEditMode) loadSurveyForEdit()
+        }
+    }
+
+    private suspend fun loadSurveyForEdit() {
+        val survey = withContext(Dispatchers.IO) {
+            database.newSurveyNewDao().getSurveyById(editSurveyId)
+        }
+        if (survey == null) {
+            ToastUtil.showShort(context, "Record not found")
+            finish()
+            return
+        }
+
+        val persons = withContext(Dispatchers.IO) {
+            database.personDao().getPersonsForSurvey(editSurveyId)
+        }
+        val images = withContext(Dispatchers.IO) {
+            database.imageDao().getImagesBySurvey(editSurveyId)
+        }
+
+        binding.etYear.setText(survey.year)
+        binding.etRemarks.setText(survey.remarks)
+
+        selectedSowingDate = survey.sowingDate
+        binding.etSowingDate.setText(survey.sowingDate.orEmpty())
+
+        farmerProfilePath = survey.farmerProfilePath
+        farmerProfilePath?.let {
+            val f = File(it)
+            if (f.exists()) {
+                binding.ivFarmerProfileImage.setImageURI(Uri.fromFile(f))
+                binding.ivFarmerProfileImage.visibility = View.VISIBLE
+                binding.layoutFarmerEmptyState.visibility = View.GONE
+            }
+        }
+
+        selectSpinnerValue(binding.spinnerOwnershipStatus, survey.ownershipStatus)
+        selectSpinnerValue(binding.spinnerPropertyStatus, survey.propertyType)
+
+        isSettingSpinnerProgrammatically = true
+        selectSpinnerValue(binding.etCrop, survey.crop)
+        selectSpinnerValue(binding.etCropType, survey.cropType)
+        selectSpinnerValue(binding.etVariety, survey.variety)
+        isSettingSpinnerProgrammatically = false
+
+        // custom values (jo list me nahi) ke liye zaroori
+        selectedCropType = survey.cropType
+        selectedVariety = survey.variety
+
+        persons.forEach { personEntryHelper.addPersonView(it, editable = true) }
+
+        images.forEach { img ->
+            viewModel.addImage(img.copy(id = 0))
+        }
+        imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
+        updateImageSectionUI()
+
+        Log.d("SurveyActivity", "Edit prefill done: pkId=$editSurveyId, persons=${persons.size}, images=${images.size}")
+    }
+
+    private fun selectSpinnerValue(spinner: android.widget.Spinner, value: String?) {
+        if (value.isNullOrBlank()) return
+        val adapter = spinner.adapter ?: return
+        for (i in 0 until adapter.count) {
+            if (adapter.getItem(i).toString().equals(value, ignoreCase = true)) {
+                spinner.setSelection(i)
+                return
+            }
+        }
     }
 
     private fun zdAdapter(items: List<String>): ArrayAdapter<String> {
@@ -601,35 +691,24 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         return adapter
     }
 
-    private fun loadCropsFromLocalDb() {
-        lifecycleScope.launch {
-            try {
-                val crops = withContext(Dispatchers.IO) {
-                    dropdownRepository.getCrops(forceRefresh = false)
-                }
-
-                cropList.clear()
-                cropList.addAll(crops)
-
-                binding.etCrop.adapter = zdAdapter(cropList)
-
-                val sugarcanePosition = cropList.indexOf("Sugarcane")
-                if (sugarcanePosition != -1) {
-                    binding.etCrop.setSelection(sugarcanePosition)
-                } else {
-                    binding.etCrop.setSelection(0)
-                }
-
-                Log.d("SurveyActivity", "Loaded ${crops.size} crops from local DB")
-            } catch (e: Exception) {
-                Log.e("SurveyActivity", "Error loading crops: ${e.message}")
-                ToastUtil.showShort(context, "Error loading crops")
+    private suspend fun loadCropsFromLocalDb() {
+        try {
+            val crops = withContext(Dispatchers.IO) {
+                dropdownRepository.getCrops(forceRefresh = false)
             }
+            cropList.clear()
+            cropList.addAll(crops)
+            binding.etCrop.adapter = zdAdapter(cropList)
+
+            val pos = cropList.indexOf("Sugarcane")
+            binding.etCrop.setSelection(if (pos != -1) pos else 0)
+        } catch (e: Exception) {
+            Log.e("SurveyActivity", "Error loading crops: ${e.message}")
+            ToastUtil.showShort(context, "Error loading crops")
         }
     }
 
-    private fun loadCropTypesFromLocalDb() {
-        lifecycleScope.launch {
+    private suspend fun loadCropTypesFromLocalDb() {
             try {
                 val cropTypes = withContext(Dispatchers.IO) {
                     dropdownRepository.getCropTypes(forceRefresh = false)
@@ -647,16 +726,14 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 Log.e("SurveyActivity", "Error loading crop types: ${e.message}")
                 ToastUtil.showShort(context, "Error loading crop types")
             }
-        }
+
     }
 
-    private fun loadVarietiesFromLocalDb() {
-        lifecycleScope.launch {
+    private suspend fun loadVarietiesFromLocalDb() {
             try {
                 val varieties = withContext(Dispatchers.IO) {
                     dropdownRepository.getVarieties(forceRefresh = false)
                 }
-
                 varietyList.clear()
                 varietyList.add("Select Variety")
                 varietyList.addAll(varieties)
@@ -670,7 +747,6 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 Log.e("SurveyActivity", "Error loading varieties: ${e.message}")
                 ToastUtil.showShort(context, "Error loading varieties")
             }
-        }
     }
 
     private fun setupVarietyListener() {
@@ -1131,7 +1207,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                     withContext(Dispatchers.Main) {
                         viewModel.addImage(image)
-                        database.imageDao().insertImage(image)
+//                        database.imageDao().insertImage(image)
                         imageAdapter.submitList(viewModel.surveyImages.value!!.toList())
                         hideImageLoading()
 
@@ -1422,10 +1498,10 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             // Button stays disabled. We don't re-enable it because finish() will close the activity.
 
             val parcelOperation = intent.getStringExtra("parcelOperation") ?: ""
-            val parcelOperationValue = if (parcelOperation == "Split") {
-                intent.getStringExtra("parcelOperationValue") ?: ""
-            } else {
-                intent.getStringExtra("parcelOperationValueHi") ?: ""
+            val parcelOperationValue = when {
+                isEditMode -> intent.getStringExtra("parcelOperationValue") ?: ""
+                parcelOperation == "Split" -> intent.getStringExtra("parcelOperationValue") ?: ""
+                else -> intent.getStringExtra("parcelOperationValueHi") ?: ""
             }
 
             val survey = NewSurveyNewEntity(
@@ -1461,25 +1537,22 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             lifecycleScope.launch {
                 try {
                     withContext(Dispatchers.IO) {
-                        val surveyId = database.newSurveyNewDao().insertSurvey(survey)
-                        Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId ===")
+                        val surveyId = if (isEditMode) {
+                            database.newSurveyNewDao().updateSurvey(survey.copy(pkId = editSurveyId))
 
-//                        val sowingPersons = getAllSowingPersons()
-//                        val primaryGrowerCode = rawPersons.firstOrNull()?.growerCode?.trim() ?: ""
-//
-//                        val sowingEntities = sowingPersons.map { person ->
-//                            SowingPersonEntity(
-//                                surveyId = surveyId,
-//                                name = person.name,
-//                                cnic = person.cnic,
-//                                growerCode = primaryGrowerCode
-//                            )
-//                        }
-//                        database.sowingPersonDao().insertAll(sowingEntities)
-//                        Log.d(
-//                            "SurveyActivity",
-//                            "Saved ${sowingEntities.size} sowing persons for surveyId=$surveyId"
-//                        )
+                            // purane children pehle hataayein — warna duplicate banenge
+                            // aur getPersonByCnic() purane row se galat link kar dega
+                            val oldPersons = database.personDao().getPersonsForSurvey(editSurveyId)
+                            if (oldPersons.isNotEmpty()) database.personDao().deletePersons(oldPersons)
+
+                            val oldImages = database.imageDao().getImagesBySurvey(editSurveyId)
+                            if (oldImages.isNotEmpty()) database.imageDao().deleteImages(oldImages)
+
+                            editSurveyId
+                        } else {
+                            database.newSurveyNewDao().insertSurvey(survey)
+                        }
+                        Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId (edit=$isEditMode) ===")
 
                         // ========== SMART PERSON HANDLING ==========
                         rawPersons.forEach { person ->
@@ -1573,12 +1646,14 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                             Log.d("SurveyActivity", "Saved grower codes to parcel $parcelId: $growerCodesText")
                         }
 
-                        val log = TempSurveyLogEntity(
-                            parcelId = parcelId,
-                            parcelNo = parcelNo,
-                            subParcelNo = subParcelNo
-                        )
-                        database.tempSurveyLogDao().insertLog(log)
+                        if (!isEditMode) {
+                            val log = TempSurveyLogEntity(
+                                parcelId = parcelId,
+                                parcelNo = parcelNo,
+                                subParcelNo = subParcelNo
+                            )
+                            database.tempSurveyLogDao().insertLog(log)
+                        }
 
                         if (parcelOperation.equals("Merge", ignoreCase = true) &&
                             parcelOperationValue.isNotBlank()
@@ -1595,7 +1670,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                             }
                         }
                     }
-                    ToastUtil.showShort(context, "Survey saved locally")
+                    ToastUtil.showShort(context, if (isEditMode) "Survey updated" else "Survey saved locally")
                     finish()
                 } catch (e: Exception) {
                     // If insertion fails, re-enable button so user can retry

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_margin="20dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:id="@+id/view_status_dot"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:background="@drawable/bg_status_pill" />
+
+            <TextView
+                android:id="@+id/tv_action_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.05"
+                android:textColor="#1B5E20"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="CANE WITHOUT A SURVEY" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_action_parcel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:fontFamily="serif"
+            android:textColor="#1B5E20"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            tools:text="Parcel 775" />
+
+        <TextView
+            android:id="@+id/tv_action_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:lineSpacingExtra="3dp"
+            android:textColor="#6B8A6B"
+            android:textSize="13sp"
+            tools:text="Khewat: 12/3\n4.25 Acres" />
+
+        <TextView
+            android:id="@+id/btn_action_accept"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/zd_arrow_pill"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:letterSpacing="0.08"
+            android:padding="16dp"
+            android:text="ACCEPT"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_action_decline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/zd_chip_amber"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:letterSpacing="0.08"
+            android:padding="16dp"
+            android:text="DECLINE"
+            android:textColor="#B47B12"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_action_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="8dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:fontFamily="sans-serif-medium"
+            android:padding="10dp"
+            android:text="CANCEL"
+            android:textColor="#6B8A6B"
+            android:textSize="13sp" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

@@ -1,6 +1,7 @@
 package pk.gop.pulse.katchiAbadi.data.remote.response
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.OnConflictStrategy.Companion.REPLACE
@@ -50,4 +51,10 @@ interface SurveyPersonDao {
 
     @Query("SELECT * FROM survey_persons WHERE surveyId = :surveyId")
     suspend fun getPersonsBySurveyId(surveyId: Int): List<SurveyPersonEntity>
+
+    @Query("DELETE FROM survey_persons WHERE surveyId = :surveyId")
+    suspend fun deletePersonsForSurvey(surveyId: Long)
+
+    @Delete
+    suspend fun deletePersons(persons: List<SurveyPersonEntity>)
 }

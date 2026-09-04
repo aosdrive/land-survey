@@ -28,4 +28,7 @@ interface SurveyImageDao {
 
     @Delete
     suspend fun deleteImage(image: SurveyImage)
+
+    @Delete
+    suspend fun deleteImages(images: List<SurveyImage>)
 }

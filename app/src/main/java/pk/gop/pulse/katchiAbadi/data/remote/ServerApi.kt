@@ -36,6 +36,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.AnalyticsParcelsResponse
 import pk.gop.pulse.katchiAbadi.domain.model.BoundaryDto
 import pk.gop.pulse.katchiAbadi.domain.model.GrowerFeatureDto
 import pk.gop.pulse.katchiAbadi.domain.model.LookupItem
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclinePostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SugarcaneResponseDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
@@ -295,4 +296,11 @@ interface ServerApi {
         @Query("mauzaId") mauzaId: Int,
         @Query("selectedYear") selectedYear: String?
     ): AnalyticsParcelsResponse
+
+    @POST("api/MobileData/AddParcelDecline")
+    @Headers("Content-Type: application/json")
+    suspend fun postParcelDeclines(
+        @Header("Authorization") token: String,
+        @Body body: List<ParcelDeclinePostDto>
+    ): Response<PostApiDto>
 }
