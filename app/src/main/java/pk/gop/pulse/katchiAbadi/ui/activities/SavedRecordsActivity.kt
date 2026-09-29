@@ -18,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.adapter.SavedAdapter
 import pk.gop.pulse.katchiAbadi.common.Constants
@@ -202,31 +203,15 @@ class SavedRecordsActivity : AppCompatActivity(),
     }
 
     override fun onDeleteItemClicked(survey: SurveyMergeDetails) {
-        val builder = AlertDialog.Builder(this)
-            .setTitle("Confirm!")
-            .setCancelable(false)
-            .setMessage("Are you sure, you want to delete this record.")
-            .setPositiveButton("Proceed") { _, _ ->
-                viewModel.deleteData(survey)
-            }
-            .setNegativeButton("Cancel", null)
-
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        ZdAlert.confirmDanger(
+            context = this,
+            title = "Confirm!",
+            message = "Are you sure, you want to delete this record.",
+            confirmText = "Proceed",
+            cancelText = "Cancel"
+        ) {
+            viewModel.deleteData(survey)
+        }
     }
 
     override fun onViewItemClicked(survey: SurveyMergeDetails) {
@@ -255,33 +240,17 @@ class SavedRecordsActivity : AppCompatActivity(),
                         val totalPendingRecords = database.surveyFormDao().totalPendingCount()
                         if (totalPendingRecords > 0) {
 
-                            val builder = AlertDialog.Builder(this@SavedRecordsActivity)
-                                .setTitle("Confirm!")
-                                .setCancelable(false)
-                                .setMessage("Are you sure, you want to upload all records.")
-                                .setPositiveButton("Proceed") { _, _ ->
-                                    // Show the progress dialog at the start
-                                    Utility.showProgressAlertDialog(context, "Data uploading...")
-                                    postAllSavedData()
-                                }
-                                .setNegativeButton("Cancel", null)
-
-                            // Create the AlertDialog object
-                            val dialog = builder.create()
-                            dialog.show()
-
-                            // Get the buttons from the dialog
-                            val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                            val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                            // Set button text size and style
-                            positiveButton.textSize =
-                                16f // Change the size according to your preference
-                            positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                            negativeButton.textSize =
-                                16f // Change the size according to your preference
-                            negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                            ZdAlert.confirm(
+                                context = this@SavedRecordsActivity,
+                                title = "Confirm!",
+                                message = "Are you sure, you want to upload all records.",
+                                confirmText = "Proceed",
+                                cancelText = "Cancel"
+                            ) {
+                                // Show the progress dialog at the start
+                                Utility.showProgressAlertDialog(context, "Data uploading...")
+                                postAllSavedData()
+                            }
                         } else {
                             ToastUtil.showShort(
                                 context,

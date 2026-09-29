@@ -376,6 +376,23 @@
                         android:textSize="15sp"
                         android:textStyle="bold"
                         android:visibility="gone" />
+
+                    <!-- Variety validation (RYK only) -->
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btn_validate_variety"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="7dp"
+                        android:background="@drawable/zd_btn_green"
+                        android:gravity="center"
+                        android:letterSpacing="0.08"
+                        android:text="Validate Variety"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
                 <!-- ACTIONS: cancel + assign task on one line -->

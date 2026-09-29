@@ -20,9 +20,11 @@ import pk.gop.pulse.katchiAbadi.domain.model.DiseaseTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.IssueTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.JKGrowerEntity
 import pk.gop.pulse.katchiAbadi.domain.model.KachiAbadiEntity
+import pk.gop.pulse.katchiAbadi.domain.model.MauzaBoundaryEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NotAtHomeSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.OfficerEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelActivityLogEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.PestTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
@@ -35,6 +37,17 @@ import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyFormEntity
 import pk.gop.pulse.katchiAbadi.domain.model.TempSurveyLogEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclineEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ZoneEntity
+import pk.gop.pulse.katchiAbadi.domain.model.DivisionEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SectionEntity
+import pk.gop.pulse.katchiAbadi.domain.model.FarmEntity
+import pk.gop.pulse.katchiAbadi.domain.model.BlockEntity
+import pk.gop.pulse.katchiAbadi.domain.model.PlotEntity
+import pk.gop.pulse.katchiAbadi.domain.model.LessorEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SurveyLessorEntity
+import pk.gop.pulse.katchiAbadi.domain.model.IrrigationSourceEntity
+import pk.gop.pulse.katchiAbadi.domain.model.PropertyTypeEntity
+import pk.gop.pulse.katchiAbadi.domain.model.AoiBoundaryEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class,
@@ -44,9 +57,23 @@ import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclineEntity
         DiseaseTypeEntity::class,
         OfficerEntity::class,
         JKGrowerEntity::class,
-        ParcelDeclineEntity::class],
-    version = 24,
-    exportSchema = false
+        ParcelDeclineEntity::class,
+        MauzaBoundaryEntity::class,
+        ParcelActivityLogEntity::class,
+        // ---- Corporate Farms ----
+        ZoneEntity::class,
+        DivisionEntity::class,
+        SectionEntity::class,
+        FarmEntity::class,
+        BlockEntity::class,
+        PlotEntity::class,
+        LessorEntity::class,
+        SurveyLessorEntity::class,
+        IrrigationSourceEntity::class,
+        PropertyTypeEntity::class,
+        AoiBoundaryEntity::class],
+    version = 29,
+    exportSchema = true
 )
 @TypeConverters(StatusConverter::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -72,6 +99,22 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun officerDao(): OfficerDao
     abstract fun jkGrowerDao(): JKGrowerDao
     abstract fun parcelDeclineDao(): ParcelDeclineDao
+    abstract fun mauzaBoundaryDao(): MauzaBoundaryDao
+    abstract fun parcelActivityLogDao(): ParcelActivityLogDao
+
+    // ---- Corporate Farms ----
+    abstract fun zoneDao(): ZoneDao
+    abstract fun divisionDao(): DivisionDao
+    abstract fun sectionDao(): SectionDao
+    abstract fun farmDao(): FarmDao
+    abstract fun blockDao(): BlockDao
+    abstract fun plotDao(): PlotDao
+    abstract fun lessorDao(): LessorDao
+    abstract fun surveyLessorDao(): SurveyLessorDao
+    abstract fun irrigationSourceDao(): IrrigationSourceDao
+    abstract fun propertyTypeDao(): PropertyTypeDao
+    abstract fun aoiBoundaryDao(): AoiBoundaryDao
+
     companion object {
 
         @Volatile
@@ -104,6 +147,14 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration18to19)
                     .addMigrations(migration19to20)
                     .addMigrations(migration20to21)
+                    .addMigrations(migration21to22)
+                    .addMigrations(migration22to23)
+                    .addMigrations(migration23to24)
+                    .addMigrations(migration24to25)
+                    .addMigrations(migration25to26)
+                    .addMigrations(migration26to27)
+                    .addMigrations(migration27to28)
+                    .addMigrations(migration28to29)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -321,5 +372,130 @@ val migration20to21 = object : Migration(20, 21) {
             )
             """.trimIndent()
         )
+    }
+}
+
+// Versions 22, 23 and 24 were once bumped with no schema change, so those builds
+// ended their migration chain at 20to21. Field devices carry user_version = 24
+// while their tables are still schema-21 content. These three no-op bridges fill
+// those empty steps so the 21-to-24 path stays connected and destructive fallback never fires.
+val migration21to22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // No schema change - the version was only bumped.
+    }
+}
+
+val migration22to23 = object : Migration(22, 23) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // No schema change - the version was only bumped.
+    }
+}
+
+val migration23to24 = object : Migration(23, 24) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // No schema change - the version was only bumped.
+    }
+}
+
+val migration24to25 = object : Migration(24, 25) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyValidationStatus TEXT")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyOldLocal TEXT")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyNewLocal TEXT")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyValidationRemarks TEXT")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyValidationLat REAL")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyValidationLng REAL")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyValidatedAt TEXT")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN varietyValidationUploaded INTEGER NOT NULL DEFAULT 1")
+        database.execSQL("ALTER TABLE active_parcels ADD COLUMN variety TEXT")
+    }
+}
+
+
+val migration25to26 = object : Migration(25, 26) {
+      override fun migrate(db: SupportSQLiteDatabase) {
+          db.execSQL("""CREATE TABLE IF NOT EXISTS mauza_boundary(
+              mauzaId INTEGER NOT NULL PRIMARY KEY,
+              mauzaName TEXT NOT NULL,
+              groupId INTEGER, unitId INTEGER, zoneId INTEGER, circleId INTEGER,
+              area TEXT, geomWKT TEXT NOT NULL, geomType TEXT,
+              downloadedAt INTEGER NOT NULL)""")
+          db.execSQL("ALTER TABLE active_parcels ADD COLUMN isLocallyDrawn INTEGER NOT NULL DEFAULT 0")
+      }
+  }
+
+val migration26to27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS parcel_activity_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                parcelId INTEGER NOT NULL,
+                parcelNo TEXT NOT NULL,
+                subParcelNo TEXT NOT NULL,
+                mauzaId INTEGER NOT NULL,
+                areaName TEXT NOT NULL,
+                action TEXT NOT NULL,
+                status TEXT NOT NULL,
+                details TEXT NOT NULL,
+                relatedParcelIds TEXT NOT NULL,
+                surveyPkId INTEGER,
+                userId INTEGER NOT NULL,
+                userName TEXT NOT NULL,
+                lat REAL,
+                lng REAL,
+                appVersion TEXT NOT NULL,
+                deviceInfo TEXT NOT NULL,
+                createdAt INTEGER NOT NULL,
+                isUploaded INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_parcel_activity_log_parcelId ON parcel_activity_log(parcelId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_parcel_activity_log_mauzaId ON parcel_activity_log(mauzaId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_parcel_activity_log_isUploaded ON parcel_activity_log(isUploaded)")
+    }
+}
+
+val migration27to28 = object : Migration(27, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Corporate Farms data layer.
+        // This DDL comes from Room's own exported schema (app/schemas/.../28.json),
+        // not hand-written - otherwise TableInfo validation would fail on upgrade.
+
+        // Farm hierarchy: zones -> divisions -> sections -> farms -> blocks -> plots.
+        // Parents are created first because every child table holds an FK on them.
+        db.execSQL("CREATE TABLE IF NOT EXISTS `zones` (`zoneId` INTEGER NOT NULL, `zoneName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`zoneId`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `divisions` (`divisionId` INTEGER NOT NULL, `zoneId` INTEGER NOT NULL, `divisionName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`divisionId`), FOREIGN KEY(`zoneId`) REFERENCES `zones`(`zoneId`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sections` (`sectionId` INTEGER NOT NULL, `divisionId` INTEGER NOT NULL, `sectionName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`sectionId`), FOREIGN KEY(`divisionId`) REFERENCES `divisions`(`divisionId`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `farms` (`farmId` INTEGER NOT NULL, `sectionId` INTEGER NOT NULL, `farmName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`farmId`), FOREIGN KEY(`sectionId`) REFERENCES `sections`(`sectionId`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `blocks` (`blockId` INTEGER NOT NULL, `farmId` INTEGER NOT NULL, `blockName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`blockId`), FOREIGN KEY(`farmId`) REFERENCES `farms`(`farmId`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `plots` (`plotId` INTEGER NOT NULL, `blockId` INTEGER NOT NULL, `plotName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`plotId`), FOREIGN KEY(`blockId`) REFERENCES `blocks`(`blockId`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+
+        // Lessor (lease) - master list plus the per-survey selection
+        db.execSQL("CREATE TABLE IF NOT EXISTS `lessors` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `code` TEXT, `zoneId` INTEGER, `isDeleted` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `new_survey_lessors` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `surveyId` INTEGER NOT NULL, `parcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `subParcelNo` TEXT NOT NULL, `lessorId` INTEGER NOT NULL, `lessorName` TEXT NOT NULL, `lessorCode` TEXT NOT NULL, `lessorType` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)")
+
+        // Lookups
+        db.execSQL("CREATE TABLE IF NOT EXISTS `irrigation_source` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `value` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `property_types` (`value` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`value`))")
+
+        // AOI / tehsil boundaries (these replace mauza + area in the corporate flow)
+        db.execSQL("CREATE TABLE IF NOT EXISTS `aoi_boundaries` (`localId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `tehsil` TEXT NOT NULL, `theId` TEXT NOT NULL, `district` TEXT NOT NULL, `area` REAL NOT NULL, `geomWKT` TEXT NOT NULL, `downloadedAt` INTEGER NOT NULL)")
+    }
+}
+
+val migration28to29 = object : Migration(28, 29) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // The Corporate Farms form also captures hierarchy and irrigation.
+        // All nullable - they stay empty for Katchi Abadi surveys.
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN zone TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN division TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN section TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN farm TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN block TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN plot TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN irrigationSource TEXT")
+        db.execSQL("ALTER TABLE new_surveys ADD COLUMN irrigationSourceQuantity TEXT")
     }
 }

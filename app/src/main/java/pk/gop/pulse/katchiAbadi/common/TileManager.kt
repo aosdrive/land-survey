@@ -4,7 +4,11 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.ConnectionPool
+import okhttp3.Dispatcher
+import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
+import java.util.concurrent.TimeUnit
 import retrofit2.Retrofit
 import retrofit2.http.GET
 import retrofit2.http.Url
@@ -24,10 +28,9 @@ class TileManager(private val context: Context) {
         maxZoomLevel: Int,
     ): File? {
 
-        // Check if the zoom level is within the specified bounds
-        if (level < minZoomLevel || level > maxZoomLevel) {
-            return null // Return null if the requested zoom level is out of range
-        }
+        // No zoom-range gate here: the download side decides which levels exist and
+        // the file system is the only reliable record of that. Gating on the settings
+        // min/max let the two disagree, which showed up as a map with no imagery.
 
         val cacheDir = when (sourceFolder) {
             "files" -> {
@@ -176,13 +179,36 @@ interface TileService {
     suspend fun getTile(@Url url: String): ResponseBody
 }
 
-fun createTileService(): TileService {
-    val retrofit = Retrofit.Builder()
-        .baseUrl("https://mt1.google.com/") // Base URL is required by Retrofit
+// One shared client for every tile request.
+//
+// Each tile used to build its own Retrofit + OkHttpClient, so every tile paid for a fresh
+// TCP + TLS handshake and connections were never reused. One shared client keeps the
+// connections alive, which makes the download several times faster.
+private val tileHttpClient: OkHttpClient by lazy {
+    OkHttpClient.Builder()
+        .connectionPool(ConnectionPool(16, 5, TimeUnit.MINUTES))
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        // Tiles are idempotent GETs, so retrying is safe here. This is the opposite of
+        // the survey-upload client in AppModule, where a retry would duplicate records.
+        .retryOnConnectionFailure(true)
+        .dispatcher(Dispatcher().apply {
+            // Default is 5 per host, which would cap tile parallelism.
+            maxRequests = 32
+            maxRequestsPerHost = 16
+        })
         .build()
-
-    return retrofit.create(TileService::class.java)
 }
+
+private val sharedTileService: TileService by lazy {
+    Retrofit.Builder()
+        .baseUrl("https://mt1.google.com/")
+        .client(tileHttpClient)
+        .build()
+        .create(TileService::class.java)
+}
+
+fun createTileService(): TileService = sharedTileService
 
 
 //class TileManager(private val context: Context) {

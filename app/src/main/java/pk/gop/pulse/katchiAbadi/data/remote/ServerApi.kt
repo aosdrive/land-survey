@@ -26,11 +26,23 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.LogoutResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaSyncResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.MouzaAssignedDto
 import pk.gop.pulse.katchiAbadi.data.remote.request.OnboardingUploadDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.FreePolygonStartResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.JKGrowerDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.LookupItemDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.MauzaBoundaryResponse
+import pk.gop.pulse.katchiAbadi.data.remote.response.BlockDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.DivisionDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.FarmDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.PlotDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.SectionDto
+import pk.gop.pulse.katchiAbadi.data.remote.response.ZoneDto
+import pk.gop.pulse.katchiAbadi.domain.model.CorporateParcelPost
+import pk.gop.pulse.katchiAbadi.domain.model.LessorEntity
 import pk.gop.pulse.katchiAbadi.data.remote.response.PostApiDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.ResponseDto
 import pk.gop.pulse.katchiAbadi.data.remote.response.TaskListResponse
+import pk.gop.pulse.katchiAbadi.data.remote.response.VarietyValidationPost
+import pk.gop.pulse.katchiAbadi.data.remote.response.VarietyValidationResponse
 import pk.gop.pulse.katchiAbadi.data.remote.response.VersionCheckResponse
 import pk.gop.pulse.katchiAbadi.domain.model.AnalyticsParcelsResponse
 import pk.gop.pulse.katchiAbadi.domain.model.BoundaryDto
@@ -66,7 +78,6 @@ interface ServerApi {
         @Url url: String,
         @Body json: LoginRequest
     ): LoginSurveyorResponse
-
 
 
     @POST
@@ -303,4 +314,139 @@ interface ServerApi {
         @Header("Authorization") token: String,
         @Body body: List<ParcelDeclinePostDto>
     ): Response<PostApiDto>
+
+    @POST("api/RykMobileData/RykValidateVariety")
+    suspend fun postVarietyValidations(
+        @Header("Authorization") token: String,
+        @Body body: List<VarietyValidationPost>
+    ): Response<VarietyValidationResponse>
+
+    @GET("api/Mauza/GetMauzaBoundary")
+    suspend fun getMauzaBoundary(
+        @Header("Authorization") token: String,
+        @Query("mauzaId") mauzaId: Long
+    ): Response<MauzaBoundaryResponse>
+
+    @POST("api/Mauza/StartFreePolygon")
+    suspend fun startFreePolygon(
+        @Header("Authorization") token: String,
+        @Header("X-Device-Info") deviceInfo: String,
+        @Header("X-App-Version") appVersion: String,
+        @Query("mauzaId") mauzaId: Long,
+        @Query("year") year: String? = null,
+        @Query("lat") lat: Double? = null,
+        @Query("lng") lng: Double? = null,
+        @Query("accuracy") accuracy: Float? = null
+    ): Response<FreePolygonStartResponse>
+
+    // =====================================================================
+    //  Corporate Farms
+    //  These are separate controllers server-side - MobileDataCorporate /
+    //  CorporateShapefile / CorporateManagement - so they never clash with the
+    //  Katchi Abadi endpoints.
+    //
+    //  Note: the corporate variants of crops / cropTypes / cropVarieties /
+    //  addVariety carry a "Corporate" prefix. In the Corporate Farm app they
+    //  REPLACED these methods, but here both flows run side by side so each
+    //  needs its own method.
+    // =====================================================================
+
+    @POST("api/MobileDataCorporate/AddCorporateSurveyData")
+    @Headers("Content-Type: application/json")
+    suspend fun postCorporateSurveyData(
+        @Header("Authorization") token: String,
+        @Body json: List<CorporateParcelPost>
+    ): Response<PostApiDto>
+
+    // ---- Lookups ----
+    @GET("api/MobileDataCorporate/GetCorporateCrops")
+    suspend fun getCorporateCrops(): Response<List<DropdownItem>>
+
+    @GET("api/MobileDataCorporate/GetCorporateCropTypes")
+    suspend fun getCorporateCropTypes(): Response<List<DropdownItem>>
+
+    @GET("api/MobileDataCorporate/GetCorporateCropVarieties")
+    suspend fun getCorporateCropVarieties(): Response<List<DropdownItem>>
+
+    @POST("api/MobileDataCorporate/AddCorporateCropVariety")
+    suspend fun addCorporateCropVariety(
+        @Body request: AddVarietyRequest
+    ): Response<AddVarietyResponse>
+
+    @GET("api/MobileDataCorporate/GetIrrigationSources")
+    suspend fun getIrrigationSources(): Response<List<DropdownItem>>
+
+    @GET("api/MobileDataCorporate/GetCorporatePropertyTypes")
+    suspend fun getPropertyTypes(): Response<List<DropdownItem>>
+
+    @GET("api/CorporateManagement/GetAllLessors")
+    suspend fun getAllLessors(): Response<List<LessorEntity>>
+
+    // ---- Farm hierarchy: zones -> divisions -> sections -> farms -> blocks -> plots ----
+    @GET("api/MobileDataCorporate/zones")
+    suspend fun getZones(
+        @Header("Authorization") token: String
+    ): Response<List<ZoneDto>>
+
+    @GET("api/MobileDataCorporate/divisions/{zoneId}")
+    suspend fun getDivisions(
+        @Header("Authorization") token: String,
+        @Path("zoneId") zoneId: Long
+    ): Response<List<DivisionDto>>
+
+    @GET("api/MobileDataCorporate/sections/{divisionId}")
+    suspend fun getSections(
+        @Header("Authorization") token: String,
+        @Path("divisionId") divisionId: Long
+    ): Response<List<SectionDto>>
+
+    @GET("api/MobileDataCorporate/Farms/{sectionId}")
+    suspend fun getFarms(
+        @Header("Authorization") token: String,
+        @Path("sectionId") sectionId: Long
+    ): Response<List<FarmDto>>
+
+    @GET("api/MobileDataCorporate/blocks/{farmId}")
+    suspend fun getBlocks(
+        @Header("Authorization") token: String,
+        @Path("farmId") farmId: Long
+    ): Response<List<BlockDto>>
+
+    @GET("api/MobileDataCorporate/plots/{blockId}")
+    suspend fun getPlots(
+        @Header("Authorization") token: String,
+        @Path("blockId") blockId: Long
+    ): Response<List<PlotDto>>
+
+    // AOI / tehsil (these replace mauza + area in the corporate flow)
+    @GET("api/CorporateShapefile/GetTehsilNames")
+    suspend fun getTehsilNames(
+        @Header("Authorization") token: String,
+        @Query("district") district: String = ""
+    ): Response<List<String>>
+
+    @GET("api/CorporateShapefile/GetAOINames")
+    suspend fun getAOINames(
+        @Header("Authorization") token: String,
+        @Query("tehsil") tehsil: String
+    ): Response<List<String>>
+
+    // Returns pipe-delimited text, not JSON
+    @GET("api/CorporateShapefile/GetParcelsByAOI")
+    suspend fun getParcelsByAOI(
+        @Header("Authorization") token: String,
+        @Query("aoi") aoi: String
+    ): Response<ResponseBody>
+
+    @GET("api/CorporateShapefile/GetAOIByTehsil")
+    suspend fun getAOIByTehsil(
+        @Header("Authorization") token: String,
+        @Query("tehsil") tehsil: String
+    ): Response<ResponseBody>
+
+    @GET("api/CorporateShapefile/GetSurveyedParcelsByTehsil")
+    suspend fun getSurveyedParcelsByTehsil(
+        @Header("Authorization") token: String,
+        @Query("tehsil") tehsil: String
+    ): Response<ResponseBody>
 }

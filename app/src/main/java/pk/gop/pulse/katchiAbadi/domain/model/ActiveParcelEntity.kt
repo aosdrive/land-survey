@@ -1,5 +1,6 @@
 package pk.gop.pulse.katchiAbadi.domain.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -22,10 +23,22 @@ data class ActiveParcelEntity(
     val parcelAreaAbadiDeh: String?,
     val surveyStatusCode: Int,
     val surveyId: Int?,
-    val isActivate: Boolean = true,  // Added IsActivate attribute with default value
+    val isActivate: Boolean = true,
     val unitId: Long? = null,
     val groupId: Long? = null,
-    val growerCodes: String? = null
+    val growerCodes: String? = null,
+
+    val variety: String? = null,
+    val varietyValidationStatus: String? = null,
+    val varietyOldLocal: String? = null,
+    val varietyNewLocal: String? = null,
+    val varietyValidationRemarks: String? = null,
+    val varietyValidationLat: Double? = null,
+    val varietyValidationLng: Double? = null,
+    val varietyValidatedAt: String? = null,
+    val varietyValidationUploaded: Boolean = true,
+    @ColumnInfo(defaultValue = "0")
+    val isLocallyDrawn: Boolean = false
 
 )
 

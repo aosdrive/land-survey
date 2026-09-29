@@ -16,6 +16,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.adapter.NAHSubParcelAdapter
@@ -120,36 +121,20 @@ class FragmentNAHSubParcelList : Fragment(), NAHSubParcelItemClickListener {
 
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val builder = AlertDialog.Builder(requireActivity())
-                    .setTitle("Alert!")
-                    .setCancelable(false)
-                    .setMessage("Are you sure you want to exit the form? Please note that any unsaved data will be lost if you proceed to leave")
-                    .setPositiveButton("Exit") { _, _ ->
-                        Intent(context, MenuActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(this)
-                            requireActivity().finish()
-                            Utility.dismissProgressAlertDialog()
-                        }
+                ZdAlert.confirm(
+                    context = requireActivity(),
+                    title = "Alert!",
+                    message = "Are you sure you want to exit the form? Please note that any unsaved data will be lost if you proceed to leave",
+                    confirmText = "Exit",
+                    cancelText = "Cancel"
+                ) {
+                    Intent(context, MenuActivity::class.java).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(this)
+                        requireActivity().finish()
+                        Utility.dismissProgressAlertDialog()
                     }
-                    .setNegativeButton("Cancel", null)
-
-                // Create the AlertDialog object
-                val dialog = builder.create()
-                dialog.show()
-
-                // Get the buttons from the dialog
-                val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                // Set button text size and style
-                positiveButton.textSize =
-                    16f // Change the size according to your preference
-                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                negativeButton.textSize =
-                    16f // Change the size according to your preference
-                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                }
             }
         }
         requireActivity().onBackPressedDispatcher.addCallback(this, callback)

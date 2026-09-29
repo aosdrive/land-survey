@@ -25,20 +25,14 @@ object Constants {
     var POST_SURVEY_DATA_REVISIT_URL = ""
     var POST_SURVEY_DATA_RETAKE_PICTURE_URL = ""
     var CHECK_VERSION_URL = "" // Add this for version check
-
-
     const val DATABASE_NAME = "kachi_abadi_db"
-
     const val SPLASH_SCREEN_DURATION = 1000L
-
     const val SHARED_PREF_NAME = "shared_pref"
-
     const val SHARED_PREF_LOGIN_STATUS = "login"
     const val SHARED_PREF_USER_ID = "id"
     const val SHARED_PREF_USER_CNIC = "cnic"
     const val SHARED_PREF_USER_NAME = "name"
     const val SHARED_PREF_TOKEN = "token"
-
     const val SHARED_PREF_USER_ASSIGNED_MOUZA = "mouza_id"
     const val SHARED_PREF_USER_ASSIGNED_MOUZA_NAME = "mouza_name"
     const val SHARED_PREF_USER_ASSIGNED_MOUZA_FeetPerMarla = "feetPerMarla"
@@ -106,6 +100,25 @@ object Constants {
     const val SHARED_PREF_UPDATE_DATABASE = "update_database"
     const val SHARED_PREF_END_SESSION = "end_session"
 
+    const val SHARED_PREF_USER_GROUP_ID = "user_group_id"
+    const val SHARED_PREF_USER_GROUP_NAME = "user_group_name"
+    const val SHARED_PREF_USER_UNIT_ID = "user_unit_id"
+    const val SHARED_PREF_USER_UNIT_NAME = "user_unit_name"
+    const val SHARED_PREF_USER_ROLE = "user_role"
+
+    const val GROUP_ID_ASM = 2
+    const val GROUP_ID_ETIHAD = 8
+    const val GROUP_ID_RYK = 3
+
+    // Corporate Farms gate. This comes from the server's Users.isCorperateUser flag,
+    // never from group or unit id. Corporate and non-corporate users share both a
+    // group and a unit, so this flag is the only reliable signal for telling them
+    // apart.
+    const val SHARED_PREF_IS_CORPORATE_USER = "is_corporate_user"
+
+    const val FREE_POLYGON_AREA = "FreePolygon"
+    const val SHARED_PREF_FREE_POLYGON_ACTIVE = "free_polygon_active"
+    const val SURVEY_YEAR = "2026-2027"
 }
 
 enum class DownloadType {

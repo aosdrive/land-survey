@@ -1,7 +1,6 @@
 package pk.gop.pulse.katchiAbadi.common
 
-import pk.gop.pulse.katchiAbadi.data.remote.response.Info
-import pk.gop.pulse.katchiAbadi.data.remote.response.KachiAbadiList
+
 
 typealias SimpleResource = Resource<Unit>
 //typealias SimpleResource = Resource<Unit, Any?>

@@ -26,12 +26,14 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -100,27 +102,33 @@ import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.CustomTileLayer
 import pk.gop.pulse.katchiAbadi.common.DownloadType
 import pk.gop.pulse.katchiAbadi.common.RejectedSubParcel
-import pk.gop.pulse.katchiAbadi.common.SubParcel
 import pk.gop.pulse.katchiAbadi.common.TileManager
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.response.SubParcelStatus
+import pk.gop.pulse.katchiAbadi.data.repository.DropdownRepository
 import pk.gop.pulse.katchiAbadi.data.repository.NewSurveyRepositoryImpl
 import pk.gop.pulse.katchiAbadi.databinding.FragmentMapBinding
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
-import pk.gop.pulse.katchiAbadi.domain.model.ParcelStatus
 import pk.gop.pulse.katchiAbadi.presentation.form.SharedFormViewModel
-import pk.gop.pulse.katchiAbadi.presentation.util.IntentUtil
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
-import pk.gop.pulse.katchiAbadi.ui.activities.DroneSprayActivity
-import pk.gop.pulse.katchiAbadi.ui.activities.InputItemsActivity
-import pk.gop.pulse.katchiAbadi.ui.activities.SolarPanelActivity
 import java.io.File
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
+import com.esri.arcgisruntime.geometry.Geometry
+import com.esri.arcgisruntime.geometry.PolygonBuilder
+import pk.gop.pulse.katchiAbadi.domain.model.MauzaBoundaryEntity
+import pk.gop.pulse.katchiAbadi.presentation.util.SnapUtils
+import pk.gop.pulse.katchiAbadi.presentation.util.TraceGraph
+import pk.gop.pulse.katchiAbadi.presentation.util.TraceUtils
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
+import com.esri.arcgisruntime.geometry.SpatialReference
+import pk.gop.pulse.katchiAbadi.data.repository.ParcelActivityLogger
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelAction
 
 @AndroidEntryPoint
 class FragmentMap : Fragment() {
@@ -198,6 +206,33 @@ class FragmentMap : Fragment() {
     private var isTaskAssignMode = false
     private val selectedTaskParcels = LinkedHashMap<Long, ParcelInfo>()
 
+
+    @Inject
+    lateinit var dropdownRepository: DropdownRepository
+    private var lastKnownLat: Double? = null
+    private var lastKnownLng: Double? = null
+    private lateinit var validatedBlocks: SimpleFillSymbol
+
+    // ===== DRAW MODE =====
+    private var isDrawMode = false
+    private val drawPoints = mutableListOf<Point>()
+    private lateinit var drawOverlay: GraphicsOverlay
+    private lateinit var mauzaBoundaryGraphics: GraphicsOverlay
+    private var boundaryGeometryUnion: Geometry? = null
+    private var isFreePolygonMode = false
+    // ===== SNAP / TRACE =====
+    private var snapTargets: List<Polygon> = emptyList()
+    private var snapTargetsSr: SpatialReference? = null
+    private val snapToleranceDp = 24.0
+
+    private var traceEnabled = false
+    private var lastTraceHit: TraceUtils.RingHit? = null
+    private var traceGraph: TraceGraph? = null
+    private var savedViewpoint: Viewpoint? = null
+    @Inject
+    lateinit var logger: ParcelActivityLogger
+    private var mergeBaseParcelId: Long = 0L
+    private var mergeBaseParcelNo: String = ""
     // Helper data class for task parcels
     data class ParcelInfo(
         val parcelId: Long,
@@ -225,14 +260,13 @@ class FragmentMap : Fragment() {
 
 
     override fun onCreateView(
+
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentMapBinding.inflate(inflater, container, false)
         return binding.root
 
     }
-
-
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -295,6 +329,14 @@ class FragmentMap : Fragment() {
             isMergeMode = false
             binding.mergeControlBar.visibility = View.GONE
             dialogView.findViewById<View?>(R.id.card_root)?.visibility = View.VISIBLE
+
+            logger.log(
+                parcelId = mergeBaseParcelId,
+                parcelNo = mergeBaseParcelNo,
+                action = ParcelAction.MERGE_SELECTED,
+                details = "Merged with: ${selectedMergeParcels.values.joinToString()}",
+                relatedParcelIds = selectedMergeParcels.keys.joinToString(",")
+            )
 
             Toast.makeText(
                 requireContext(),
@@ -362,10 +404,16 @@ class FragmentMap : Fragment() {
 
         // Add split mode setup
         setupSplitOverlay()
+        setupDrawOverlay()
+
+
         setupSplitModeListeners()
     }
 
-
+    private fun setupDrawOverlay() {
+        drawOverlay = GraphicsOverlay()
+        binding.parcelMapview.graphicsOverlays.add(drawOverlay)
+    }
 
     private fun exitTaskAssignMode() {
         isTaskAssignMode = false
@@ -795,12 +843,14 @@ class FragmentMap : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 withContext(Dispatchers.IO) {
                     try {
-                        val originalParcelId = originalAttributes["parcel_id"] as? Long ?: return@withContext
+                        val originalParcelId =
+                            originalAttributes["parcel_id"] as? Long ?: return@withContext
 
                         Log.d("SPLIT_DEBUG", "=== SPLIT OPERATION STARTED ===")
                         Log.d("SPLIT_DEBUG", "Original parcel ID: $originalParcelId")
 
-                        val originalParcel = database.activeParcelDao().getParcelById(originalParcelId)
+                        val originalParcel =
+                            database.activeParcelDao().getParcelById(originalParcelId)
 
                         if (originalParcel == null) {
                             Log.e("SPLIT_DEBUG", "❌ Original parcel not found")
@@ -812,7 +862,8 @@ class FragmentMap : Fragment() {
                         Log.d("SPLIT_DEBUG", "   AreaAssigned: ${originalParcel.areaAssigned}")
 
                         // ✅ Deactivate original parcel
-                        database.activeParcelDao().updateParcelActivationStatus(originalParcel.id, false)
+                        database.activeParcelDao()
+                            .updateParcelActivationStatus(originalParcel.id, false)
                         Log.d("SPLIT_DEBUG", "✅ Deactivated original parcel")
 
                         cleanupOriginalGraphicsAfterSplit(originalParcelId)
@@ -833,17 +884,21 @@ class FragmentMap : Fragment() {
                         // manfi id server tak pohnchti hi nahi.
                         // ═══════════════════════════════════════════════════════════
                         val localIdBase = -System.currentTimeMillis()
-                        Log.d("SPLIT_DEBUG", "Local id base (negative, collision-free): $localIdBase")
+                        Log.d(
+                            "SPLIT_DEBUG",
+                            "Local id base (negative, collision-free): $localIdBase"
+                        )
 
                         val newParcels = mutableListOf<ActiveParcelEntity>()
 
                         // ✅ Create split parcels with geometry
                         for (i in splitPolygons.indices) {
-                            val newSubParcelNo = if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
-                                (i + 1).toString()
-                            } else {
-                                "${originalSubParcelNo}_${i + 1}"
-                            }
+                            val newSubParcelNo =
+                                if (originalSubParcelNo.isBlank() || originalSubParcelNo == "0") {
+                                    (i + 1).toString()
+                                } else {
+                                    "${originalSubParcelNo}_${i + 1}"
+                                }
 
                             // ✅ CRITICAL: Convert polygon to WKT
                             val newGeomWKT = convertPolygonToWkt(splitPolygons[i])
@@ -867,7 +922,8 @@ class FragmentMap : Fragment() {
                             Log.d("SPLIT_DEBUG", "   GeomWKT preview: ${newGeomWKT.take(100)}...")
 
                             val newCentroid = splitPolygons[i].extent.center
-                            val centroidWKT = String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
+                            val centroidWKT =
+                                String.format("POINT(%.8f %.8f)", newCentroid.x, newCentroid.y)
 
                             val newUniqueId = localIdBase - i
 
@@ -894,7 +950,10 @@ class FragmentMap : Fragment() {
                             Log.d("SPLIT_DEBUG", "   ParcelNo: $originalParcelNo")
                             Log.d("SPLIT_DEBUG", "   SubParcelNo: $newSubParcelNo")
                             Log.d("SPLIT_DEBUG", "   AreaAssigned: ${newParcel.areaAssigned}")
-                            Log.d("SPLIT_DEBUG", "   GeomWKT: ${if (newParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY" else "✅ Present (${newParcel.geomWKT?.length} chars)"}")
+                            Log.d(
+                                "SPLIT_DEBUG",
+                                "   GeomWKT: ${if (newParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY" else "✅ Present (${newParcel.geomWKT?.length} chars)"}"
+                            )
                             Log.d("SPLIT_DEBUG", "   Centroid: ${newParcel.centroid}")
                         }
 
@@ -902,22 +961,47 @@ class FragmentMap : Fragment() {
                         database.activeParcelDao().insertActiveParcels(newParcels)
                         Log.d("SPLIT_DEBUG", "✅ Inserted ${newParcels.size} split parcels")
 
+                        database.activeParcelDao().insertActiveParcels(newParcels)
+                        Log.d("SPLIT_DEBUG", "✅ Inserted ${newParcels.size} split parcels")
+
+                        logger.log(
+                            originalParcel, ParcelAction.SPLIT,
+                            details = "Split into ${newParcels.size} parts: ${newParcels.joinToString { it.subParcelNo }}",
+                            relatedParcelIds = newParcels.joinToString(",") { it.id.toString() }
+                        )
+
                         // ✅ VERIFICATION: Check that parcels were inserted with geometry
                         newParcels.forEach { newParcel ->
-                            val verifyParcel = database.activeParcelDao().getParcelById(newParcel.id)
+                            val verifyParcel =
+                                database.activeParcelDao().getParcelById(newParcel.id)
                             if (verifyParcel != null) {
                                 Log.d("SPLIT_DEBUG", "✅ Verify parcel ID ${newParcel.id}:")
                                 Log.d("SPLIT_DEBUG", "   Exists: true")
                                 Log.d("SPLIT_DEBUG", "   isActivate: ${verifyParcel.isActivate}")
-                                Log.d("SPLIT_DEBUG", "   AreaAssigned: ${verifyParcel.areaAssigned}")
-                                Log.d("SPLIT_DEBUG", "   GeomWKT: ${if (verifyParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY/NULL" else "✅ Present (${verifyParcel.geomWKT?.length} chars)"}")
-                                Log.d("SPLIT_DEBUG", "   Centroid: ${verifyParcel.centroid ?: "❌ NULL"}")
+                                Log.d(
+                                    "SPLIT_DEBUG",
+                                    "   AreaAssigned: ${verifyParcel.areaAssigned}"
+                                )
+                                Log.d(
+                                    "SPLIT_DEBUG",
+                                    "   GeomWKT: ${if (verifyParcel.geomWKT.isNullOrEmpty()) "❌ EMPTY/NULL" else "✅ Present (${verifyParcel.geomWKT?.length} chars)"}"
+                                )
+                                Log.d(
+                                    "SPLIT_DEBUG",
+                                    "   Centroid: ${verifyParcel.centroid ?: "❌ NULL"}"
+                                )
 
                                 if (verifyParcel.geomWKT.isNullOrEmpty()) {
-                                    Log.e("SPLIT_DEBUG", "❌❌ CRITICAL: Split parcel ${verifyParcel.id} has NO geometry in database!")
+                                    Log.e(
+                                        "SPLIT_DEBUG",
+                                        "❌❌ CRITICAL: Split parcel ${verifyParcel.id} has NO geometry in database!"
+                                    )
                                 }
                             } else {
-                                Log.e("SPLIT_DEBUG", "❌ Parcel ID ${newParcel.id} NOT FOUND after insert!")
+                                Log.e(
+                                    "SPLIT_DEBUG",
+                                    "❌ Parcel ID ${newParcel.id} NOT FOUND after insert!"
+                                )
                             }
                         }
 
@@ -1051,7 +1135,21 @@ class FragmentMap : Fragment() {
         }
     }
 
+    private fun resetSnapCache() {
+        snapTargets = emptyList()
+        snapTargetsSr = null
+        traceGraph = null
+        lastTraceHit = null
+    }
     private fun refreshMapDisplay() {
+        resetSnapCache()
+
+        savedViewpoint = try {
+            binding.parcelMapview.getCurrentViewpoint(Viewpoint.Type.BOUNDING_GEOMETRY)
+        } catch (e: Exception) {
+            null
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 Log.d("MapRefresh", "Starting map refresh...")
@@ -1066,6 +1164,7 @@ class FragmentMap : Fragment() {
                     }
                 }
 
+
                 withContext(Dispatchers.Main) {
                     surveyParcelsGraphics.graphics.clear()
                     surveyLabelGraphics.graphics.clear()
@@ -1073,13 +1172,16 @@ class FragmentMap : Fragment() {
                     if (::splitOverlay.isInitialized) {
                         splitOverlay.graphics.clear()
                     }
+                    if (::mauzaBoundaryGraphics.isInitialized) mauzaBoundaryGraphics.graphics.clear()
+                    if (::drawOverlay.isInitialized) drawOverlay.graphics.clear()
                 }
 
                 delay(200)
                 stopLoadingParcels()
 
                 withContext(Dispatchers.Main) {
-                    val currentShowLabels = binding.parcelMapview.graphicsOverlays.contains(surveyLabelGraphics)
+                    val currentShowLabels =
+                        binding.parcelMapview.graphicsOverlays.contains(surveyLabelGraphics)
                     Log.d("MapRefresh", "Reloading map with current filter")
 
                     loadMap(ids, currentShowLabels)
@@ -1101,7 +1203,11 @@ class FragmentMap : Fragment() {
             } catch (e: Exception) {
                 Log.e("MapRefresh", "Error refreshing map display: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error refreshing map: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Error refreshing map: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -1167,7 +1273,7 @@ class FragmentMap : Fragment() {
 
 
     private fun setupMap() {
-        ToastUtil.showLong(context,"Please wait while parcels are being loaded...")
+        ToastUtil.showLong(context, "Please wait while parcels are being loaded...")
         with(binding) {
 
             setupSplitOverlay()
@@ -1180,11 +1286,23 @@ class FragmentMap : Fragment() {
                     this@FragmentMap.surveyParcelsGraphics
                 ).also { parcelMapview.onTouchListener = it }
             } catch (e: Exception) {
-                ToastUtil.showShort(context,"Restart the map screen.")
+                ToastUtil.showShort(context, "Restart the map screen.")
             }
 
             fab.setOnClickListener {
                 handleFabClick()
+            }
+
+            fabStartDraw.setOnClickListener { enterDrawMode() }
+            btnDoneDraw.setOnClickListener { saveDrawnPolygon() }
+            btnCancelDraw.setOnClickListener { exitDrawMode() }
+            btnTrace.setOnClickListener { setTraceEnabled(!traceEnabled) }
+            btnUndoDrawPoint.setOnClickListener {
+                if (drawPoints.isNotEmpty()) {
+                    drawPoints.removeAt(drawPoints.lastIndex)
+                    updateDrawVisual()
+                    if (traceEnabled) refreshLastTraceHit()
+                }
             }
 
 //            ivSearch.setOnClickListener {
@@ -1272,9 +1390,11 @@ class FragmentMap : Fragment() {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun loadMapTiles(ids: ArrayList<Long>, showLabels: Boolean) {
+        resetSnapCache()
         with(binding) {
             surveyParcelsGraphics = GraphicsOverlay()
             surveyLabelGraphics = GraphicsOverlay()
+            mauzaBoundaryGraphics = GraphicsOverlay()
             parcelMapview.graphicsOverlays.clear()
 
             setupMap()
@@ -1290,6 +1410,12 @@ class FragmentMap : Fragment() {
                     SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.WHITE, redLine)
                 surveyedBlocks =
                     SimpleFillSymbol(SimpleFillSymbol.Style.NULL, Color.WHITE, greenLine)
+
+                validatedBlocks = SimpleFillSymbol(
+                    SimpleFillSymbol.Style.SOLID,
+                    Color.argb(110, 255, 235, 59),
+                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 3f)
+                )
 
                 revisitBlocks = SimpleFillSymbol(
                     SimpleFillSymbol.Style.SOLID, Color.argb(
@@ -1335,14 +1461,18 @@ class FragmentMap : Fragment() {
                 Log.d("LoadMap", "=== PARCEL LOADING DEBUG ===")
                 Log.d("LoadMap", "Total parcels from DB: ${parcels.size}")
 
-                val allParcels = database.activeParcelDao().getParcelsByMauzaAndArea(mauzaId, areaName)
+                val allParcels =
+                    database.activeParcelDao().getParcelsByMauzaAndArea(mauzaId, areaName)
                 Log.d("LoadMap", "Total ALL parcels (including inactive): ${allParcels.size}")
 
                 val inactiveParcels = allParcels.filter { !it.isActivate }
                 Log.d("LoadMap", "Inactive parcels: ${inactiveParcels.size}")
 
                 inactiveParcels.forEach { parcel ->
-                    Log.d("LoadMap", "Inactive: ID=${parcel.id}, ParcelNo=${parcel.parcelNo}, SubParcel=${parcel.subParcelNo}")
+                    Log.d(
+                        "LoadMap",
+                        "Inactive: ID=${parcel.id}, ParcelNo=${parcel.parcelNo}, SubParcel=${parcel.subParcelNo}"
+                    )
                 }
 
                 val polygonsList = mutableListOf<Polygon>()
@@ -1437,20 +1567,38 @@ class FragmentMap : Fragment() {
                     "Processing complete - Processed: $processedCount, Skipped: $skipCount"
                 )
 
-                if (polygonsList.isEmpty()) {
+                // ---- Boundary (free polygon mode) ----
+                val boundaryEntity = database.mauzaBoundaryDao().getByMauzaId(mauzaId)
+                val boundaryPolygons: List<Polygon> =
+                    if (boundaryEntity != null && boundaryEntity.geomWKT.isNotBlank())
+                        parseWktToPolygons(boundaryEntity.geomWKT)
+                    else emptyList()
+
+                // Extent: parcels ho to parcels, warna boundary
+                val freePolygonActive = sharedPreferences.getBoolean(
+                    Constants.SHARED_PREF_FREE_POLYGON_ACTIVE, false
+                )
+                // Free polygon: boundary tak zoom. Normal: parcels tak, boundary na ho to fallback.
+                val extentSource = when {
+                    freePolygonActive && boundaryPolygons.isNotEmpty() -> boundaryPolygons
+                    polygonsList.isNotEmpty() -> polygonsList
+                    else -> boundaryPolygons
+                }
+                if (extentSource.isEmpty()) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
                             context,
-                            "No valid geometries found to display",
+                            "No parcels or boundary found. Please sync first.",
                             Toast.LENGTH_LONG
                         ).show()
                         progressBar.visibility = View.GONE
-                        return@withContext
                     }
                     return@launch
                 }
 
-                val combinedGeometry = GeometryEngine.union(polygonsList)
+                val combinedGeometry = GeometryEngine.union(extentSource)
+
+
                 val combinedExtent = combinedGeometry.extent
                 val bufferDistance = 0.0001
                 val bufferedGeometry =
@@ -1524,7 +1672,16 @@ class FragmentMap : Fragment() {
                         Constants.SHARED_PREF_DEFAULT_MIN_SCALE
                     )
 
-                    val maxZoomLevel = 16
+                    // Tiles are downloaded from minZoomLevel up to whatever
+                    // calculateTilesToDownload settled on (it walks down from the
+                    // settings max until the tile count is manageable). Hardcoding 16
+                    // here made viewCacheTile refuse every level above 16, so imagery
+                    // vanished the moment you zoomed in on a small area where tiles up
+                    // to 20 had actually been downloaded.
+                    val maxZoomLevel = sharedPreferences.getInt(
+                        Constants.SHARED_PREF_MAP_MAX_SCALE,
+                        Constants.SHARED_PREF_DEFAULT_MAX_SCALE
+                    )
 
                     val customTileLayer = CustomTileLayer(
                         tileInfo,
@@ -1536,7 +1693,8 @@ class FragmentMap : Fragment() {
                     )
 
                     val map = ArcGISMap(Basemap(customTileLayer))
-                    map.initialViewpoint = Viewpoint(webMercatorEnvelope)
+                    map.initialViewpoint = savedViewpoint ?: Viewpoint(webMercatorEnvelope)
+                    savedViewpoint = null
 
                     ArcGISRuntimeEnvironment.setLicense("runtimelite,1000,rud5883837740,none,ZZ0RJAY3FLCB0YRJD136")
                     binding.parcelMapview.map = map
@@ -1551,6 +1709,7 @@ class FragmentMap : Fragment() {
                     }
 
                     parcelMapview.graphicsOverlays.add(surveyParcelsGraphics)
+                    parcelMapview.graphicsOverlays.add(0, mauzaBoundaryGraphics)
                     mCallOut = parcelMapview.callout
 
                     try {
@@ -1570,12 +1729,492 @@ class FragmentMap : Fragment() {
                     parcelMapview.visibility = View.VISIBLE
 //                    ivReset.visibility = View.VISIBLE
 //                    ivSearch.visibility = View.GONE
-
+                    if (::drawOverlay.isInitialized &&
+                        !parcelMapview.graphicsOverlays.contains(drawOverlay)
+                    ) {
+                        parcelMapview.graphicsOverlays.add(drawOverlay)
+                    }
+                    loadMauzaBoundary()
                     Log.d("LoadMap", "Map setup completed successfully")
                 }
             }
         }
     }
+
+    private fun parseWktToPolygons(wkt: String): List<Polygon> = try {
+        when {
+            wkt.contains("MULTIPOLYGON") -> Utility.getMultiPolygonFromString(wkt, wgs84)
+            wkt.contains("POLYGON ((") ->
+                Utility.getPolygonFromString(wkt, wgs84)?.let { listOf(it) } ?: emptyList()
+
+            wkt.contains("POLYGON") ->
+                Utility.getPolyFromString(wkt, wgs84)?.let { listOf(it) } ?: emptyList()
+
+            else -> emptyList()
+        }
+    } catch (e: Exception) {
+        Log.e("DrawMode", "WKT parse error: ${e.message}")
+        emptyList()
+    }
+
+    // ---------------------------------------------------------------------
+// 3f) Boundary load + draw  (ADD)
+// ---------------------------------------------------------------------
+    private fun loadMauzaBoundary() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val isCorporate = sharedPreferences.getBoolean(
+                    Constants.SHARED_PREF_IS_CORPORATE_USER, false
+                )
+                val mauzaId = sharedPreferences.getLong(
+                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L
+                )
+
+                // Corporate keeps its boundary in aoi_boundaries keyed by tehsil, and the
+                // tehsil lives in the area-name pref (see MenuActivity.selectTehsil()).
+                // mauza_boundary is always empty for those users and their mauzaId is 0,
+                // so looking there would hide the draw tool for every corporate surveyor.
+                val polygons: List<Polygon>
+                val label: String
+
+                if (isCorporate) {
+                    val tehsil = sharedPreferences.getString(
+                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, ""
+                    ).orEmpty()
+                    val parts = withContext(Dispatchers.IO) {
+                        database.aoiBoundaryDao().getByTehsil(tehsil)
+                    }
+                    // A tehsil can arrive as several boundary rows, so parse each one.
+                    polygons = withContext(Dispatchers.Default) {
+                        parts.flatMap { parseWktToPolygons(it.geomWKT) }
+                    }
+                    label = tehsil
+                } else {
+                    val boundary = withContext(Dispatchers.IO) {
+                        database.mauzaBoundaryDao().getByMauzaId(mauzaId)
+                    }
+                    polygons = if (boundary == null || boundary.geomWKT.isBlank()) {
+                        emptyList()
+                    } else {
+                        withContext(Dispatchers.Default) { parseWktToPolygons(boundary.geomWKT) }
+                    }
+                    label = boundary?.mauzaName.orEmpty()
+                }
+
+                if (polygons.isEmpty()) {
+                    boundaryGeometryUnion = null
+                    isFreePolygonMode = false
+                    _binding?.fabStartDraw?.visibility = View.GONE
+                    return@launch
+                }
+
+                // Union cache (inside-check ke liye)
+                boundaryGeometryUnion = withContext(Dispatchers.Default) {
+                    var u: Geometry = polygons[0]
+                    for (i in 1 until polygons.size) u = GeometryEngine.union(u, polygons[i])
+                    u
+                }
+
+                val boundarySymbol = SimpleFillSymbol(
+                    SimpleFillSymbol.Style.NULL,
+                    Color.TRANSPARENT,
+                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.rgb(255, 140, 0), 4f)
+                )
+
+                mauzaBoundaryGraphics.graphics.clear()
+                for (p in polygons) {
+                    val g = Graphic(p, boundarySymbol)
+                    g.attributes["type"] = "mauza_boundary"
+                    g.attributes["mauza_id"] = mauzaId
+                    mauzaBoundaryGraphics.graphics.add(g)
+                }
+
+                // Every corporate parcel is drawn by hand, so the draw tool is always on
+                // for them. Katchi Abadi only exposes it in free-polygon sync mode.
+                isFreePolygonMode = isCorporate || sharedPreferences.getBoolean(
+                    Constants.SHARED_PREF_FREE_POLYGON_ACTIVE, false
+                )
+                _binding?.fabStartDraw?.visibility =
+                    if (isFreePolygonMode) View.VISIBLE else View.GONE
+                Log.d("DrawMode", "Boundary drawn for $label, freePolygon=$isFreePolygonMode")
+            } catch (e: Exception) {
+                Log.e("DrawMode", "loadMauzaBoundary error: ${e.message}", e)
+                boundaryGeometryUnion = null
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------
+// 3g) Draw mode enter / exit / visual  (ADD)
+// ---------------------------------------------------------------------
+    private fun enterDrawMode() {
+        if (boundaryGeometryUnion == null) {
+            Toast.makeText(
+                context, "Boundary not loaded. Please sync in Free Polygon mode first.",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        if (isSplitMode) exitSplitMode()
+        if (isMergeMode || isTaskAssignMode) {
+            Toast.makeText(context, "Finish the current mode first", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        isDrawMode = true
+        drawPoints.clear()
+        drawOverlay.graphics.clear()
+        setTraceEnabled(false)
+        closeCallOut()
+
+        binding.layoutDrawControls.visibility = View.VISIBLE
+        binding.fabStartDraw.visibility = View.GONE
+
+        Toast.makeText(
+            context,
+            "Draw Mode: Tap inside the boundary to add points",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
+    private fun exitDrawMode() {
+        if (!isDrawMode) return
+        isDrawMode = false
+        drawPoints.clear()
+        setTraceEnabled(false)
+        drawOverlay.graphics.clear()
+        _binding?.layoutDrawControls?.visibility = View.GONE
+        _binding?.fabStartDraw?.visibility = if (isFreePolygonMode) View.VISIBLE else View.GONE
+    }
+
+    private fun updateDrawVisual() {
+        if (!::drawOverlay.isInitialized) return
+        drawOverlay.graphics.clear()
+        val sr = binding.parcelMapview.spatialReference
+
+        val pointSymbol = SimpleMarkerSymbol(SimpleMarkerSymbol.Style.CIRCLE, Color.RED, 8f).apply {
+            outline = SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.WHITE, 2f)
+        }
+        drawPoints.forEach { drawOverlay.graphics.add(Graphic(it, pointSymbol)) }
+
+        if (drawPoints.size >= 2) {
+            val lb = PolylineBuilder(sr)
+            drawPoints.forEach { lb.addPoint(it) }
+            drawOverlay.graphics.add(
+                Graphic(
+                    lb.toGeometry(),
+                    SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLUE, 3f)
+                )
+            )
+        }
+
+        if (drawPoints.size >= 3) {
+            val pb = PolygonBuilder(sr)
+            drawPoints.forEach { pb.addPoint(it) }
+            val fill = SimpleFillSymbol(
+                SimpleFillSymbol.Style.SOLID,
+                Color.argb(80, 0, 200, 0),
+                SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.GREEN, 2f)
+            )
+            drawOverlay.graphics.add(Graphic(pb.toGeometry(), fill))
+        }
+    }
+
+    /** Point boundary ke andar hai aur kisi existing parcel ke andar nahi? */
+    private fun tryAddDrawPoint(p: Point, silent: Boolean = false): Boolean {
+        val inside = boundaryGeometryUnion?.let { boundary ->
+            val projected = if (p.spatialReference != boundary.spatialReference)
+                GeometryEngine.project(p, boundary.spatialReference) as Point else p
+            GeometryEngine.contains(boundary, projected)
+        } ?: false
+
+        if (!inside) {
+            if (!silent) Toast.makeText(
+                context, "Point is outside the boundary.", Toast.LENGTH_SHORT
+            ).show()
+            return false
+        }
+        if (isPointInsideExistingParcel(p)) {
+            if (!silent) Toast.makeText(
+                context, "You can't draw inside an existing parcel.", Toast.LENGTH_SHORT
+            ).show()
+            return false
+        }
+        drawPoints.add(p)
+        return true
+    }
+
+    private fun isPointInsideExistingParcel(mapPoint: Point): Boolean {
+        if (!::surveyParcelsGraphics.isInitialized) return false
+        return try {
+            for (g in surveyParcelsGraphics.graphics) {
+                val poly = g.geometry as? Polygon ?: continue
+                val same = if (poly.spatialReference != mapPoint.spatialReference)
+                    GeometryEngine.project(poly, mapPoint.spatialReference) as Polygon else poly
+                // 1.5m andar tak edge ke paas allowed (adjacent parcel banane ke liye)
+                val shrunk = try {
+                    GeometryEngine.bufferGeodetic(
+                        same, -1.5,
+                        com.esri.arcgisruntime.geometry.LinearUnit(com.esri.arcgisruntime.geometry.LinearUnitId.METERS),
+                        Double.NaN, GeodeticCurveType.GEODESIC
+                    ) as? Polygon
+                } catch (e: Exception) {
+                    null
+                }
+                val check = if (shrunk != null && !shrunk.isEmpty) shrunk else same
+                if (GeometryEngine.contains(check, mapPoint)) return true
+            }
+            false
+        } catch (e: Exception) {
+            Log.e("DrawMode", "isPointInsideExistingParcel: ${e.message}")
+            false
+        }
+    }
+
+
+    /** Map par jitne parcels dikh rahe hain unke polygons — snap/trace targets. */
+    private fun snapTargetsFor(sr: SpatialReference): List<Polygon> {
+        if (snapTargetsSr == sr && snapTargets.isNotEmpty()) return snapTargets
+
+        val list = mutableListOf<Polygon>()
+        if (::surveyParcelsGraphics.isInitialized) {
+            surveyParcelsGraphics.graphics.forEach { g ->
+                val poly = g.geometry as? Polygon ?: return@forEach
+                val p = if (poly.spatialReference == sr) poly
+                else GeometryEngine.project(poly, sr) as? Polygon
+                p?.let { list.add(it) }
+            }
+        }
+
+        snapTargets = list
+        snapTargetsSr = sr
+        traceGraph = TraceGraph(list, mergeTol = 0.05)
+        Log.d("DrawMode", "Snap targets built: ${list.size}")
+        return list
+    }
+
+    private fun setTraceEnabled(enabled: Boolean) {
+        traceEnabled = enabled
+        lastTraceHit = null
+        _binding?.btnTrace?.apply {
+            text = if (enabled) "Trace: On" else "Trace: Off"
+            val c = Color.parseColor(if (enabled) "#1976D2" else "#455A64")
+            setTextColor(c)
+            iconTint = android.content.res.ColorStateList.valueOf(c)
+            strokeColor = android.content.res.ColorStateList.valueOf(
+                Color.parseColor(if (enabled) "#1976D2" else "#B0BEC5")
+            )
+        }
+        if (isDrawMode) {
+            Toast.makeText(
+                context,
+                if (enabled) "Trace on: tap two points on an existing parcel edge to follow it."
+                else "Trace off",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    /** Edge par "hit" maanne ki tolerance — aadha dp map units mein. */
+    private fun traceEpsilon(): Double =
+        binding.parcelMapview.unitsPerDensityIndependentPixel * 0.5
+
+    /** Undo ke baad aakhri point se trace anchor dobara nikaalo. */
+    private fun refreshLastTraceHit() {
+        val last = drawPoints.lastOrNull()
+        val sr = last?.spatialReference
+        lastTraceHit = if (last != null && sr != null)
+            TraceUtils.locate(last, snapTargetsFor(sr), traceEpsilon())
+        else null
+    }
+
+    /** Pehle apne drawn points par snap (polygon band karne ke liye), phir parcel vertices/edges par. */
+    private fun snapPoint(raw: Point): Point {
+        val sr = raw.spatialReference ?: return raw
+        val tolerance = binding.parcelMapview.unitsPerDensityIndependentPixel * snapToleranceDp
+        if (tolerance <= 0.0) return raw
+
+        drawPoints.forEach { p ->
+            val dx = p.x - raw.x
+            val dy = p.y - raw.y
+            if (kotlin.math.sqrt(dx * dx + dy * dy) <= tolerance) return p
+        }
+
+        return SnapUtils.snap(raw, snapTargetsFor(sr), tolerance)
+    }
+
+    // ---------------------------------------------------------------------
+// 3h) Save drawn polygon  (ADD)
+// ---------------------------------------------------------------------
+    private fun saveDrawnPolygon() {
+        if (drawPoints.size < 3) {
+            Toast.makeText(context, "At least 3 points are needed", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val pb = PolygonBuilder(binding.parcelMapview.spatialReference)
+        drawPoints.forEach { pb.addPoint(it) }
+        persistDrawnPolygon(pb.toGeometry())
+    }
+
+    private fun persistDrawnPolygon(polygon: Polygon) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                var polyWgs84 = if (polygon.spatialReference != wgs84)
+                    GeometryEngine.project(polygon, wgs84) as Polygon else polygon
+
+                // 1) Boundary clip
+                val boundaryClipped = withContext(Dispatchers.Default) { clipToBoundary(polyWgs84) }
+                if (boundaryClipped == null || boundaryClipped.isEmpty) {
+                    Toast.makeText(context, "Polygon is outside the boundary.", Toast.LENGTH_LONG)
+                        .show()
+                    return@launch
+                }
+                polyWgs84 = boundaryClipped
+
+                // 2) Existing parcels ka overlap kaat do
+                val clipped = clipAgainstExistingParcels(polyWgs84)
+                if (clipped == null || clipped.isEmpty) {
+                    Toast.makeText(
+                        context, "This polygon lies completely inside existing parcels.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+                polyWgs84 = clipped
+
+                val wkt = convertPolygonToWkt(polyWgs84)
+                val c = polyWgs84.extent.center
+                val centroidWKT = String.format(Locale.US, "POINT(%.8f %.8f)", c.x, c.y)
+
+                val mauzaId =
+                    sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L)
+                val mauzaName = sharedPreferences.getString(
+                    Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME, ""
+                ).orEmpty()
+                val areaName = sharedPreferences.getString(
+                    Constants.SHARED_PREF_USER_SELECTED_AREA_NAME, Constants.FREE_POLYGON_AREA
+                ).orEmpty()
+                val unitId = sharedPreferences.getInt(
+                    Constants.SHARED_PREF_USER_UNIT_ID, 0
+                ).toLong()
+                val groupId =
+                    sharedPreferences.getInt(Constants.SHARED_PREF_USER_GROUP_ID, 0).toLong()
+
+                val newParcelNo = withContext(Dispatchers.IO) {
+                    (database.activeParcelDao().getMaxParcelNoByMauza(mauzaId) ?: 0L) + 1
+                }
+
+                withContext(Dispatchers.IO) {
+                    // Negative id → server ids (positive) se kabhi nahi takraye ga.
+                    // Upload par "New" hone se parcelId=0 jata hai, yeh id server tak nahi pohnchti.
+                    val newId = -System.currentTimeMillis()
+
+                    val template =
+                        database.activeParcelDao().getAnyActiveParcelByMauza(mauzaId)
+
+                    val newParcel = template?.copy(
+                        pkid = 0,
+                        id = newId,
+                        parcelNo = newParcelNo,
+                        subParcelNo = "",
+                        mauzaId = mauzaId,
+                        mauzaName = mauzaName,
+                        khewatInfo = "0",
+                        areaAssigned = areaName,
+                        geomWKT = wkt,
+                        centroid = centroidWKT,
+                        surveyStatusCode = 1,
+                        surveyId = null,
+                        isActivate = true,
+                        growerCodes = null,
+                        variety = null,
+                        varietyValidationStatus = null,
+                        isLocallyDrawn = true
+                    ) ?: ActiveParcelEntity(
+                        pkid = 0,
+                        id = newId,
+                        parcelNo = newParcelNo,
+                        subParcelNo = "",
+                        mauzaId = mauzaId,
+                        mauzaName = mauzaName,
+                        khewatInfo = "0",
+                        areaAssigned = areaName,
+                        geomWKT = wkt,
+                        centroid = centroidWKT,
+                        distance = 100,
+                        parcelType = "",
+                        parcelAreaKMF = null,
+                        parcelAreaAbadiDeh = null,
+                        surveyStatusCode = 1,
+                        surveyId = null,
+                        isActivate = true,
+                        unitId = unitId,
+                        groupId = groupId,
+                        isLocallyDrawn = true
+                    )
+
+                    database.activeParcelDao().insertActiveParcels(listOf(newParcel))
+                    logger.log(newParcel, ParcelAction.DRAWN,
+                        details = "Free polygon drawn, ${drawPoints.size} points")
+
+                }
+
+                Toast.makeText(context, "Parcel $newParcelNo saved", Toast.LENGTH_SHORT).show()
+                exitDrawMode()
+                refreshMapDisplay()
+            } catch (e: Exception) {
+                Log.e("DrawMode", "Save error: ${e.message}", e)
+                Toast.makeText(context, "Save error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun clipToBoundary(newPolygon: Polygon): Polygon? = try {
+        val boundary = boundaryGeometryUnion
+        if (boundary == null) newPolygon else {
+            val same = if (boundary.spatialReference != newPolygon.spatialReference)
+                GeometryEngine.project(boundary, newPolygon.spatialReference) else boundary
+            val clipped = GeometryEngine.intersection(newPolygon, same)
+            if (clipped == null || clipped.isEmpty) null else clipped as? Polygon
+        }
+    } catch (e: Exception) {
+        Log.e("DrawMode", "clipToBoundary: ${e.message}")
+        newPolygon
+    }
+
+    private suspend fun clipAgainstExistingParcels(newPolygon: Polygon): Polygon? =
+        withContext(Dispatchers.IO) {
+            try {
+                val mauzaId =
+                    sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0L)
+
+                // Only parcels whose extent actually meets the new polygon can clip it.
+                // Unioning every parcel in the mauza one at a time was the reason saving a
+                // drawn parcel took so long - each union rebuilt an ever larger geometry.
+                val target = newPolygon.extent
+                val overlapping = mutableListOf<Geometry>()
+
+                database.activeParcelDao().getActiveParcelsByMauza(mauzaId).forEach { p ->
+                    val geom = p.geomWKT
+                    if (geom.isNullOrBlank()) return@forEach
+                    val poly = parseWktToPolygons(geom).firstOrNull() ?: return@forEach
+                    val sameSr = if (poly.spatialReference != newPolygon.spatialReference)
+                        GeometryEngine.project(poly, newPolygon.spatialReference) as Polygon
+                    else poly
+                    if (GeometryEngine.intersects(target, sameSr.extent)) overlapping.add(sameSr)
+                }
+
+                if (overlapping.isEmpty()) return@withContext newPolygon
+
+                // One batch union instead of N incremental ones.
+                val union = GeometryEngine.union(overlapping)
+                val diff = GeometryEngine.difference(newPolygon, union)
+                if (diff == null || diff.isEmpty) null else diff as? Polygon
+            } catch (e: Exception) {
+                Log.e("DrawMode", "clipAgainstExistingParcels: ${e.message}")
+                newPolygon
+            }
+        }
 
     private fun addGraphics(parcel: ActiveParcelEntity, polygon: Polygon, gson: Gson) {
         val areaSqFt = GeometryEngine.areaGeodetic(
@@ -1591,25 +2230,38 @@ class FragmentMap : Fragment() {
         val symbol: SimpleFillSymbol
         val textColor: Int
         val isHarvested = isParcelHarvested(parcel.id)
+        val isValidated = !parcel.varietyValidationStatus.isNullOrBlank()
+
 
         when (parcel.surveyStatusCode) {
             1 -> {
                 symbol = unSurveyedBlocks
                 textColor = ContextCompat.getColor(context, R.color.parcel_red)
             }
+
             2 -> {
-                if (isHarvested) {
-                    symbol = SimpleFillSymbol(
-                        SimpleFillSymbol.Style.SOLID,
-                        Color.WHITE,
-                        SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
-                    )
-                    textColor = Color.BLACK
-                } else {
-                    symbol = surveyedBlocks
-                    textColor = ContextCompat.getColor(context, R.color.parcel_green)
+                when {
+                    isValidated -> {
+                        symbol = validatedBlocks
+                        textColor = Color.parseColor("#F57F17")
+                    }
+
+                    isHarvested -> {
+                        symbol = SimpleFillSymbol(
+                            SimpleFillSymbol.Style.SOLID,
+                            Color.WHITE,
+                            SimpleLineSymbol(SimpleLineSymbol.Style.SOLID, Color.BLACK, 2f)
+                        )
+                        textColor = Color.BLACK
+                    }
+
+                    else -> {
+                        symbol = surveyedBlocks
+                        textColor = ContextCompat.getColor(context, R.color.parcel_green)
+                    }
                 }
             }
+
             else -> {
                 symbol = unSurveyedBlocks
                 textColor = ContextCompat.getColor(context, R.color.parcel_red)
@@ -1630,11 +2282,13 @@ class FragmentMap : Fragment() {
         attr["unit_id"] = parcel.unitId ?: 0L
         attr["group_id"] = parcel.groupId ?: 0L
         attr["khewatInfo"] = parcel.khewatInfo.orEmpty()
-        // ✅ Grower codes ab seedha parcel se (resync ke baad bhi available)
+        attr["varietyValidationStatus"] = parcel.varietyValidationStatus ?: ""
+        attr["is_drawn"] = parcel.isLocallyDrawn
+
+
         val growerText = parcel.growerCodes?.trim().orEmpty()
         val isSurveyed = parcel.surveyStatusCode == 2
 
-        // ✅ Label banao: ParcelNo + Khewat + (GrowerCode + Area SIRF surveyed par)
         val labelText = buildString {
             append(parcel.parcelNo)
             val khewat = parcel.khewatInfo?.trim().orEmpty()
@@ -1642,7 +2296,6 @@ class FragmentMap : Fragment() {
                 append("\n")
                 append(khewat)
             }
-            // Grower code + Area SIRF surveyed parcels par
             if (isSurveyed) {
                 if (growerText.isNotEmpty()) {
                     append("\n")
@@ -1650,6 +2303,10 @@ class FragmentMap : Fragment() {
                 }
                 append("\n")
                 append(areaText)
+                if (isValidated) {
+                    append("\n✓ ")
+                    append(parcel.variety.orEmpty())
+                }
             }
         }
 
@@ -1682,12 +2339,15 @@ class FragmentMap : Fragment() {
         attrLabel["unit_id"] = parcel.unitId ?: 0L
         attrLabel["group_id"] = parcel.groupId ?: 0L
         attrLabel["growerCodes"] = growerText
+        attrLabel["varietyValidationStatus"] = parcel.varietyValidationStatus ?: ""
+        attrLabel["is_drawn"] = parcel.isLocallyDrawn
 
         surveyParcelsGraphics.graphics.add(parcelGraphic)
         surveyLabelGraphics.graphics.add(labelGraphic)
 
         originalLabelGraphics[parcelId] = labelGraphic
     }
+
     private fun restoreOriginalGraphics() {
         Log.d("RESTORE_DEBUG", "Starting graphics restoration...")
 
@@ -1705,7 +2365,10 @@ class FragmentMap : Fragment() {
                 val correctSymbol = getSymbolForSurveyStatus(surveyStatus)
                 graphic.symbol = correctSymbol
                 originalGraphicSymbols[parcelId] = correctSymbol
-                Log.d("RESTORE_DEBUG", "Generated new symbol for parcel_id: $parcelId, status: $surveyStatus")
+                Log.d(
+                    "RESTORE_DEBUG",
+                    "Generated new symbol for parcel_id: $parcelId, status: $surveyStatus"
+                )
             }
         }
 
@@ -1788,7 +2451,10 @@ class FragmentMap : Fragment() {
                 surveyLabelGraphics.graphics.add(newLabel)
                 originalLabelGraphics[parcelId] = newLabel
 
-                Log.d("RESTORE_DEBUG", "Created new label for parcel_id: $parcelId with grower codes: $storedGrowerCodes")
+                Log.d(
+                    "RESTORE_DEBUG",
+                    "Created new label for parcel_id: $parcelId with grower codes: $storedGrowerCodes"
+                )
             }
         }
 
@@ -1844,6 +2510,7 @@ class FragmentMap : Fragment() {
             requestPermission()
         }
     }
+
     private fun requestFreshLocation(enableZoom: Boolean) {
         val locationRequest = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY,
@@ -1863,7 +2530,10 @@ class FragmentMap : Fragment() {
                         Constants.SHARED_PREF_DEFAULT_ACCURACY
                     )
 
-                    if (location.accuracy < meterAccuracy && isLocationValid(location) && !isMockLocation(location)) {
+                    if (location.accuracy < meterAccuracy && isLocationValid(location) && !isMockLocation(
+                            location
+                        )
+                    ) {
                         Utility.dismissProgressAlertDialog()
                         fusedLocationClient.removeLocationUpdates(this)
                         handleInitialLocation(location, enableZoom)
@@ -1904,7 +2574,8 @@ class FragmentMap : Fragment() {
 
     private fun handleInitialLocation(location: Location, enableZoom: Boolean) {
         updateLocationOnMap(location)
-
+        lastKnownLat = location.latitude
+        lastKnownLng = location.longitude
         if (enableZoom) {
             val point = Point(
                 location.longitude,
@@ -1981,10 +2652,16 @@ class FragmentMap : Fragment() {
             // Update location on map
             updateLocationOnMap(location)
 
+            logger.lastLat = location.latitude
+            logger.lastLng = location.longitude
+
             // Store current location
             viewModel.currentLocation = Utility.convertGpsTimeToString(location.time)
 
-            Log.d("Location", "Location updated: ${location.latitude}, ${location.longitude}, Accuracy: ${location.accuracy}m")
+            Log.d(
+                "Location",
+                "Location updated: ${location.latitude}, ${location.longitude}, Accuracy: ${location.accuracy}m"
+            )
 
         } catch (e: Exception) {
             Log.e("Location", "Error handling location update: ${e.message}", e)
@@ -2067,11 +2744,6 @@ class FragmentMap : Fragment() {
     }
 
 
-
-
-
-
-
     private fun setHeaderText() {
         val mauzaName = sharedPreferences.getString(
             Constants.SHARED_PREF_USER_SELECTED_MAUZA_NAME,
@@ -2120,7 +2792,7 @@ class FragmentMap : Fragment() {
                 } else {
                     showMessageOKCancel(
                         "You need to allow location permission"
-                    ) { _, _ ->
+                    ) {
                         requestPermission()
                     }
                 }
@@ -2129,44 +2801,30 @@ class FragmentMap : Fragment() {
     }
 
     private fun showSettingsDialog(value: String) {
-        val builder = AlertDialog.Builder(context)
-            .setMessage("You have denied $value permission permanently. Please go to settings to enable it.")
-            .setPositiveButton("Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                val uri = Uri.fromParts("package", context.packageName, null)
-                intent.data = uri
-                startActivity(intent)
-            }.setNegativeButton("Cancel", null)
-
-        val dialog = builder.create()
-        dialog.show()
-
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        positiveButton.textSize = 16f
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-
-        negativeButton.textSize = 16f
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+        ZdAlert.confirm(
+            context = requireContext(),
+            title = "Permission needed",
+            message = "You have denied $value permission permanently. Please go to settings to enable it.",
+            confirmText = "Settings",
+            cancelText = "Cancel"
+        ) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = Uri.fromParts("package", requireContext().packageName, null)
+            startActivity(intent)
+        }
     }
 
-    private fun showMessageOKCancel(message: String, okListener: DialogInterface.OnClickListener) {
-        val builder =
-            AlertDialog.Builder(context).setMessage(message).setPositiveButton("OK", okListener)
-                .setNegativeButton("Cancel", null)
-
-        val dialog = builder.create()
-        dialog.show()
-
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        positiveButton.textSize = 16f
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-
-        negativeButton.textSize = 16f
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+    // Takes a plain lambda instead of DialogInterface.OnClickListener - ZdAlert does not
+    // hand a DialogInterface back to the caller.
+    private fun showMessageOKCancel(message: String, onOk: () -> Unit) {
+        ZdAlert.confirm(
+            context = requireContext(),
+            title = "Permission needed",
+            message = message,
+            confirmText = "OK",
+            cancelText = "Cancel",
+            onConfirm = onOk
+        )
     }
 
 //    private fun startLocationProcess(enableZoom: Boolean) {
@@ -2299,7 +2957,6 @@ class FragmentMap : Fragment() {
     }
 
 
-
 //    private fun setLocation(location: Location, enableZoom: Boolean) {
 //        stopLocationUpdates()
 //
@@ -2392,12 +3049,18 @@ class FragmentMap : Fragment() {
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+
+
             // Handle split mode touches
             if (isSplitMode) {
                 handleSplitModeTouch(e)
                 return true
             }
 
+            if (isDrawMode) {
+                handleDrawModeTouch(e)
+                return true
+            }
             // Handle task assign mode touches
             if (isTaskAssignMode) {
                 handleTaskAssignModeTouch(e)
@@ -2424,6 +3087,47 @@ class FragmentMap : Fragment() {
             return true
         }
 
+        private fun handleDrawModeTouch(e: MotionEvent) {
+            if (!isDrawMode) return
+
+            val screenPoint = android.graphics.Point(e.x.toInt(), e.y.toInt())
+            val rawPoint = mMapView.screenToLocation(screenPoint) ?: return
+            val mapPoint = snapPoint(rawPoint)          // 👈 pehle snap
+
+            var hit: TraceUtils.RingHit? = null
+            val sr = mapPoint.spatialReference
+
+            if (traceEnabled && sr != null) {
+                val targets = snapTargetsFor(sr)
+                hit = TraceUtils.locate(mapPoint, targets, traceEpsilon())
+
+                val prev = lastTraceHit
+                if (hit != null && prev != null) {
+                    // Pichle hit se is hit tak parcel ki edge ke saath saath vertices add karo
+                    val path = traceGraph?.path(prev, hit)
+                    if (path != null) {
+                        for (p in path) {
+                            if (!tryAddDrawPoint(p, silent = true)) {
+                                updateDrawVisual()
+                                lastTraceHit = null
+                                Toast.makeText(
+                                    context, "Trace stopped: a vertex is outside the boundary.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!tryAddDrawPoint(mapPoint, silent = false)) return
+
+            lastTraceHit = if (traceEnabled) hit else null
+            updateDrawVisual()
+            Toast.makeText(context, "Point ${drawPoints.size} added", Toast.LENGTH_SHORT).show()
+        }
+
         override fun onLongPress(e: MotionEvent) {
             super.onLongPress(e)
 
@@ -2437,6 +3141,11 @@ class FragmentMap : Fragment() {
                         val graphic = result.graphics[0]
 
                         val surveyStatus = graphic.attributes["surveyStatusCode"] as? Int ?: 1
+
+                        if ((graphic.attributes["is_drawn"] as? Boolean) == true) {
+                            Toast.makeText(context, "Drawn parcels cannot be split", Toast.LENGTH_SHORT).show()
+                            return@addDoneListener
+                        }
 
                         if (surveyStatus == 2) {
                             // Parcel is surveyed - don't allow splitting
@@ -2592,7 +3301,7 @@ class FragmentMap : Fragment() {
         val btnRetakePicturesSurvey =
             dialogView.findViewById<Button>(R.id.btn_retake_pictures_survey)
         val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
-
+        val btnValidateVariety = dialogView.findViewById<Button>(R.id.btn_validate_variety)
 //        val btnHarvested = dialogView.findViewById<Button>(R.id.btn_Harvested)
 //        val btnSolar = dialogView.findViewById<Button>(R.id.btn_solar_panel)
 //        val btnDrone = dialogView.findViewById<Button>(R.id.btn_drone_spray)
@@ -2610,7 +3319,13 @@ class FragmentMap : Fragment() {
         tvMergeParcelHi = dialogView.findViewById(R.id.tv_merge_parcel_hi)
 
         val rgParcel = dialogView.findViewById<RadioGroup>(R.id.rg_parcel)
-
+        val isDrawn = (attr["is_drawn"] as? Boolean) == true
+        val rbMerge = dialogView.findViewById<RadioButton>(R.id.rb_merge)
+        if (isDrawn) {
+            rbMerge.isEnabled = false
+            rbMerge.alpha = 0.4f
+            btnStartTaskAssign.visibility = View.GONE
+        }
 //        btnSolar.setOnClickListener {
 //            IntentUtil.startActivity(context,SolarPanelActivity::class.java)
 //        }
@@ -2651,11 +3366,12 @@ class FragmentMap : Fragment() {
         val parcelNo = attr["parcel_no"]?.toString().orEmpty()
         val subParcelNo = attr["sub_parcel_no"]?.toString()?.trim().orEmpty()
 
-        tvParcelNo.text = if (subParcelNo.isBlank() || subParcelNo == "0" || subParcelNo == "null") {
-            parcelNo
-        } else {
-            "$parcelNo/$subParcelNo"
-        }
+        tvParcelNo.text =
+            if (subParcelNo.isBlank() || subParcelNo == "0" || subParcelNo == "null") {
+                parcelNo
+            } else {
+                "$parcelNo/$subParcelNo"
+            }
         tvParcelNoUni.text = attr["khewatInfo"]?.toString()
             ?.takeIf { it.isNotBlank() && it != "null" } ?: "—"
         val areaSqFt = attr["area"].toString().toDoubleOrNull() ?: 0.0
@@ -2693,7 +3409,7 @@ class FragmentMap : Fragment() {
                 btnStartSurvey.visibility = View.VISIBLE
                 btnRevisitSurvey.visibility = View.GONE
                 btnRetakePicturesSurvey.visibility = View.GONE
-//                delete.visibility = View.GONE
+                btnValidateVariety.visibility = View.GONE
             }
 
             2 -> {
@@ -2702,12 +3418,49 @@ class FragmentMap : Fragment() {
                 lMergeParcel.visibility = View.GONE
                 btnStartSurvey.visibility = View.GONE
                 btnRevisitSurvey.visibility = View.GONE
-//                delete.visibility = View.GONE
+                btnRetakePicturesSurvey.visibility = View.GONE
+
+                lActionButtons.visibility = View.VISIBLE
+                btnValidateVariety.visibility = View.VISIBLE
+
+                val pid = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L
+                val alreadyValidated =
+                    attr["varietyValidationStatus"]?.toString().orEmpty().isNotBlank()
+
+                when {
+                    pid <= 0 -> {
+                        btnValidateVariety.isEnabled = false
+                        btnValidateVariety.alpha = 0.5f
+                        btnValidateVariety.text = "Upload & Sync first"
+                    }
+
+                    alreadyValidated -> {
+                        btnValidateVariety.isEnabled = false
+                        btnValidateVariety.alpha = 0.5f
+                        btnValidateVariety.text = "Variety Validated ✓"
+                    }
+
+                    else -> {
+                        btnValidateVariety.isEnabled = true
+                        btnValidateVariety.alpha = 1f
+                        btnValidateVariety.text = "Validate Variety"
+                    }
+                }
             }
 
             else -> {
+                btnValidateVariety.visibility = View.GONE
             }
         }
+
+        btnValidateVariety.setOnClickListener {
+            showVarietyValidationDialog(
+                parcelId = attr["parcel_id"].toString().toLongOrNull() ?: 0L,
+                parcelNo = attr["parcel_no"].toString(),
+                subParcelNo = attr["sub_parcel_no"].toString()
+            )
+        }
+
 
         val parcelId = attr["parcel_id"]?.toString()?.toLongOrNull() ?: 0L
 
@@ -2828,6 +3581,9 @@ class FragmentMap : Fragment() {
             }
 
             val baseParcelId = graphics.attributes["parcel_id"].toString()
+
+            mergeBaseParcelId = baseParcelId.toLongOrNull() ?: 0L
+            mergeBaseParcelNo = graphics.attributes["parcel_no"].toString()
 
             graphics.symbol = SimpleFillSymbol(
                 SimpleFillSymbol.Style.SOLID,
@@ -3036,6 +3792,7 @@ class FragmentMap : Fragment() {
                         putExtra("unitId", unitId)
                         putExtra("groupId", groupId)
                         putExtra("mauzaName", mauzaName)
+                        putExtra("isDrawnParcel", isDrawn)
                     }
 
                     Log.d("TaskAssign", "Intent extras being passed:")
@@ -3465,6 +4222,145 @@ class FragmentMap : Fragment() {
         mCallOut.show()
     }
 
+    private fun showVarietyValidationDialog(
+        parcelId: Long,
+        parcelNo: String,
+        subParcelNo: String
+    ) {
+        viewLifecycleOwner.lifecycleScope.launch {
+
+            if (parcelId <= 0) {
+                Toast.makeText(
+                    requireContext(),
+                    "This parcel has not reached the server yet. Please upload the survey from Saved Records, then sync the area again to validate its variety.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
+
+            val parcel = withContext(Dispatchers.IO) {
+                database.activeParcelDao().getParcelById(parcelId)
+            }
+
+            if (!parcel?.varietyValidationStatus.isNullOrBlank()) {
+                Toast.makeText(
+                    requireContext(),
+                    "This parcel is already validated (${parcel?.varietyValidationStatus}) on ${parcel?.varietyValidatedAt}",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
+
+            // current variety: parcel column, warna local survey record
+            val currentVariety = parcel?.variety?.takeIf { it.isNotBlank() }
+                ?: withContext(Dispatchers.IO) {
+                    database.newSurveyNewDao().getSurveysByParcelId(parcelId)
+                        .lastOrNull()?.variety
+                }.orEmpty()
+
+            if (currentVariety.isBlank()) {
+                Toast.makeText(
+                    requireContext(),
+                    "Variety is not available for this parcel. Please download the area again.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
+
+            val view = layoutInflater.inflate(R.layout.dialog_variety_validation, null)
+            val tvInfo = view.findViewById<TextView>(R.id.tvParcelInfo)
+            val tvCurrent = view.findViewById<TextView>(R.id.tvCurrentVariety)
+            val rgCheck = view.findViewById<RadioGroup>(R.id.rgVarietyCheck)
+            val layoutNew = view.findViewById<LinearLayout>(R.id.layoutNewVariety)
+            val spinnerNew = view.findViewById<Spinner>(R.id.spinnerNewVariety)
+            val etRemarks = view.findViewById<EditText>(R.id.etValidationRemarks)
+            val btnSave = view.findViewById<Button>(R.id.btnSaveValidation)
+            val btnCancel = view.findViewById<Button>(R.id.btnCancelValidation)
+
+            val display =
+                if (subParcelNo.isNotBlank() && subParcelNo != "0") "$parcelNo-$subParcelNo" else parcelNo
+            tvInfo.text = "Parcel: $display"
+            tvCurrent.text = "Recorded Variety: $currentVariety"
+
+            val varieties = withContext(Dispatchers.IO) {
+                dropdownRepository.getVarieties(forceRefresh = false)
+            }.filter { !it.equals(currentVariety, ignoreCase = true) }
+
+            spinnerNew.adapter = ArrayAdapter(
+                requireContext(), R.layout.spinner_item_drop_down,
+                listOf("Select Correct Variety") + varieties
+            ).apply { setDropDownViewResource(R.layout.spinner_dropdown_item) }
+
+            rgCheck.setOnCheckedChangeListener { _, id ->
+                layoutNew.visibility = if (id == R.id.rbMismatch) View.VISIBLE else View.GONE
+            }
+
+            val dialog = AlertDialog.Builder(requireContext(), R.style.ZdDialog)
+                .setTitle("Variety Validation")
+                .setView(view)
+                .setCancelable(false)
+                .create()
+
+            btnCancel.setOnClickListener { dialog.dismiss() }
+
+            btnSave.setOnClickListener {
+                if (rgCheck.checkedRadioButtonId == -1) {
+                    Toast.makeText(context, "Please select an option first", Toast.LENGTH_SHORT)
+                        .show()
+                    return@setOnClickListener
+                }
+                val isMatched = rgCheck.checkedRadioButtonId == R.id.rbMatched
+
+                var newVariety = currentVariety
+                if (!isMatched) {
+                    if (spinnerNew.selectedItemPosition <= 0) {
+                        Toast.makeText(
+                            context,
+                            "Please select the correct variety",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@setOnClickListener
+                    }
+                    newVariety = spinnerNew.selectedItem.toString()
+                }
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    withContext(Dispatchers.IO) {
+                        database.activeParcelDao().saveVarietyValidation(
+                            parcelId = parcelId,
+                            status = if (isMatched) "Matched" else "Corrected",
+                            oldVariety = currentVariety,
+                            newVariety = newVariety,
+                            remarks = etRemarks.text.toString().trim(),
+                            lat = lastKnownLat,
+                            lng = lastKnownLng,
+                            validatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(
+                                Date()
+                            )
+                        )
+                        if (!isMatched) {
+                            database.newSurveyNewDao().updateVarietyByParcelId(parcelId, newVariety)
+                        }
+                    }
+                    dialog.dismiss()
+                    closeCallOut()
+
+                    Toast.makeText(
+                        context,
+                        if (isMatched) "Validation saved. Upload it from Pending Validations."
+                        else "Variety corrected & saved. Upload it from Pending Validations.",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    refreshMapData()
+                }
+
+            }
+
+            dialog.show()
+        }
+    }
+
     // Task Assign Selection Dialog
     private fun showTaskAssignSelectionDialog(currentParcelAttr: Map<String, Any>) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_task_assign_selection, null)
@@ -3701,42 +4597,20 @@ class FragmentMap : Fragment() {
                             "Please go for this Survey after:\n$remainingMinutes minutes"
                     }
 
-                    val builder = AlertDialog.Builder(requireActivity())
-                        .setTitle("Info!")
-                        .setCancelable(false)
-                        .setMessage(message)
-                        .setPositiveButton("Ok", null)
-
-                    val dialog = builder.create()
-                    dialog.show()
-
-                    val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                    val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                    positiveButton.textSize = 16f
-                    positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-
-                    negativeButton.textSize = 16f
-                    negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+                    ZdAlert.warn(
+                        context = requireContext(),
+                        title = "Info!",
+                        message = message,
+                        buttonText = "Ok"
+                    )
                 }
             } else {
-                val builder = AlertDialog.Builder(requireActivity())
-                    .setTitle("Alert!")
-                    .setCancelable(false)
-                    .setMessage("Please try again after few minutes.")
-                    .setPositiveButton("Ok", null)
-
-                val dialog = builder.create()
-                dialog.show()
-
-                val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                positiveButton.textSize = 16f
-                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-
-                negativeButton.textSize = 16f
-                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
+                ZdAlert.warn(
+                    context = requireContext(),
+                    title = "Alert!",
+                    message = "Please try again after few minutes.",
+                    buttonText = "Ok"
+                )
             }
         }
     }
@@ -3831,6 +4705,7 @@ class FragmentMap : Fragment() {
                 requireActivity().finish()
                 true
             }
+
             R.id.action_refresh_map -> {
                 // Refresh button (same as your iv_reset functionality)
                 closeCallOut()
@@ -3842,6 +4717,7 @@ class FragmentMap : Fragment() {
                 Toast.makeText(requireContext(), "Refreshing map...", Toast.LENGTH_SHORT).show()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

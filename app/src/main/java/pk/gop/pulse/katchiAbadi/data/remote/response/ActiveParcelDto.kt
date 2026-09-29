@@ -21,5 +21,14 @@ data class ActiveParcelDto(
     @SerializedName("Group_ID")
     val groupId: Long?,
     @SerializedName("growerCodes")
-    val growerCodes: String? = ""
+    val growerCodes: String? = "",
+
+    @SerializedName("variety")
+    val variety: String? = null,
+
+    @SerializedName("isVarietyValidated")
+    val isVarietyValidated: Boolean = false,
+
+    @SerializedName("varietyValidationStatus")
+    val varietyValidationStatus: String? = null
 )

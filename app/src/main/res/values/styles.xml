@@ -191,5 +191,23 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
+    <style name="ZdNavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">#1B5E20</item>
+        <item name="android:width">60dp</item>
+        <item name="android:height">34dp</item>
+        <item name="marginHorizontal">8dp</item>
+        <item name="shapeAppearance">@style/ZdNavIndicatorShape</item>
+    </style>
+
+    <style name="ZdNavIndicatorShape">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ZdNavLabel" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">11sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
 
 </resources>

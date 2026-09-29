@@ -29,6 +29,7 @@ android {
     kapt {
         useBuildCache = false
         correctErrorTypes = true
+        arguments { arg("room.schemaLocation", "$projectDir/schemas") }
     }
 
     buildTypes {

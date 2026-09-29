@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.appcompat.app.AlertDialog
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.ui.fragments.auth.LoginFragment
 
 object VersionUpdateHandler {
@@ -17,13 +18,12 @@ object VersionUpdateHandler {
         sharedPreferences.edit().clear().apply()
 
         // Show dialog
-        AlertDialog.Builder(context)
-            .setTitle("Update Required")
-            .setMessage("$message\n\nYou have been logged out for security reasons.")
-            .setCancelable(false)
-            .setPositiveButton("OK") { dialog, _ ->
-                dialog.dismiss()
-
+        ZdAlert.error(
+            context = context,
+            title = "Update Required",
+            message = "$message\n\nYou have been logged out for security reasons.",
+            buttonText = "OK",
+            onDismiss = {
                 // Navigate to login screen
                 val intent = Intent(context, LoginFragment::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -35,7 +35,7 @@ object VersionUpdateHandler {
                     context.finishAffinity()
                 }
             }
-            .show()
+        )
     }
 
     fun isVersionUpdateError(errorMessage: String?): Boolean {

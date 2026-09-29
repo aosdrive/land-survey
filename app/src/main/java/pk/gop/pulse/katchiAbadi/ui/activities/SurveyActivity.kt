@@ -38,6 +38,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
 import androidx.core.app.ActivityCompat
+import com.esri.arcgisruntime.geometry.AngularUnit
+import com.esri.arcgisruntime.geometry.AngularUnitId
+import com.esri.arcgisruntime.geometry.GeodeticCurveType
+import com.esri.arcgisruntime.geometry.GeometryEngine
+import com.esri.arcgisruntime.geometry.LinearUnit
+import com.esri.arcgisruntime.geometry.LinearUnitId
+import com.esri.arcgisruntime.geometry.Point
+import com.esri.arcgisruntime.geometry.Polygon
+import com.esri.arcgisruntime.geometry.SpatialReferences
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.AndroidEntryPoint
@@ -62,6 +71,7 @@ import java.io.File
 import javax.inject.Inject
 import com.google.android.gms.location.Priority
 import com.google.android.material.textfield.TextInputEditText
+import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
 import pk.gop.pulse.katchiAbadi.domain.model.JKGrowerEntity
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonEntity
@@ -72,6 +82,21 @@ import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import pk.gop.pulse.katchiAbadi.data.repository.ParcelActivityLogger
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelAction
+import pk.gop.pulse.katchiAbadi.common.Resource
+import pk.gop.pulse.katchiAbadi.data.repository.CorporateRepository
+import pk.gop.pulse.katchiAbadi.data.repository.LessorRepository
+import pk.gop.pulse.katchiAbadi.ui.dialogs.LessorSelectionDialog
+import pk.gop.pulse.katchiAbadi.domain.model.BlockEntity
+import pk.gop.pulse.katchiAbadi.domain.model.DivisionEntity
+import pk.gop.pulse.katchiAbadi.domain.model.FarmEntity
+import pk.gop.pulse.katchiAbadi.domain.model.LessorEntity
+import pk.gop.pulse.katchiAbadi.domain.model.PlotEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SectionEntity
+import pk.gop.pulse.katchiAbadi.domain.model.SurveyLessorEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ZoneEntity
+
 
 
 @AndroidEntryPoint
@@ -102,6 +127,12 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     @Inject
     lateinit var jkGrowerRepository: JKGrowerRepositoryImpl
 
+    @Inject
+    lateinit var corporateRepository: CorporateRepository
+
+    @Inject
+    lateinit var lessorRepository: LessorRepository
+
     private var cropList = mutableListOf<String>()
     private var cropTypeList = mutableListOf<String>()
     private var varietyList = mutableListOf<String>()
@@ -125,8 +156,9 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private var selectedSowingDate: String? = null
     private var editSurveyId: Long = 0L
     private val isEditMode get() = editSurveyId > 0L
-
-
+    private var parcelPolygon: Polygon? = null
+    @Inject
+    lateinit var logger: ParcelActivityLogger
 
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -154,7 +186,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
         // Set default year
-        binding.etYear.setText("2026")
+        binding.etYear.setText(Constants.SURVEY_YEAR)
 //        setupAreaInputRestrictions()
 
 
@@ -213,11 +245,81 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         setupPersonSection()
         setupImageSection()
         setupFarmerProfile()
+        setupCorporateSection()
         setupSubmit(parcelId, parcelNo, subParcelNo)
+        loadParcelGeometry(parcelId)
         loadSharedMouzaData()
 //        syncUnsyncedData()
         loadJKGrowers()
         if (!isEditMode) syncUnsyncedData()
+    }
+
+    private fun loadParcelGeometry(parcelId: Long) {
+        lifecycleScope.launch {
+            parcelPolygon = withContext(Dispatchers.IO) {
+                try {
+                    val wkt = database.activeParcelDao().getParcelById(parcelId)?.geomWKT
+                    if (wkt.isNullOrBlank()) return@withContext null
+                    val wgs84 = SpatialReferences.getWgs84()
+                    when {
+                        wkt.contains("MULTIPOLYGON") ->
+                            Utility.getMultiPolygonFromString(wkt, wgs84)?.firstOrNull()
+                        else -> Utility.getPolygonFromString(wkt, wgs84)
+                    }
+                } catch (e: Exception) {
+                    Log.e("CapturePos", "Geometry load failed: ${e.message}")
+                    null
+                }
+            }
+            Log.d("CapturePos", "Parcel polygon loaded: ${parcelPolygon != null}")
+        }
+    }
+
+    private fun describeCapturePosition(location: Location?, cameraBearing: Float): String? {
+        val polygon = parcelPolygon ?: return null
+        val loc = location ?: return null
+
+        return try {
+            val wgs84 = SpatialReferences.getWgs84()
+            val photographer = Point(loc.longitude, loc.latitude, wgs84)
+            val centre = GeometryEngine.labelPoint(polygon) ?: polygon.extent.center
+
+            val inside = GeometryEngine.contains(polygon, photographer)
+
+            val geo = GeometryEngine.distanceGeodetic(
+                centre, photographer,
+                LinearUnit(LinearUnitId.METERS),
+                AngularUnit(AngularUnitId.DEGREES),
+                GeodeticCurveType.GEODESIC
+            )
+            val distanceM = geo.distance
+            val centreToPhotographer = ((geo.azimuth1 % 360) + 360) % 360   // parcel se surveyor ki taraf
+            val photographerToCentre = (centreToPhotographer + 180) % 360     // surveyor se parcel ki taraf
+
+            val side = getDirectionFromBearing(centreToPhotographer.toFloat())
+            val facing = getDirectionFromBearing(cameraBearing)
+
+            // camera parcel ki taraf hai? (±45° tolerance)
+            var diff = Math.abs(cameraBearing - photographerToCentre)
+            if (diff > 180) diff = 360 - diff
+            val facingNote = when {
+                inside -> "inside parcel"
+                diff <= 45 -> "towards parcel"
+                diff >= 135 -> "away from parcel"
+                else -> "sideways"
+            }
+
+            val standing = if (inside) {
+                "Standing: inside parcel, ~${distanceM.toInt()} m from centre"
+            } else {
+                "Standing: $side side, ~${distanceM.toInt()} m from centre (outside parcel)"
+            }
+
+            "$standing | Facing: $facing ($facingNote)"
+        } catch (e: Exception) {
+            Log.e("CapturePos", "describe failed: ${e.message}")
+            null
+        }
     }
 
     private fun loadJKGrowers() {
@@ -694,7 +796,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private suspend fun loadCropsFromLocalDb() {
         try {
             val crops = withContext(Dispatchers.IO) {
-                dropdownRepository.getCrops(forceRefresh = false)
+                if (isCorporateFarm) corporateRepository.getCrops()
+                else dropdownRepository.getCrops(forceRefresh = false)
             }
             cropList.clear()
             cropList.addAll(crops)
@@ -711,7 +814,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private suspend fun loadCropTypesFromLocalDb() {
             try {
                 val cropTypes = withContext(Dispatchers.IO) {
-                    dropdownRepository.getCropTypes(forceRefresh = false)
+                    if (isCorporateFarm) corporateRepository.getCropTypes()
+                    else dropdownRepository.getCropTypes(forceRefresh = false)
                 }
 
                 cropTypeList.clear()
@@ -732,7 +836,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     private suspend fun loadVarietiesFromLocalDb() {
             try {
                 val varieties = withContext(Dispatchers.IO) {
-                    dropdownRepository.getVarieties(forceRefresh = false)
+                    if (isCorporateFarm) corporateRepository.getVarieties()
+                    else dropdownRepository.getVarieties(forceRefresh = false)
                 }
                 varietyList.clear()
                 varietyList.add("Select Variety")
@@ -806,26 +911,21 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         input.inputType = InputType.TYPE_CLASS_TEXT
         input.hint = "Enter variety name"
 
-        AlertDialog.Builder(this)
-            .setTitle("Enter Variety")
-            .setMessage("Please enter the variety name. This field is required.")
-            .setView(input)
-            .setPositiveButton("OK") { dialogInterface, _ ->
+        ZdAlert.custom(
+            context = this,
+            title = "Enter Variety",
+            message = "Please enter the variety name. This field is required.",
+            view = input,
+            confirmText = "OK",
+            cancelText = "Cancel",
+            onCancel = { resetVarietySpinner() },
+            onConfirm = {
                 val customVariety = input.text.toString().trim()
                 if (customVariety.isNotBlank()) {
                     // Just set the selected variety, don't add to database
                     selectedVariety = customVariety
                     ToastUtil.showShort(this, "Custom variety selected: $customVariety")
-                    dialogInterface.dismiss()
                 } else {
-//                    AlertDialog.Builder(this)
-//                        .setTitle("Required Field")
-//                        .setMessage("You must enter a variety name.")
-//                        .setPositiveButton("Retry") { _, _ ->
-//                            showCustomVarietyInputDialog()
-//                        }
-//                        .show()
-
                     ZdAlert.error(
                         this,
                         "Required Field",
@@ -835,10 +935,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     )
                 }
             }
-            .setNegativeButton("Cancel") { _, _ ->
-                resetVarietySpinner()
-            }
-            .setCancelable(false)
+        )
             .show()
     }
 
@@ -848,25 +945,25 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
         input.inputType = InputType.TYPE_CLASS_TEXT
         input.hint = "Enter crop type name"
 
-        AlertDialog.Builder(this)
-            .setTitle("Enter Crop Type")
-            .setMessage("Please enter the crop type name. This field is required.")
-            .setView(input)
-            .setPositiveButton("OK") { dialogInterface, _ ->
+        ZdAlert.custom(
+            context = this,
+            title = "Enter Crop Type",
+            message = "Please enter the crop type name. This field is required.",
+            view = input,
+            confirmText = "OK",
+            cancelText = "Cancel",
+            onCancel = {
+                selectedCropType = null
+                isSettingSpinnerProgrammatically = true
+                binding.etCropType.setSelection(0)
+                isSettingSpinnerProgrammatically = false
+            },
+            onConfirm = {
                 val customCrop = input.text.toString().trim()
                 if (customCrop.isNotBlank()) {
                     selectedCropType = customCrop
                     ToastUtil.showShort(this, "Custom crop type selected: $customCrop")
-                    dialogInterface.dismiss()
                 } else {
-//                    AlertDialog.Builder(this)
-//                        .setTitle("Required Field")
-//                        .setMessage("You must enter a crop type name.")
-//                        .setPositiveButton("Retry") { _, _ ->
-//                            showCustomCropInputDialog()
-//                        }
-//                        .show()
-
                     ZdAlert.error(
                         this,
                         "Required Field",
@@ -876,17 +973,15 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                     )
                 }
             }
-            .setNegativeButton("Cancel") { _, _ ->
-                selectedCropType = null
-                isSettingSpinnerProgrammatically = true
-                binding.etCropType.setSelection(0)
-                isSettingSpinnerProgrammatically = false
-            }
-            .setCancelable(false)
+        )
             .show()
     }
 
     private fun syncUnsyncedData() {
+        // Locally added varieties are pushed to the Katchi Abadi endpoint. Corporate
+        // never adds varieties to the DB, so there is nothing for it to sync here.
+        if (isCorporateFarm) return
+
         lifecycleScope.launch {
             try {
                 val syncedCount = withContext(Dispatchers.IO) {
@@ -911,7 +1006,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     }
 
     private fun setupPersonSection() {
-        personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries)
+        val groupId = sharedPreferences.getInt(Constants.SHARED_PREF_USER_GROUP_ID, 0)
+        personEntryHelper = PersonEntryHelper(context, binding.layoutPersonEntries, groupId)
 
         binding.btnSelectOwner.setOnClickListener {
             val ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString()
@@ -1186,7 +1282,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
                     // Get current timestamp
                     val timestamp = System.currentTimeMillis()
-
+                    val capturePosition = describeCapturePosition(currentLocation, currentBearing)
+                    Log.d("CapturePos", "Photo position: $capturePosition")
                     // ===== MODIFIED: Don't get location address, just use coordinates =====
                     val image = SurveyImage(
                         uri = compressedFile.absolutePath,
@@ -1194,7 +1291,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                         latitude = currentLocation?.latitude,
                         longitude = currentLocation?.longitude,
                         timestamp = timestamp,
-                        locationAddress = null,
+                        locationAddress = capturePosition,
                         bearing = currentBearing
                     )
 
@@ -1232,10 +1329,8 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                             ""
                         }
 
-                        ToastUtil.showShort(
-                            context,
-                            "Photo added\n$dateTime$locationInfo$directionInfo"
-                        )
+                        val positionInfo = capturePosition?.let { "\n$it" } ?: ""
+                        ToastUtil.showShort(context, "Photo added\n$dateTime$locationInfo$directionInfo$positionInfo")
 
                         // Reset current location for next image
                         currentLocation = null
@@ -1322,14 +1417,20 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             val rawPersons = personEntryHelper.getAllPersons()
 
             // ===== VALIDATION: Check if at least one owner/person has been added =====
-            if (rawPersons.isEmpty()) {
+            // Corporate captures lessors instead of owners, so the owner requirement is
+            // replaced by a lessor requirement for those users.
+            if (isCorporateFarm) {
+                if (selectedLessors.isEmpty()) {
+                    binding.btnSubmitSurvey.isEnabled = true
+                    ZdAlert.warn(
+                        this,
+                        "Lessor Required",
+                        "Please select at least one lessor before submitting the survey."
+                    )
+                    return@setOnClickListener
+                }
+            } else if (rawPersons.isEmpty()) {
                 binding.btnSubmitSurvey.isEnabled = true
-//                AlertDialog.Builder(this)
-//                    .setTitle("Owner Required")
-//                    .setMessage("Please add at least one owner/person before submitting the survey. Use 'Select Owner' or 'Add New Person' button.")
-//                    .setPositiveButton("OK", null)
-//                    .show()
-//                return@setOnClickListener
                 ZdAlert.warn(
                     this,
                     "Owner Required",
@@ -1345,11 +1446,12 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
             if (invalidPersons.isNotEmpty()) {
                 binding.btnSubmitSurvey.isEnabled = true
-                AlertDialog.Builder(this)
-                    .setTitle("Missing Required Fields")
-                    .setMessage("Please enter the first name for all owners.")
-                    .setPositiveButton("OK", null)
-                    .show()
+                ZdAlert.error(
+                    context = this,
+                    title = "Missing Required Fields",
+                    message = "Please enter the first name for all owners.",
+                    buttonText = "OK"
+                )
                 return@setOnClickListener
             }
 
@@ -1437,8 +1539,42 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 return@setOnClickListener
             }
 
+
+            // ===== VALIDATION: Grower Code (required for ASM / Etihad, format group ke hisab se) =====
+            if (personEntryHelper.isGrowerCodeRequired) {
+                val pattern = personEntryHelper.growerCodePattern
+
+                val personsWithInvalidGrowerCode = rawPersons.filter { person ->
+                    val code = person.growerCode?.replace("\\s".toRegex(), "")?.trim()
+                    code.isNullOrBlank() || !pattern.matches(code)
+                }
+
+                if (personsWithInvalidGrowerCode.isNotEmpty()) {
+                    binding.btnSubmitSurvey.isEnabled = true
+
+                    val invalidCodes = personsWithInvalidGrowerCode.mapIndexed { index, person ->
+                        val name = person.firstName?.takeIf { it.isNotBlank() } ?: "Person ${index + 1}"
+                        val code = person.growerCode?.trim().orEmpty().ifBlank { "Empty" }
+                        "$name  ->  $code"
+                    }
+
+                    ZdAlert.error(
+                        this,
+                        "Grower Code Required",
+                        "Grower code is mandatory. Please enter it in format:  ${personEntryHelper.growerCodeHint}",
+                        details = invalidCodes
+                    )
+                    return@setOnClickListener
+                }
+            }
+
             // ===== VALIDATION: Crop Type must be selected =====
-            if (selectedCropType.isNullOrBlank()) {
+            // Corporate hides the crop block for non "Crop Survey" property types, so
+            // those fields must not be required when they are not on screen.
+            val cropFieldsVisible =
+                binding.layoutCropSurveyFields.visibility == View.VISIBLE
+
+            if (cropFieldsVisible && selectedCropType.isNullOrBlank()) {
                 binding.btnSubmitSurvey.isEnabled = true
 //                AlertDialog.Builder(this)
 //                    .setTitle("Crop Type Required")
@@ -1456,7 +1592,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             }
 
 // ===== VALIDATION: Variety must be selected =====
-            if (selectedVariety.isNullOrBlank()) {
+            if (cropFieldsVisible && selectedVariety.isNullOrBlank()) {
                 binding.btnSubmitSurvey.isEnabled = true
 //                AlertDialog.Builder(this)
 //                    .setTitle("Variety Required")
@@ -1508,11 +1644,14 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 parcelId = parcelId,
                 parcelNo = parcelNo,
                 subParcelNo = subParcelNo,
-                propertyType = binding.spinnerPropertyStatus.selectedItem.toString(),
-                ownershipStatus = binding.spinnerOwnershipStatus.selectedItem.toString(),
-                variety = selectedVariety!!,
-                crop = binding.etCrop.selectedItem.toString(),
-                cropType = selectedCropType!!,
+                // Spinners inside a hidden section can have no selection, and crop
+                // type / variety are cleared when the crop block is hidden. Reading
+                // them with !! crashed the submit and lost the survey.
+                propertyType = binding.spinnerPropertyStatus.selectedItem?.toString().orEmpty(),
+                ownershipStatus = binding.spinnerOwnershipStatus.selectedItem?.toString().orEmpty(),
+                variety = selectedVariety.orEmpty(),
+                crop = binding.etCrop.selectedItem?.toString().orEmpty(),
+                cropType = selectedCropType.orEmpty(),
                 year = binding.etYear.text.toString(),
 //                isGeometryCorrect = binding.cbGeometryCorrect.isChecked,
                 remarks = binding.etRemarks.text.toString(),
@@ -1528,7 +1667,18 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 ).orEmpty(),
                 sowingStatus = if (selectedSowingDate.isNullOrBlank()) "No" else "Yes",
                 sowingDate = selectedSowingDate,   // optional, may be null
-                farmerProfilePath = farmerProfilePath
+                farmerProfilePath = farmerProfilePath,
+                // These stay null in every flow except Corporate Farms
+                zone = if (isCorporateFarm) selectedZone?.zoneName else null,
+                division = if (isCorporateFarm) selectedDivision?.divisionName else null,
+                section = if (isCorporateFarm) selectedSection?.sectionName else null,
+                farm = if (isCorporateFarm) selectedFarm?.farmName else null,
+                block = if (isCorporateFarm) selectedBlock?.blockName else null,
+                plot = if (isCorporateFarm) selectedPlot?.plotName else null,
+                irrigationSource = if (isCorporateFarm) selectedIrrigationSource() else null,
+                irrigationSourceQuantity = if (isCorporateFarm)
+                    binding.etIrrigationQuantity.text?.toString()?.takeIf { it.isNotBlank() }
+                else null
             )
 
             val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
@@ -1536,7 +1686,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
             lifecycleScope.launch {
                 try {
-                    withContext(Dispatchers.IO) {
+                    val (surveyId, growerCodesText) = withContext(Dispatchers.IO) {
                         val surveyId = if (isEditMode) {
                             database.newSurveyNewDao().updateSurvey(survey.copy(pkId = editSurveyId))
 
@@ -1553,6 +1703,27 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                             database.newSurveyNewDao().insertSurvey(survey)
                         }
                         Log.d("SurveyActivity", "=== SAVING SURVEY $surveyId (edit=$isEditMode) ===")
+
+                        // Corporate Farms: link the selected lessors to this survey.
+                        // In edit mode the old rows are removed first, otherwise they duplicate.
+                        if (isCorporateFarm) {
+                            database.surveyLessorDao().deleteForSurvey(surveyId)
+                            selectedLessors.forEach { lessor ->
+                                database.surveyLessorDao().insert(
+                                    SurveyLessorEntity(
+                                        surveyId = surveyId,
+                                        parcelId = parcelId,
+                                        parcelNo = parcelNo,
+                                        subParcelNo = subParcelNo,
+                                        lessorId = lessor.id,
+                                        lessorName = lessor.name,
+                                        lessorCode = lessor.code.orEmpty(),
+                                        lessorType = binding.spinnerLessorType
+                                            .selectedItem?.toString() ?: "Single"
+                                    )
+                                )
+                            }
+                        }
 
                         // ========== SMART PERSON HANDLING ==========
                         rawPersons.forEach { person ->
@@ -1669,7 +1840,22 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                 }
                             }
                         }
+
+                        // withContext ka return value
+                        surveyId to growerCodesText
                     }
+
+                    // ===== ACTIVITY LOG =====
+                    logger.log(
+                        parcelId, parcelNo,
+                        if (isEditMode) ParcelAction.SURVEY_UPDATED else ParcelAction.SURVEY_SAVED,
+                        subParcelNo,
+                        surveyPkId = surveyId,
+                        details = "op=$parcelOperation, opValue=$parcelOperationValue, " +
+                                "variety=$selectedVariety, persons=${rawPersons.size}, " +
+                                "images=${images.size}, growers=$growerCodesText"
+                    )
+
                     ToastUtil.showShort(context, if (isEditMode) "Survey updated" else "Survey saved locally")
                     finish()
                 } catch (e: Exception) {
@@ -1770,4 +1956,293 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     }
 
 
+
+    // =====================================================================
+    //  Corporate Farms
+    //
+    //  The whole section lives inside cardCorporate and stays gone by default.
+    //  The gate is the server's Users.isCorperateUser flag - never group or unit
+    //  id, because corporate and non-corporate users share the same group and the
+    //  same unit.
+    // =====================================================================
+
+    private val isCorporateFarm: Boolean
+        get() = sharedPreferences.getBoolean(Constants.SHARED_PREF_IS_CORPORATE_USER, false)
+
+    private var allZones: List<ZoneEntity> = emptyList()
+    private var allDivisions: List<DivisionEntity> = emptyList()
+    private var allSections: List<SectionEntity> = emptyList()
+    private var allFarms: List<FarmEntity> = emptyList()
+    private var allBlocks: List<BlockEntity> = emptyList()
+    private var allPlots: List<PlotEntity> = emptyList()
+
+    private var selectedZone: ZoneEntity? = null
+    private var selectedDivision: DivisionEntity? = null
+    private var selectedSection: SectionEntity? = null
+    private var selectedFarm: FarmEntity? = null
+    private var selectedBlock: BlockEntity? = null
+    private var selectedPlot: PlotEntity? = null
+
+    private var allLessors: List<LessorEntity> = emptyList()
+    private val selectedLessors = mutableListOf<LessorEntity>()
+
+    private fun setupCorporateSection() {
+        if (!isCorporateFarm) return
+
+        binding.cardCorporate.visibility = View.VISIBLE
+
+        // Corporate captures lessors, not owners/growers, and has no farmer profile -
+        // those sections belong to the Katchi Abadi form only.
+        binding.cardOwners.visibility = View.GONE
+        binding.cardFarmerProfile.visibility = View.GONE
+
+        // Corporate property types come from GetCorporatePropertyTypes, not the
+        // hardcoded Katchi Abadi pair set in setupSpinners().
+        lifecycleScope.launch {
+            val types = corporateRepository.getPropertyTypes()
+            if (types.isNotEmpty()) {
+                binding.spinnerPropertyStatus.adapter = zdAdapter(types)
+
+                // Listener must be attached after the adapter, because the list
+                // arrives asynchronously from the API.
+                binding.spinnerPropertyStatus.onItemSelectedListener =
+                    object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(
+                            parent: AdapterView<*>, view: View?, position: Int, id: Long
+                        ) {
+                            toggleCropSurveyFields(
+                                parent.getItemAtPosition(position).toString() == "Crop Survey"
+                            )
+                        }
+
+                        override fun onNothingSelected(parent: AdapterView<*>) {}
+                    }
+
+                val cropSurveyIndex = types.indexOf("Crop Survey")
+                if (cropSurveyIndex != -1) {
+                    binding.spinnerPropertyStatus.setSelection(cropSurveyIndex)
+                }
+            }
+        }
+
+        binding.spinnerLessorType.adapter = zdAdapter(listOf("Single", "Multiple"))
+        binding.btnSelectLessor.setOnClickListener { showLessorPicker() }
+        refreshSelectedLessorsUi()
+
+        loadIrrigationSources()
+        loadLessors()
+        loadZones()
+    }
+
+    /**
+     *One step of the cascade. Binds the list to the spinner and runs [onPick] on
+     *selection. An empty list shows a placeholder and [onPick] never fires, because
+     *the position is then outside the items range.
+     */
+    private fun <T> bindCascade(
+        spinner: android.widget.Spinner,
+        items: List<T>,
+        label: (T) -> String,
+        emptyText: String,
+        onPick: (T) -> Unit
+    ) {
+        spinner.adapter =
+            zdAdapter(if (items.isEmpty()) listOf(emptyText) else items.map(label))
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                if (position < items.size) onPick(items[position])
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {}
+        }
+    }
+
+    /** When a parent changes, clear every spinner below it - otherwise the old selection lingers. */
+    private fun clearCascadeBelow(level: Int) {
+        if (level <= 1) {
+            selectedDivision = null; allDivisions = emptyList()
+            bindCascade(binding.spinnerDivision, emptyList<DivisionEntity>(), { "" }, "Select zone first") {}
+        }
+        if (level <= 2) {
+            selectedSection = null; allSections = emptyList()
+            bindCascade(binding.spinnerSection, emptyList<SectionEntity>(), { "" }, "Select division first") {}
+        }
+        if (level <= 3) {
+            selectedFarm = null; allFarms = emptyList()
+            bindCascade(binding.spinnerFarm, emptyList<FarmEntity>(), { "" }, "Select section first") {}
+        }
+        if (level <= 4) {
+            selectedBlock = null; allBlocks = emptyList()
+            bindCascade(binding.spinnerBlock, emptyList<BlockEntity>(), { "" }, "Select farm first") {}
+        }
+        if (level <= 5) {
+            selectedPlot = null; allPlots = emptyList()
+            bindCascade(binding.spinnerPlot, emptyList<PlotEntity>(), { "" }, "Select block first") {}
+        }
+    }
+
+    private fun <T> unwrap(result: Resource<List<T>>, what: String): List<T> = when (result) {
+        is Resource.Success -> result.data.orEmpty()
+        is Resource.Error -> {
+            ToastUtil.showShort(context, "$what could not be loaded: ${result.message}")
+            emptyList()
+        }
+        else -> emptyList()
+    }
+
+    private fun loadZones() {
+        lifecycleScope.launch {
+            allZones = unwrap(corporateRepository.getZones(), "Zones")
+            clearCascadeBelow(1)
+            bindCascade(binding.spinnerZone, allZones, { it.zoneName }, "No zones available") { zone ->
+                selectedZone = zone
+                clearCascadeBelow(1)
+                loadDivisions(zone.zoneId)
+            }
+        }
+    }
+
+    private fun loadDivisions(zoneId: Long) {
+        lifecycleScope.launch {
+            allDivisions = unwrap(corporateRepository.getDivisions(zoneId), "Divisions")
+            bindCascade(binding.spinnerDivision, allDivisions, { it.divisionName }, "No divisions") { division ->
+                selectedDivision = division
+                clearCascadeBelow(2)
+                loadSections(division.divisionId)
+            }
+        }
+    }
+
+    private fun loadSections(divisionId: Long) {
+        lifecycleScope.launch {
+            allSections = unwrap(corporateRepository.getSections(divisionId), "Sections")
+            bindCascade(binding.spinnerSection, allSections, { it.sectionName }, "No sections") { section ->
+                selectedSection = section
+                clearCascadeBelow(3)
+                loadFarms(section.sectionId)
+            }
+        }
+    }
+
+    private fun loadFarms(sectionId: Long) {
+        lifecycleScope.launch {
+            allFarms = unwrap(corporateRepository.getFarms(sectionId), "Farms")
+            bindCascade(binding.spinnerFarm, allFarms, { it.farmName }, "No farms") { farm ->
+                selectedFarm = farm
+                clearCascadeBelow(4)
+                loadBlocks(farm.farmId)
+            }
+        }
+    }
+
+    private fun loadBlocks(farmId: Long) {
+        lifecycleScope.launch {
+            allBlocks = unwrap(corporateRepository.getBlocks(farmId), "Blocks")
+            bindCascade(binding.spinnerBlock, allBlocks, { it.blockName }, "No blocks") { block ->
+                selectedBlock = block
+                clearCascadeBelow(5)
+                loadPlots(block.blockId)
+            }
+        }
+    }
+
+    private fun loadPlots(blockId: Long) {
+        lifecycleScope.launch {
+            allPlots = unwrap(corporateRepository.getPlots(blockId), "Plots")
+            bindCascade(binding.spinnerPlot, allPlots, { it.plotName }, "No plots") { plot ->
+                selectedPlot = plot
+            }
+        }
+    }
+
+    private fun loadIrrigationSources() {
+        lifecycleScope.launch {
+            val sources = corporateRepository.getIrrigationSources()
+            binding.spinnerIrrigationSource.adapter =
+                zdAdapter(if (sources.isEmpty()) listOf("No sources available") else sources)
+        }
+    }
+
+    private fun selectedIrrigationSource(): String? =
+        binding.spinnerIrrigationSource.selectedItem
+            ?.toString()
+            ?.takeIf { it.isNotBlank() && !it.startsWith("No ") }
+
+    private fun loadLessors() {
+        lifecycleScope.launch {
+            allLessors = when (val r = lessorRepository.fetchAndCacheLessors()) {
+                is Resource.Success -> r.data.orEmpty()
+                else -> emptyList()
+            }
+        }
+    }
+
+    private fun showLessorPicker() {
+        val multiple = binding.spinnerLessorType.selectedItem?.toString() == "Multiple"
+        LessorSelectionDialog(
+            context = context,
+            lessors = allLessors,
+            currentSelectedId = selectedLessors.firstOrNull()?.id
+        ) { picked ->
+            if (multiple) {
+                if (selectedLessors.none { it.id == picked.id }) selectedLessors.add(picked)
+            } else {
+                selectedLessors.clear()
+                selectedLessors.add(picked)
+            }
+            refreshSelectedLessorsUi()
+        }.show()
+    }
+
+    private fun refreshSelectedLessorsUi() {
+        val container = binding.layoutSelectedLessors
+        container.removeAllViews()
+        binding.tvNoLessors.visibility =
+            if (selectedLessors.isEmpty()) View.VISIBLE else View.GONE
+
+        selectedLessors.forEach { lessor ->
+            val row = TextView(context).apply {
+                text = if (lessor.code.isNullOrBlank()) lessor.name
+                else "${lessor.name}  (${lessor.code})"
+                textSize = 13f
+                setTextColor(android.graphics.Color.parseColor("#1B5E20"))
+                setPadding(0, 10, 0, 10)
+                setOnClickListener {
+                    ZdAlert.confirmDanger(
+                        context = context,
+                        title = "Remove lessor?",
+                        message = "${lessor.name} will be removed from this survey.",
+                        confirmText = "Remove"
+                    ) {
+                        selectedLessors.removeAll { it.id == lessor.id }
+                        refreshSelectedLessorsUi()
+                    }
+                }
+            }
+            container.addView(row)
+        }
+    }
+
+    /**
+     * Corporate only: the crop details and irrigation belong to a "Crop Survey" and are
+     * hidden for every other property type. Hidden fields are also cleared, so a value
+     * picked before switching type cannot leak into the saved survey.
+     */
+    private fun toggleCropSurveyFields(show: Boolean) {
+        binding.layoutCropSurveyFields.visibility = if (show) View.VISIBLE else View.GONE
+        binding.layoutCorporateIrrigation.visibility = if (show) View.VISIBLE else View.GONE
+
+        if (!show) {
+            selectedCropType = null
+            selectedVariety = null
+            selectedSowingDate = null
+            binding.etSowingDate.setText("")
+            binding.etIrrigationQuantity.setText("")
+
+            isSettingSpinnerProgrammatically = true
+            if (binding.etCropType.adapter != null) binding.etCropType.setSelection(0)
+            if (binding.etVariety.adapter != null) binding.etVariety.setSelection(0)
+            isSettingSpinnerProgrammatically = false
+        }
+    }
 }

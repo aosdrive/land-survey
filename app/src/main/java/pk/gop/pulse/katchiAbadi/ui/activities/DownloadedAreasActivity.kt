@@ -17,6 +17,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.adapter.DownloadedAreasAdapter
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.DownloadType
@@ -134,45 +135,33 @@ class DownloadedAreasActivity : AppCompatActivity(), DownloadedAreasItemClickLis
     }
 
     override fun onDeleteItemClicked(survey: MauzaAreaEntry) {
-        val builder = AlertDialog.Builder(this)
-            .setTitle("Confirm!")
-            .setCancelable(false)
-            .setMessage("Are you sure, you want to delete this record?")
-            .setPositiveButton("Proceed") { _, _ ->
-                lifecycleScope.launch {
-                    database.activeParcelDao()
-                        .deleteParcelsByMauzaAndArea(survey.mauzaId, survey.areaAssigned)
-                    //database.surveyDao().deleteAllSurveysWrtArea(survey.mauzaId)
+        ZdAlert.confirmDanger(
+            context = this,
+            title = "Confirm!",
+            message = "Are you sure, you want to delete this record?",
+            confirmText = "Proceed",
+            cancelText = "Cancel"
+        ) {
+            lifecycleScope.launch {
+                database.activeParcelDao()
+                    .deleteParcelsByMauzaAndArea(survey.mauzaId, survey.areaAssigned)
 
-                    val areaName = survey.areaAssigned
-                    val mauzaId = survey.mauzaId
-                    val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
-                    val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
+                val areaName = survey.areaAssigned
+                val mauzaId = survey.mauzaId
+                val sanitizedAreaName = areaName.replace(Regex("[^a-zA-Z0-9_]"), "_")
+                val folderKey = "mauza_${mauzaId}_area_${sanitizedAreaName}"
 
-                    val mapFolder = when (Constants.MAP_DOWNLOAD_TYPE) {
-                        DownloadType.TPK -> "MapTpk/${survey.mauzaId}"
-                        DownloadType.TILES -> "MapTiles/${folderKey}"
-                    }
-                    File(context.filesDir, mapFolder).deleteRecursively()
-
-                    downloadedAreasAdapter.deleteItem(survey, sharedPreferences)
-
-                    // header ka count aur slot meter dobara bhar dein
-                    refreshScreen()
+                val mapFolder = when (Constants.MAP_DOWNLOAD_TYPE) {
+                    DownloadType.TPK -> "MapTpk/${survey.mauzaId}"
+                    DownloadType.TILES -> "MapTiles/${folderKey}"
                 }
+                File(context.filesDir, mapFolder).deleteRecursively()
+
+                downloadedAreasAdapter.deleteItem(survey, sharedPreferences)
+
+                // header ka count aur slot meter dobara bhar dein
+                refreshScreen()
             }
-            .setNegativeButton("Cancel", null)
-
-        val dialog = builder.create()
-        dialog.show()
-
-        dialog.getButton(DialogInterface.BUTTON_POSITIVE)?.apply {
-            textSize = 16f
-            setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
-        }
-        dialog.getButton(DialogInterface.BUTTON_NEGATIVE)?.apply {
-            textSize = 16f
-            setTypeface(android.graphics.Typeface.DEFAULT_BOLD)
         }
     }
 

@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.adapter.NewSurveyAdapter
 import pk.gop.pulse.katchiAbadi.common.Constants
@@ -159,14 +160,15 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
     }
 
     override fun onDeleteClicked(survey: NewSurveyNewEntity) {
-        AlertDialog.Builder(this)
-            .setTitle("Confirm")
-            .setMessage("Do you really want to delete this record?")
-            .setPositiveButton("Yes") { _: DialogInterface, _: Int ->
-                viewModel.deleteData(survey)
-            }
-            .setNegativeButton("No", null)
-            .show()
+        ZdAlert.confirmDanger(
+            context = this,
+            title = "Confirm",
+            message = "Do you really want to delete this record?",
+            confirmText = "Yes",
+            cancelText = "No"
+        ) {
+            viewModel.deleteData(survey)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -177,15 +179,16 @@ class NewSavedRecordsActivity : AppCompatActivity(), NewSurveyAdapter.OnItemClic
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.upload_all) {
             if (Utility.checkInternetConnection(this)) {
-                AlertDialog.Builder(this)
-                    .setTitle("Confirm Upload")
-                    .setMessage("Upload all pending records?")
-                    .setPositiveButton("Yes") { _, _ ->
-                        uploadType = Constants.UPLOAD_ALL
-                        uploadNextSurvey()
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
+                ZdAlert.confirm(
+                    context = this,
+                    title = "Confirm Upload",
+                    message = "Upload all pending records?",
+                    confirmText = "Yes",
+                    cancelText = "Cancel"
+                ) {
+                    uploadType = Constants.UPLOAD_ALL
+                    uploadNextSurvey()
+                }
             } else {
                 Utility.dialog(this, "Please connect to the internet first.", "No Internet")
             }

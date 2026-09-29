@@ -57,4 +57,11 @@ interface NewSurveyNewDao {
     @Query("SELECT * FROM active_parcels WHERE parcelNo = :parcelNo AND mauzaId = :mauzaId AND areaAssigned = :areaName AND isActivate = 1")
     suspend fun getActiveParcelsByParcelNumber(parcelNo: Long, mauzaId: Long, areaName: String): List<ActiveParcelEntity>
 
+    @Query("UPDATE new_surveys SET variety = :variety WHERE parcelId = :parcelId")
+    suspend fun updateVarietyByParcelId(parcelId: Long, variety: String)
+
+    // Corporate Farms: these parcels must survive a tehsil re-sync, because their
+    // survey has not been uploaded yet.
+    @Query("SELECT DISTINCT parcelId FROM new_surveys WHERE statusBit = 0")
+    suspend fun getPendingParcelIds(): List<Long>
 }

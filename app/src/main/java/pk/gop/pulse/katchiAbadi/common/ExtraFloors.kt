@@ -12,6 +12,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import kotlinx.parcelize.Parceler
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import kotlinx.parcelize.Parcelize
 
@@ -85,11 +86,13 @@ data class ExtraFloors(
         }
 
         tvDeleteFloor?.setOnClickListener {
-            val builder = AlertDialog.Builder(fragment.requireContext())
-            builder.setMessage("Do You want to Delete this Floor?")
-                .setTitle("Confirm Deletion!")
-            builder.setPositiveButton("Yes") { dialog, _ ->
-                dialog.dismiss()
+            ZdAlert.confirmDanger(
+                context = fragment.requireContext(),
+                title = "Confirm Deletion!",
+                message = "Do You want to Delete this Floor?",
+                confirmText = "Yes",
+                cancelText = "No"
+            ) {
                 try {
                     parent.removeView(view)
                 } catch (e: Exception) {
@@ -105,10 +108,6 @@ data class ExtraFloors(
                     extraFloorsInterface.makeAddMoreButtonVisible()
                 }
             }
-            builder.setNegativeButton("No") { dialog, _ ->
-                dialog.dismiss()
-            }
-            builder.create().show()
         }
 
         tvDeleteFloor?.visibility = if (priority < 2) View.GONE else View.VISIBLE

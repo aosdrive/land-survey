@@ -35,6 +35,7 @@ import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.MenuRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NAHRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NewSurveyRepositoryImpl
+import pk.gop.pulse.katchiAbadi.data.repository.ParcelActivityLogger
 import pk.gop.pulse.katchiAbadi.data.repository.SavedRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.SurveyFormRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.SurveyRepositoryImpl
@@ -608,7 +609,8 @@ object AppModule {
         db: AppDatabase,
         api: ServerApi,
         sharedPreferences: SharedPreferences,
-        activeParcelDao: ActiveParcelDao
+        activeParcelDao: ActiveParcelDao,
+        logger: ParcelActivityLogger
     ): NewSurveyRepository {
         return NewSurveyRepositoryImpl(
             dao,
@@ -618,6 +620,8 @@ object AppModule {
             api,
             sharedPreferences,
             activeParcelDao,
+            logger,
+            db.surveyLessorDao()
         )
     }
     @Provides
@@ -641,4 +645,20 @@ object AppModule {
         api,
         sharedPreferences
     )
+
+    @Provides fun provideParcelActivityLogDao(db: AppDatabase) = db.parcelActivityLogDao()
+
+    // ---- Corporate Farms ----
+    // LessorRepository ka apna @Inject constructor hai, is liye uska @Provides nahi chahiye.
+    @Provides fun provideZoneDao(db: AppDatabase) = db.zoneDao()
+    @Provides fun provideDivisionDao(db: AppDatabase) = db.divisionDao()
+    @Provides fun provideSectionDao(db: AppDatabase) = db.sectionDao()
+    @Provides fun provideFarmDao(db: AppDatabase) = db.farmDao()
+    @Provides fun provideBlockDao(db: AppDatabase) = db.blockDao()
+    @Provides fun providePlotDao(db: AppDatabase) = db.plotDao()
+    @Provides fun provideLessorDao(db: AppDatabase) = db.lessorDao()
+    @Provides fun provideSurveyLessorDao(db: AppDatabase) = db.surveyLessorDao()
+    @Provides fun provideIrrigationSourceDao(db: AppDatabase) = db.irrigationSourceDao()
+    @Provides fun providePropertyTypeDao(db: AppDatabase) = db.propertyTypeDao()
+    @Provides fun provideAoiBoundaryDao(db: AppDatabase) = db.aoiBoundaryDao()
 }

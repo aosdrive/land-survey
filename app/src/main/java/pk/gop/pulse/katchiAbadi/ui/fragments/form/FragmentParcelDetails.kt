@@ -35,6 +35,7 @@ import com.devstune.searchablemultiselectspinner.SearchableMultiSelectSpinner
 import com.devstune.searchablemultiselectspinner.SelectionCompleteListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Utility
@@ -80,7 +81,7 @@ class FragmentParcelDetails : Fragment(), RadioGroup.OnCheckedChangeListener {
                     // Display a rationale and request permission again
                     showMessageOKCancel(
                         "You need to allow camera permission"
-                    ) { _, _ ->
+                    ) {
                         requestCameraPermission()
                     }
                 }
@@ -389,55 +390,30 @@ class FragmentParcelDetails : Fragment(), RadioGroup.OnCheckedChangeListener {
     }
 
     private fun showSettingsDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-            .setMessage("You have denied permission permanently. Please go to settings to enable it.")
-            .setPositiveButton("Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                val uri = Uri.fromParts("package", requireContext().packageName, null)
-                intent.data = uri
-                startActivity(intent)
-            }
-            .setNegativeButton("Cancel", null)
-
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        ZdAlert.confirm(
+            context = requireContext(),
+            title = "Permission needed",
+            message = "You have denied permission permanently. Please go to settings to enable it.",
+            confirmText = "Settings",
+            cancelText = "Cancel"
+        ) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = Uri.fromParts("package", requireContext().packageName, null)
+            startActivity(intent)
+        }
     }
 
-    private fun showMessageOKCancel(message: String, okListener: DialogInterface.OnClickListener) {
-        val builder = AlertDialog.Builder(requireContext())
-            .setMessage(message)
-            .setPositiveButton("OK", okListener)
-            .setNegativeButton("Cancel", null)
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+    // Takes a plain lambda instead of DialogInterface.OnClickListener - ZdAlert does not
+    // hand a DialogInterface back to the caller.
+    private fun showMessageOKCancel(message: String, onOk: () -> Unit) {
+        ZdAlert.confirm(
+            context = requireContext(),
+            title = "Permission needed",
+            message = message,
+            confirmText = "OK",
+            cancelText = "Cancel",
+            onConfirm = onOk
+        )
     }
 
     private fun startCamera() {

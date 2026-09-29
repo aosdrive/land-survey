@@ -31,7 +31,18 @@ data class NewSurveyNewEntity(
     val sowingStatus: String = "No",
     val sowingDate: String? = null,
     val farmerProfilePath: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // ---- Corporate Farms ----
+    // These are always null in the Katchi Abadi flow.
+    val zone: String? = null,
+    val division: String? = null,
+    val section: String? = null,
+    val farm: String? = null,
+    val block: String? = null,
+    val plot: String? = null,
+    val irrigationSource: String? = null,
+    val irrigationSourceQuantity: String? = null
 )
 
 

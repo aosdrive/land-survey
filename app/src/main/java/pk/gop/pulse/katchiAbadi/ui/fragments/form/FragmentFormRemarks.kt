@@ -47,6 +47,7 @@ import com.journeyapps.barcodescanner.ScanOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.common.Constants
@@ -109,7 +110,7 @@ class FragmentFormRemarks : Fragment(), ExtraPicturesInterface {
                     // Display a rationale and request permission again
                     showMessageOKCancel(
                         "You need to allow camera permission"
-                    ) { _, _ ->
+                    ) {
                         requestCameraPermission(requestCode)
                     }
                 }
@@ -132,7 +133,7 @@ class FragmentFormRemarks : Fragment(), ExtraPicturesInterface {
                     // Display a rationale and request permission again
                     showMessageOKCancel(
                         "You need to allow location permission"
-                    ) { _, _ ->
+                    ) {
                         requestPermission()
                     }
                 }
@@ -586,54 +587,30 @@ class FragmentFormRemarks : Fragment(), ExtraPicturesInterface {
     }
 
     private fun showSettingsDialog(value: String) {
-        val builder = AlertDialog.Builder(requireContext())
-            .setMessage("You have denied $value permission permanently. Please go to settings to enable it.")
-            .setPositiveButton("Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                val uri = Uri.fromParts("package", requireContext().packageName, null)
-                intent.data = uri
-                startActivity(intent)
-            }
-            .setNegativeButton("Cancel", null)
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        ZdAlert.confirm(
+            context = requireContext(),
+            title = "Permission needed",
+            message = "You have denied $value permission permanently. Please go to settings to enable it.",
+            confirmText = "Settings",
+            cancelText = "Cancel"
+        ) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = Uri.fromParts("package", requireContext().packageName, null)
+            startActivity(intent)
+        }
     }
 
-    private fun showMessageOKCancel(message: String, okListener: DialogInterface.OnClickListener) {
-        val builder = AlertDialog.Builder(requireContext())
-            .setMessage(message)
-            .setPositiveButton("OK", okListener)
-            .setNegativeButton("Cancel", null)
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+    // Takes a plain lambda instead of DialogInterface.OnClickListener - ZdAlert does not
+    // hand a DialogInterface back to the caller.
+    private fun showMessageOKCancel(message: String, onOk: () -> Unit) {
+        ZdAlert.confirm(
+            context = requireContext(),
+            title = "Permission needed",
+            message = message,
+            confirmText = "OK",
+            cancelText = "Cancel",
+            onConfirm = onOk
+        )
     }
 
     private fun extraPicture() {
@@ -1114,48 +1091,13 @@ class FragmentFormRemarks : Fragment(), ExtraPicturesInterface {
                             else -> saveData()
                         }
                     } else {
-                        val builder = AlertDialog.Builder(requireActivity())
-                            .setTitle("Alert!")
-                            .setCancelable(false)
-                            .setMessage("Data cannot be saved, \"$validationValue\" while saving the data, restart the application.")
-                            .setPositiveButton("Exit") { _, _ ->
-                                Intent(context, MenuActivity::class.java).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    startActivity(this)
-                                    requireActivity().finish()
-                                    Utility.dismissProgressAlertDialog()
-                                }
-                            }
-                            .setNegativeButton("Cancel", null)
-
-                        // Create the AlertDialog object
-                        val dialog = builder.create()
-                        dialog.show()
-
-                        // Get the buttons from the dialog
-                        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                        // Set button text size and style
-                        positiveButton.textSize =
-                            16f // Change the size according to your preference
-                        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                        negativeButton.textSize =
-                            16f // Change the size according to your preference
-                        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-                    }
-
-                } else {
-                    val builder = AlertDialog.Builder(requireActivity())
-                        .setTitle("Alert!")
-                        .setCancelable(false)
-                        .setMessage(
-                            "The Mobile time and GPS time of your device are not synchronized. This may lead to " +
-                                    "incorrect data being saved. Please restart the mobile to " +
-                                    "resolve this issue."
-                        )
-                        .setPositiveButton("Exit") { _, _ ->
+                        ZdAlert.confirm(
+                            context = requireActivity(),
+                            title = "Alert!",
+                            message = "Data cannot be saved, \"$validationValue\" while saving the data, restart the application.",
+                            confirmText = "Exit",
+                            cancelText = "Cancel"
+                        ) {
                             Intent(context, MenuActivity::class.java).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 startActivity(this)
@@ -1163,24 +1105,25 @@ class FragmentFormRemarks : Fragment(), ExtraPicturesInterface {
                                 Utility.dismissProgressAlertDialog()
                             }
                         }
-                        .setNegativeButton("Cancel", null)
+                    }
 
-                    // Create the AlertDialog object
-                    val dialog = builder.create()
-                    dialog.show()
-
-                    // Get the buttons from the dialog
-                    val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                    val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                    // Set button text size and style
-                    positiveButton.textSize =
-                        16f // Change the size according to your preference
-                    positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                    negativeButton.textSize =
-                        16f // Change the size according to your preference
-                    negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                } else {
+                    ZdAlert.confirm(
+                        context = requireActivity(),
+                        title = "Alert!",
+                        message = "The Mobile time and GPS time of your device are not synchronized. " +
+                                "This may lead to incorrect data being saved. Please restart the " +
+                                "mobile to resolve this issue.",
+                        confirmText = "Exit",
+                        cancelText = "Cancel"
+                    ) {
+                        Intent(context, MenuActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(this)
+                            requireActivity().finish()
+                            Utility.dismissProgressAlertDialog()
+                        }
+                    }
                 }
             }
         }
@@ -1212,33 +1155,18 @@ class FragmentFormRemarks : Fragment(), ExtraPicturesInterface {
     }
 
     private fun showAlertDialog() {
-        val builder = AlertDialog.Builder(requireActivity())
-            .setTitle("Alert!")
-            .setCancelable(false)
-            .setMessage("Are you sure you want to go back? Please note that the form will be reset, if you proceed to leave")
-            .setPositiveButton("Proceed") { _, _ ->
-                viewModel.resetValues(false)
-                if (isAdded) {
-                    findNavController().popBackStack()
-                }
+        ZdAlert.confirm(
+            context = requireActivity(),
+            title = "Alert!",
+            message = "Are you sure you want to go back? Please note that the form will be reset, if you proceed to leave",
+            confirmText = "Proceed",
+            cancelText = "Cancel"
+        ) {
+            viewModel.resetValues(false)
+            if (isAdded) {
+                findNavController().popBackStack()
             }
-            .setNegativeButton("Cancel", null)
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        }
     }
 
 

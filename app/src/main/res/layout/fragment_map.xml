@@ -548,4 +548,160 @@
         app:srcCompat="@android:drawable/ic_menu_mylocation"
         app:tint="#2E7D32" />
 
+
+    <!-- ============ DRAW PARCEL FAB (boundary load hone par code se VISIBLE hota hai) ============ -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_start_draw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="18dp"
+        android:layout_marginBottom="90dp"
+        android:contentDescription="Draw parcel"
+        android:visibility="gone"
+        app:backgroundTint="#E65100"
+        app:borderWidth="0dp"
+        app:elevation="12dp"
+        app:srcCompat="@android:drawable/ic_menu_edit"
+        app:tint="#FFFFFF" />
+
+    <!-- ============ DRAW MODE ============ -->
+    <LinearLayout
+        android:id="@+id/layout_draw_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/zd_sheet_top"
+        android:elevation="20dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="20dp"
+        android:visibility="gone">
+
+        <View
+            android:layout_width="38dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:background="#C8E6C9" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="24dp"
+                android:layout_height="2dp"
+                android:background="#E65100" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:letterSpacing="0.15"
+                android:text="DRAW MODE"
+                android:textColor="#E65100"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="16dp"
+            android:text="Tap inside the boundary to add points (at least 3)"
+            android:textColor="#6B8A6B"
+            android:textSize="13sp" />
+
+        <!-- Row 1: tools -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_trace"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:text="Trace: Off"
+                android:textAllCaps="false"
+                android:textColor="#455A64"
+                android:textSize="13sp"
+                app:cornerRadius="12dp"
+                app:icon="@android:drawable/ic_menu_directions"
+                app:iconGravity="textStart"
+                app:iconSize="16dp"
+                app:iconTint="#455A64"
+                app:strokeColor="#B0BEC5"
+                app:strokeWidth="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_undo_draw_point"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1"
+                android:text="Undo"
+                android:textAllCaps="false"
+                android:textColor="#2E5A2E"
+                android:textSize="13sp"
+                app:cornerRadius="12dp"
+                app:icon="@android:drawable/ic_menu_revert"
+                app:iconGravity="textStart"
+                app:iconSize="16dp"
+                app:iconTint="#2E5A2E"
+                app:strokeColor="#C8E6C9"
+                app:strokeWidth="1dp" />
+        </LinearLayout>
+
+        <!-- Row 2: actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_cancel_draw"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginEnd="7dp"
+                android:layout_weight="1"
+                android:letterSpacing="0.05"
+                android:text="Cancel"
+                android:textAllCaps="false"
+                android:textColor="#2E5A2E"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="#F1F6F1"
+                app:cornerRadius="16dp"
+                app:strokeColor="#C8E6C9"
+                app:strokeWidth="1dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_done_draw"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_marginStart="7dp"
+                android:layout_weight="1"
+                android:letterSpacing="0.05"
+                android:text="Save Parcel"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="#E65100"
+                app:cornerRadius="16dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

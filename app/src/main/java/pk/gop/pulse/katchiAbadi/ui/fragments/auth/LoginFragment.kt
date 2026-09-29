@@ -62,7 +62,6 @@ class LoginFragment : Fragment() {
 
             tvFooter.text =
                 tvFooter.text.toString().replace("Version", "Version ${Constants.VERSION_NAME}")
-
             btnLogin.setOnClickListener {
                 requireActivity().let { activity -> Utility.closeKeyBoard(activity) }
                 if (Utility.checkInternetConnection(requireContext())) {
@@ -164,11 +163,21 @@ class LoginFragment : Fragment() {
                         is Resource.Success -> {
                             binding.btnLogin.revertAnimation()
                             it.data?.let { loginData ->
+                                Log.d("LOGIN_DEBUG", "groupId=${loginData.groupId}, groupName=${loginData.groupName}, unitId=${loginData.unitId}, unitName=${loginData.unitName}, isCorporateUser=${loginData.isCorporateUser}")
                                 sharedPreferences.edit()
                                     .putInt(Constants.SHARED_PREF_LOGIN_STATUS, Constants.LOGIN_STATUS_ACTIVE)
                                     .putLong(Constants.SHARED_PREF_USER_ID, loginData.userId)
                                     .putString(Constants.SHARED_PREF_TOKEN, loginData.token)
                                     .putString(Constants.SHARED_PREF_USER_NAME, loginData.name)
+                                    .putInt(Constants.SHARED_PREF_USER_GROUP_ID, loginData.groupId ?: 0)
+                                    .putString(Constants.SHARED_PREF_USER_GROUP_NAME, loginData.groupName ?: "")
+                                    .putInt(Constants.SHARED_PREF_USER_UNIT_ID, loginData.unitId ?: 0)
+                                    .putString(Constants.SHARED_PREF_USER_UNIT_NAME, loginData.unitName ?: "")
+                                    .putString(Constants.SHARED_PREF_USER_ROLE, loginData.roleName ?: "")
+                                    .putBoolean(
+                                        Constants.SHARED_PREF_IS_CORPORATE_USER,
+                                        loginData.isCorporateUser == true
+                                    )
                                     .apply()
 
                                 ToastUtil.showShort(requireContext(),"Login successful! Welcome ${loginData.name}")

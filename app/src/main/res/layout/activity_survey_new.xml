@@ -84,6 +84,342 @@
                 tools:text="P/N: 2759/1    GC= 263-14-3    Area: 12034    ID: 9681486" />
         </LinearLayout>
 
+
+        <!-- ================= CORPORATE FARM =================
+             The whole card stays gone and is shown only for a Corporate Farms surveyor
+             - see SurveyActivity.isCorporateFarm -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardCorporate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="14dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="16dp">
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#2E7D32" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:letterSpacing="0.15"
+                        android:text="FARM LOCATION"
+                        android:textColor="#2E7D32"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="ZONE"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerZone"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="DIVISION"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerDivision"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="SECTION"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="FARM"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerFarm"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="BLOCK"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerBlock"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="PLOT"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerPlot"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <!-- Irrigation - follows the same Crop Survey toggle -->
+                <LinearLayout
+                    android:id="@+id/layoutCorporateIrrigation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                <!-- Irrigation -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="16dp">
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#B47B12" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:letterSpacing="0.15"
+                        android:text="IRRIGATION"
+                        android:textColor="#B47B12"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="SOURCE"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerIrrigationSource"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilIrrigationQuantity"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:hint="Quantity"
+                    app:boxBackgroundColor="#F6FAF6"
+                    app:boxCornerRadiusBottomEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxStrokeColor="#2E7D32"
+                    app:boxStrokeErrorColor="#C62828"
+                    app:helperText="e.g. number of tubewells or canal turns"
+                    app:hintTextColor="#2E7D32">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etIrrigationQuantity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:textColor="#1B5E20"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Lessor (theka) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="16dp">
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="2dp"
+                        android:background="#2E7D32" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:letterSpacing="0.15"
+                        android:text="LESSOR"
+                        android:textColor="#2E7D32"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.1"
+                    android:paddingBottom="6dp"
+                    android:text="LESSOR TYPE"
+                    android:textColor="#6B8A6B"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerLessorType"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginBottom="14dp"
+                    android:background="@drawable/zd_spinner_bg"
+                    android:dropDownVerticalOffset="6dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="38dp"
+                    android:popupBackground="@drawable/zd_dropdown_bg"
+                    android:spinnerMode="dropdown" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSelectLessor"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Select Lessor"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="#1B5E20"
+                    app:cornerRadius="14dp" />
+
+                <TextView
+                    android:id="@+id/tvNoLessors"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="12dp"
+                    android:text="No lessor selected yet"
+                    android:textColor="#6B8A6B"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:id="@+id/layoutSelectedLessors"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="8dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -168,6 +504,12 @@
                     android:popupBackground="@drawable/zd_dropdown_bg"
                     android:spinnerMode="dropdown" />
 
+                <!-- Crop details - hidden unless the property type is Crop Survey -->
+                <LinearLayout
+                    android:id="@+id/layoutCropSurveyFields"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -305,6 +647,7 @@
                         android:focusable="false"
                         android:inputType="none" />
                 </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -336,6 +679,7 @@
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
+            android:id="@+id/cardOwners"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
@@ -640,6 +984,7 @@
         </androidx.cardview.widget.CardView>
 
         <androidx.cardview.widget.CardView
+            android:id="@+id/cardFarmerProfile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"

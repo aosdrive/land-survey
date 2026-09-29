@@ -27,6 +27,7 @@ import com.esri.arcgisruntime.geometry.Polygon
 import com.esri.arcgisruntime.geometry.PolygonBuilder
 import com.esri.arcgisruntime.geometry.SpatialReference
 import pk.gop.pulse.katchiAbadi.R
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
@@ -57,6 +58,11 @@ class Utility {
 
         fun showProgressAlertDialog(mAct: Context, message: String) {
 
+            // Dismiss anything already on screen first. Each call used to overwrite the
+            // shared field with a new dialog and leave the old one showing forever, so a
+            // flow that showed two progress messages left the first spinner stuck.
+            dismissProgressAlertDialog()
+
             val builder = AlertDialog.Builder(mAct)
             val inflater = LayoutInflater.from(mAct)
             val dialogView: View =
@@ -84,27 +90,23 @@ class Utility {
         }
 
         fun dialog(activity: Context?, message: String?, title: String?) {
-            val alertDialog = AlertDialog.Builder(activity)
-            alertDialog.setMessage(message)
-            alertDialog.setTitle(title)
-            alertDialog.setCancelable(false)
-            alertDialog.setPositiveButton("OK", null)
-            alertDialog.create()
-            alertDialog.show()
+            ZdAlert.warn(
+                context = activity ?: return,
+                title = title.orEmpty(),
+                message = message.orEmpty(),
+                buttonText = "OK"
+            )
         }
 
         fun exitApplication(title: String?, message: String?, activity: Activity) {
             try {
-                val builder = AlertDialog.Builder(activity)
-                if (title != null) {
-                    builder.setTitle(title)
-                }
-                builder.setMessage(message)
-                builder.setPositiveButton(
-                    "OK"
-                ) { _, _ -> killApplicationProcess(activity) }
-                builder.create()
-                builder.show()
+                ZdAlert.warn(
+                    context = activity,
+                    title = title.orEmpty(),
+                    message = message.orEmpty(),
+                    buttonText = "OK",
+                    onDismiss = { killApplicationProcess(activity) }
+                )
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -127,21 +129,18 @@ class Utility {
         }
 
         fun buildAlertMessageNoGps(activity: Activity) {
-            val builder = AlertDialog.Builder(activity)
-            builder.setTitle("Alert!")
-            builder.setMessage(activity.resources.getString(pk.gop.pulse.katchiAbadi.R.string.app_name) + " wants you to enable the GPS Sensor!")
-                .setCancelable(false)
-                .setPositiveButton(
-                    "Enable"
-                ) { _, _ -> activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) }
-                .setNegativeButton(
-                    "Cancel"
-                ) { dialog, _ ->
-                    dialog.cancel()
-                    activity.finish()
-                }
-            val alert = builder.create()
-            alert.show()
+            ZdAlert.confirm(
+                context = activity,
+                title = "Alert!",
+                message = activity.resources
+                    .getString(pk.gop.pulse.katchiAbadi.R.string.app_name) +
+                        " wants you to enable the GPS Sensor!",
+                confirmText = "Enable",
+                cancelText = "Cancel",
+                onCancel = { activity.finish() }
+            ) {
+                activity.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            }
         }
 
         fun mockLocationCheck(activity: Activity) {

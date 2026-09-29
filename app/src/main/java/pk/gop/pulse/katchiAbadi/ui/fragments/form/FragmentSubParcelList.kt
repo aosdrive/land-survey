@@ -18,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.ui.activities.SurveyActivity
@@ -161,51 +162,22 @@ class FragmentSubParcelList : Fragment(), SubParcelItemClickListener {
 
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val builder = AlertDialog.Builder(requireActivity())
-                    .setTitle("Alert!")
-                    .setCancelable(false)
-                    .setMessage("Are you sure you want to exit the form? Please note that any unsaved data will be lost if you proceed to leave")
-                    .setPositiveButton("Exit") { _, _ ->
-                        Intent(context, MenuActivity::class.java).apply {
-//                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-//                            startActivity(this)
-//                            requireActivity().finish()
-//                            Utility.dismissProgressAlertDialog()
-                            lifecycleScope.launch {
-                                // Clear all temp logs
-                                database.tempSurveyLogDao().clearAllLogs()
+                ZdAlert.confirm(
+                    context = requireActivity(),
+                    title = "Alert!",
+                    message = "Are you sure you want to exit the form? Please note that any unsaved data will be lost if you proceed to leave",
+                    confirmText = "Exit",
+                    cancelText = "Cancel"
+                ) {
+                    lifecycleScope.launch {
+                        // Clear all temp logs
+                        database.tempSurveyLogDao().clearAllLogs()
 
-                                // Save other data if you want
-                                // viewModel.saveAllData(viewModel.parcelNo)
-
-                                // Navigate to Map Fragment
-                                // If you use Navigation Component:
-                                findNavController().navigate(R.id.action_fragmentSubParcelList_to_fragmentMap)
-
-                                // Or if MapFragment is your activity, you can start it like:
-                                // val intent = Intent(requireContext(), MapActivity::class.java)
-                                // startActivity(intent)
-                                // requireActivity().finish()
-                            }
-                        }
+                        // Navigate back to the map
+                        findNavController()
+                            .navigate(R.id.action_fragmentSubParcelList_to_fragmentMap)
                     }
-                    .setNegativeButton("Cancel", null)
-                // Create the AlertDialog object
-                val dialog = builder.create()
-                dialog.show()
-
-                // Get the buttons from the dialog
-                val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                // Set button text size and style
-                positiveButton.textSize =
-                    16f // Change the size according to your preference
-                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                negativeButton.textSize =
-                    16f // Change the size according to your preference
-                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                }
 
 
             }

@@ -23,6 +23,7 @@ import pk.gop.pulse.katchiAbadi.data.repository.TaskRepository
 import pk.gop.pulse.katchiAbadi.databinding.ActivityPendingTasksBinding
 import pk.gop.pulse.katchiAbadi.domain.model.TaskEntity
 import pk.gop.pulse.katchiAbadi.presentation.util.ToastUtil
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -107,23 +108,24 @@ class PendingTasksActivity : AppCompatActivity() {
             return
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Upload All")
-            .setMessage("Upload all pending tasks now?")
-            .setPositiveButton("Upload") { _, _ ->
-                binding.progressBar.visibility = View.VISIBLE
-                binding.btnUploadAll.isEnabled = false
+        ZdAlert.confirm(
+            context = this,
+            title = "Upload All",
+            message = "Upload all pending tasks now?",
+            confirmText = "Upload",
+            cancelText = "Cancel"
+        ) {
+            binding.progressBar.visibility = View.VISIBLE
+            binding.btnUploadAll.isEnabled = false
 
-                lifecycleScope.launch {
-                    val summary = taskRepository.uploadAllPendingTasks()
-                    binding.progressBar.visibility = View.GONE
-                    binding.btnUploadAll.isEnabled = true
+            lifecycleScope.launch {
+                val summary = taskRepository.uploadAllPendingTasks()
+                binding.progressBar.visibility = View.GONE
+                binding.btnUploadAll.isEnabled = true
 
-                    showUploadAllResult(summary)
-                }
+                showUploadAllResult(summary)
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
     }
 
     private fun showUploadAllResult(summary: TaskRepository.UploadSummary) {
@@ -163,61 +165,67 @@ class PendingTasksActivity : AppCompatActivity() {
             }
         }
 
-        val builder = AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-
-        // If everything failed, offer a Retry button
+        // Retry only makes sense when nothing at all got through.
         if (summary.failed > 0 && summary.success == 0) {
-            builder.setNegativeButton("Retry") { _, _ -> uploadAll() }
+            ZdAlert.confirm(
+                context = this,
+                title = title,
+                message = message,
+                confirmText = "Retry",
+                cancelText = "OK"
+            ) { uploadAll() }
+        } else {
+            ZdAlert.warn(
+                context = this,
+                title = title,
+                message = message,
+                buttonText = "OK"
+            )
         }
-
-        builder.show()
     }
 
     // =============================================================
     //   DELETE
     // =============================================================
     private fun confirmDelete(task: TaskEntity) {
-        AlertDialog.Builder(this)
-            .setTitle("Delete Task")
-            .setMessage("Discard this pending task? This cannot be undone.")
-            .setPositiveButton("Delete") { _, _ ->
-                lifecycleScope.launch {
-                    taskRepository.deletePendingTask(task)
-                    ToastUtil.showShort(this@PendingTasksActivity, "Task deleted")
-                }
+        ZdAlert.confirmDanger(
+            context = this,
+            title = "Delete Task",
+            message = "Discard this pending task? This cannot be undone.",
+            confirmText = "Delete",
+            cancelText = "Cancel"
+        ) {
+            lifecycleScope.launch {
+                taskRepository.deletePendingTask(task)
+                ToastUtil.showShort(this@PendingTasksActivity, "Task deleted")
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
     }
 
     // =============================================================
     //   DIALOG HELPERS
     // =============================================================
     private fun showNoInternetDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("No Internet Connection")
-            .setMessage(
-                "You need an active internet connection to upload tasks.\n\n" +
-                        "Please turn on Wi-Fi or mobile data and try again. " +
-                        "Your tasks are safely saved on this device and won't be lost."
-            )
-            .setPositiveButton("Open Settings") { _, _ ->
+        ZdAlert.confirm(
+            context = this,
+            title = "No Internet Connection",
+            message = "You need an active internet connection to upload tasks.\n\n" +
+                    "Please turn on Wi-Fi or mobile data and try again. " +
+                    "Your tasks are safely saved on this device and won't be lost.",
+            confirmText = "Open Settings",
+            cancelText = "Cancel"
+        ) {
+            try {
+                startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
+            } catch (e: Exception) {
+                // Fallback if the wireless settings intent is unavailable
                 try {
-                    startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS))
-                } catch (e: Exception) {
-                    // Fallback if the wireless settings intent is unavailable
-                    try {
-                        startActivity(Intent(Settings.ACTION_SETTINGS))
-                    } catch (_: Exception) {
-                        ToastUtil.showShort(this, "Couldn't open settings")
-                    }
+                    startActivity(Intent(Settings.ACTION_SETTINGS))
+                } catch (_: Exception) {
+                    ToastUtil.showShort(this, "Couldn't open settings")
                 }
             }
-            .setNegativeButton("Cancel", null)
-            .show()
+        }
     }
 
     private fun showUploadFailedDialog(
@@ -225,12 +233,13 @@ class PendingTasksActivity : AppCompatActivity() {
         message: String,
         onRetry: () -> Unit
     ) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("Retry") { _, _ -> onRetry() }
-            .setNegativeButton("Cancel", null)
-            .show()
+        ZdAlert.confirm(
+            context = this,
+            title = title,
+            message = message,
+            confirmText = "Retry",
+            cancelText = "Cancel"
+        ) { onRetry() }
     }
 
     /** Convert raw error messages into something user-friendly. */

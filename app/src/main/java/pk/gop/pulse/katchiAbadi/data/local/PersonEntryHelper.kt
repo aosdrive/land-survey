@@ -10,13 +10,15 @@ import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import pk.gop.pulse.katchiAbadi.R
+import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.databinding.ItemPersonEntryBinding
 import pk.gop.pulse.katchiAbadi.databinding.ItemPersonSummaryBinding
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
 
 class PersonEntryHelper(
     private val context: Context,
-    private val container: LinearLayout
+    private val container: LinearLayout,
+    private val groupId: Int = 0
 ) {
 
     private data class PersonSlot(
@@ -29,6 +31,28 @@ class PersonEntryHelper(
     private val genderOptions = listOf("Male", "Female", "Other")
     private val ownershipOptions = listOf("Owner", "Leasee", "Other")
     private val relationOptions = listOf("Father", "Husband", "Other")
+
+
+        /** Grower code ka format group ke hisab se. groups = digits per block, e.g. [2,3,5] = 00-000-00000 */
+        private class GrowerCodeSpec(val groups: List<Int>, val editable: Boolean, val required: Boolean, val cnicAsGrowerCode: Boolean = false) {
+            val maxDigits = groups.sum()
+            val maxLen = maxDigits + groups.size - 1
+            val dashBefore: Set<Int> = groups.runningReduce { a, b -> a + b }.dropLast(1).toSet()
+            val pattern = Regex("^" + groups.joinToString("-") { "\\d{$it}" } + "$")
+            val hint = groups.joinToString("-") { "0".repeat(it) }
+        }
+
+        private val spec: GrowerCodeSpec = when (groupId) {
+            Constants.GROUP_ID_ASM    -> GrowerCodeSpec(listOf(2, 5),    editable = true,  required = true)   // 00-00000
+            Constants.GROUP_ID_ETIHAD -> GrowerCodeSpec(listOf(2, 3, 5), editable = true,  required = true)   // 00-000-00000,
+            Constants.GROUP_ID_RYK    -> GrowerCodeSpec(listOf(2, 2, 5), editable = false, required = false, cnicAsGrowerCode = true)
+            else                      -> GrowerCodeSpec(listOf(2, 2, 5), editable = false, required = false)  // 00-00-00000 (list se)
+        }
+
+        // SurveyActivity ki validation ke liye
+        val isGrowerCodeRequired get() = spec.required
+        val growerCodePattern get() = spec.pattern
+        val growerCodeHint get() = spec.hint
 
     // =====================================================================
     //  PUBLIC: pehle jaisa naam, magar ab bottom sheet kholta hai
@@ -128,7 +152,7 @@ class PersonEntryHelper(
             .ifEmpty { "Tap to add details" }
 
         val grower = f.etGrowerCode.text?.toString()?.trim().orEmpty()
-        if (grower.isEmpty()) {
+        if (grower.isEmpty() || spec.cnicAsGrowerCode) {
             s.llGrowerChip.visibility = android.view.View.GONE
         } else {
             s.llGrowerChip.visibility = android.view.View.VISIBLE
@@ -223,12 +247,25 @@ class PersonEntryHelper(
             binding.spinnerRelation, binding.spinnerGender, binding.spinnerOwnership
         ).forEach { it.isEnabled = editable }
 
-        // Grower Code hamesha readonly
-        binding.etGrowerCode.isEnabled = false
-        binding.etGrowerCode.isFocusable = false
-        binding.etGrowerCode.isFocusableInTouchMode = false
-        binding.etGrowerCode.isCursorVisible = false
-        binding.etGrowerCode.keyListener = null
+        if (spec.cnicAsGrowerCode) {
+            // RYK: grower code = CNIC, field dikhani nahi
+            (binding.etGrowerCode.parent?.parent as? android.view.View)?.visibility = android.view.View.GONE
+        }
+
+
+        if (spec.editable) {
+            binding.etGrowerCode.isEnabled = editable
+            binding.etGrowerCode.isFocusable = editable
+            binding.etGrowerCode.isFocusableInTouchMode = editable
+            binding.etGrowerCode.isCursorVisible = editable
+            binding.etGrowerCode.inputType = InputType.TYPE_CLASS_NUMBER
+        } else {
+            binding.etGrowerCode.isEnabled = false
+            binding.etGrowerCode.isFocusable = false
+            binding.etGrowerCode.isFocusableInTouchMode = false
+            binding.etGrowerCode.isCursorVisible = false
+            binding.etGrowerCode.keyListener = null
+        }
 
         return binding
     }
@@ -240,8 +277,7 @@ class PersonEntryHelper(
     }
 
     private fun setupGrowerCodeFormatting(binding: ItemPersonEntryBinding) {
-        val growerCodePattern = Regex("""^\d{2}-\d{2}-\d{5}$""")
-        binding.etGrowerCode.filters = arrayOf(InputFilter.LengthFilter(11))
+        binding.etGrowerCode.filters = arrayOf(InputFilter.LengthFilter(spec.maxLen))
 
         var isFormatting = false
         binding.etGrowerCode.addTextChangedListener(object : TextWatcher {
@@ -252,11 +288,11 @@ class PersonEntryHelper(
                 if (isFormatting || s == null) return
                 isFormatting = true
 
-                val digits = s.toString().filter { it.isDigit() }.take(9)
+                val digits = s.toString().filter { it.isDigit() }.take(spec.maxDigits)
 
                 val formatted = buildString {
                     for (i in digits.indices) {
-                        if (i == 2 || i == 4) append('-')
+                        if (i in spec.dashBefore) append('-')
                         append(digits[i])
                     }
                 }
@@ -266,13 +302,11 @@ class PersonEntryHelper(
                     binding.etGrowerCode.setSelection(formatted.length)
                 }
 
-                when {
-                    formatted.isEmpty() -> binding.etGrowerCode.error = null
-                    formatted.length < 11 -> binding.etGrowerCode.error = null
-                    !growerCodePattern.matches(formatted) ->
-                        binding.etGrowerCode.error = "Format: 11-01-00001"
-
-                    else -> binding.etGrowerCode.error = null
+                binding.etGrowerCode.error = when {
+                    formatted.isEmpty() -> null
+                    formatted.length < spec.maxLen -> null
+                    !spec.pattern.matches(formatted) -> "Format: ${spec.hint}"
+                    else -> null
                 }
 
                 isFormatting = false
@@ -351,7 +385,11 @@ class PersonEntryHelper(
         mobile = b.etMobile.text.toString().trim(),
         nic = b.etNic.text.toString().trim(),
 
-        growerCode = b.etGrowerCode.text?.toString()?.trim().orEmpty(),
+        growerCode = if (spec.cnicAsGrowerCode) {
+            b.etNic.text?.toString()?.trim().orEmpty()
+        } else {
+            b.etGrowerCode.text?.toString()?.trim().orEmpty()
+        },
         extra1 = b.etExtra1.text?.toString()?.trim().orEmpty(),
         extra2 = b.etExtra2.text?.toString()?.trim().orEmpty(),
 

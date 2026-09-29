@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
 import pk.gop.pulse.katchiAbadi.data.remote.post.Floors
@@ -90,42 +91,25 @@ class SettingsActivity : AppCompatActivity() {
                     val totalPendingRecords = database.surveyFormDao().totalCount()
                     if (totalPendingRecords > 0) {
 
-                        val builder = AlertDialog.Builder(this@SettingsActivity)
-                            .setTitle("Confirm!")
-                            .setCancelable(false)
-                            .setMessage("Are you sure, you want to download all records.")
-                            .setPositiveButton("Proceed") { _, _ ->
-
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    postAllSavedData()
-                                } else {
-                                    if (checkPermissionDownload()) {
-                                        lifecycleScope.launch {
-                                            postAllSavedData()
-                                        }
-                                    } else {
-                                        requestPermissionDownload()
+                        ZdAlert.confirm(
+                            context = this@SettingsActivity,
+                            title = "Confirm!",
+                            message = "Are you sure, you want to download all records.",
+                            confirmText = "Proceed",
+                            cancelText = "Cancel"
+                        ) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                postAllSavedData()
+                            } else {
+                                if (checkPermissionDownload()) {
+                                    lifecycleScope.launch {
+                                        postAllSavedData()
                                     }
+                                } else {
+                                    requestPermissionDownload()
                                 }
                             }
-                            .setNegativeButton("Cancel", null)
-
-                        // Create the AlertDialog object
-                        val dialog = builder.create()
-                        dialog.show()
-
-                        // Get the buttons from the dialog
-                        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                        // Set button text size and style
-                        positiveButton.textSize =
-                            16f // Change the size according to your preference
-                        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                        negativeButton.textSize =
-                            16f // Change the size according to your preference
-                        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                        }
                     } else {
                         ToastUtil.showShort(
                             context,
@@ -500,7 +484,7 @@ class SettingsActivity : AppCompatActivity() {
                     // Display a rationale and request permission again
                     showMessageOKCancel(
                         "You need to allow location permission"
-                    ) { _, _ ->
+                    ) {
                         requestPermissionDownload()
                     }
                 }
@@ -509,58 +493,30 @@ class SettingsActivity : AppCompatActivity() {
 
 
     private fun showSettingsDialog() {
-        val builder = AlertDialog.Builder(context)
-            .setMessage("You have denied Storage permission permanently. Please go to settings to enable it.")
-            .setPositiveButton("Settings") { _, _ ->
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                val uri = Uri.fromParts("package", context.packageName, null)
-                intent.data = uri
-                startActivity(intent)
-            }.setNegativeButton("Cancel", null)
-
-
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        ZdAlert.confirm(
+            context = context,
+            title = "Permission needed",
+            message = "You have denied Storage permission permanently. Please go to settings to enable it.",
+            confirmText = "Settings",
+            cancelText = "Cancel"
+        ) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = Uri.fromParts("package", context.packageName, null)
+            startActivity(intent)
+        }
     }
 
-    private fun showMessageOKCancel(
-        message: String,
-        okListener: DialogInterface.OnClickListener
-    ) {
-        val builder =
-            AlertDialog.Builder(context).setMessage(message).setPositiveButton("OK", okListener)
-                .setNegativeButton("Cancel", null)
-
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+    // Takes a plain lambda instead of DialogInterface.OnClickListener - ZdAlert does not
+    // hand a DialogInterface back to the caller.
+    private fun showMessageOKCancel(message: String, onOk: () -> Unit) {
+        ZdAlert.confirm(
+            context = context,
+            title = "Permission needed",
+            message = message,
+            confirmText = "OK",
+            cancelText = "Cancel",
+            onConfirm = onOk
+        )
     }
 
     private fun requestPermissionDownload() {

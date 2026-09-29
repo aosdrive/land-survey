@@ -22,6 +22,7 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import kotlinx.parcelize.Parceler
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import kotlinx.parcelize.Parcelize
 import java.io.File
@@ -122,11 +123,13 @@ data class ExtraPictures(
         }
 
         deleteBtn?.setOnClickListener {
-            val builder = AlertDialog.Builder(fragment.requireContext())
-            builder.setMessage("Do you want to delete this image?")
-                .setTitle("Confirm Deletion!")
-            builder.setPositiveButton("Yes") { dialog, _ ->
-                dialog.dismiss()
+            ZdAlert.confirmDanger(
+                context = fragment.requireContext(),
+                title = "Confirm Deletion!",
+                message = "Do you want to delete this image?",
+                confirmText = "Yes",
+                cancelText = "No"
+            ) {
                 try {
                     parent.removeView(view)
                     imageTaken = 1
@@ -147,10 +150,6 @@ data class ExtraPictures(
                     extraPicturesInterface.makeAddMoreButtonVisible()
                 }
             }
-            builder.setNegativeButton("No") { dialog, _ ->
-                dialog.dismiss()
-            }
-            builder.create().show()
         }
 
         etPictureOtherType?.setText(otherDescription)

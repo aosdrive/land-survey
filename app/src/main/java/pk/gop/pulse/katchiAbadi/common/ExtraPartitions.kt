@@ -20,6 +20,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import kotlinx.parcelize.Parceler
 import kotlinx.parcelize.Parcelize
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 
 @Parcelize
@@ -253,11 +254,13 @@ data class ExtraPartitions(
         parent: LinearLayout,
         extraPartitionsList: ArrayList<ExtraPartitions>
     ) {
-        val builder = AlertDialog.Builder(fragment?.requireContext() ?: return)
-        builder.setMessage("Do you want to delete this Division?")
-            .setTitle("Confirm Deletion!")
-        builder.setPositiveButton("Yes") { dialog, _ ->
-            dialog.dismiss()
+        ZdAlert.confirmDanger(
+            context = fragment?.requireContext() ?: return,
+            title = "Confirm Deletion!",
+            message = "Do you want to delete this Division?",
+            confirmText = "Yes",
+            cancelText = "No"
+        ) {
             try {
                 parent.removeView(view)
             } catch (e: Exception) {
@@ -271,10 +274,6 @@ data class ExtraPartitions(
                 }
             }
         }
-        builder.setNegativeButton("No") { dialog, _ ->
-            dialog.dismiss()
-        }
-        builder.create().show()
     }
 
     private fun correctPriority(priority: Int) {

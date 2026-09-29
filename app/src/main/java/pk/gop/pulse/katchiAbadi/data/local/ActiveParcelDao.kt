@@ -10,6 +10,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelStatus
@@ -169,7 +170,73 @@ interface ActiveParcelDao {
     @Query("Update active_parcels set surveyStatusCode = :statusBit  where  centroid = :centroidGeom")
     suspend fun updateParcelSurveyStatus(statusBit: Int, centroidGeom: String): Int
 
+    @Query("""
+    UPDATE active_parcels
+    SET varietyValidationStatus = :status,
+        varietyOldLocal = :oldVariety,
+        varietyNewLocal = :newVariety,
+        varietyValidationRemarks = :remarks,
+        varietyValidationLat = :lat,
+        varietyValidationLng = :lng,
+        varietyValidatedAt = :validatedAt,
+        varietyValidationUploaded = 0,
+        variety = CASE WHEN :status = 'Corrected' THEN :newVariety ELSE variety END
+    WHERE id = :parcelId
+""")
+    suspend fun saveVarietyValidation(
+        parcelId: Long, status: String, oldVariety: String, newVariety: String,
+        remarks: String, lat: Double?, lng: Double?, validatedAt: String
+    )
 
+    @Query("SELECT * FROM active_parcels WHERE varietyValidationUploaded = 0 AND varietyValidationStatus IS NOT NULL")
+    suspend fun getPendingVarietyValidations(): List<ActiveParcelEntity>
+
+    @Query("SELECT COUNT(*) FROM active_parcels WHERE varietyValidationUploaded = 0 AND varietyValidationStatus IS NOT NULL")
+    fun livePendingVarietyValidationCount(): Flow<Int>
+
+    @Query("UPDATE active_parcels SET varietyValidationUploaded = 1 WHERE id IN (:ids)")
+    suspend fun markVarietyValidationsUploaded(ids: List<Long>)
+
+    @Query("UPDATE active_parcels SET varietyValidationUploaded = 1 WHERE id <= 0 AND varietyValidationUploaded = 0")
+    suspend fun discardLocalOnlyValidations(): Int
+
+    @Query("SELECT COUNT(*) FROM active_parcels WHERE mauzaId = :mauzaId AND surveyStatusCode = 2")
+  suspend fun countSurveyedByMauza(mauzaId: Long): Int
+
+  @Query("SELECT COUNT(*) FROM active_parcels WHERE mauzaId = :mauzaId")
+  suspend fun countAllByMauza(mauzaId: Long): Int
+
+  @Query("UPDATE active_parcels SET isActivate = 0 WHERE mauzaId = :mauzaId")
+  suspend fun deactivateAllByMauza(mauzaId: Long): Int
+
+  @Query("SELECT * FROM active_parcels WHERE mauzaId = :mauzaId AND isActivate = 1")
+  suspend fun getActiveParcelsByMauza(mauzaId: Long): List<ActiveParcelEntity>
+
+  // Template ke liye sirf ek row chahiye. Poori mauza load karna hazaron parcels par
+  // mehanga tha.
+  @Query("SELECT * FROM active_parcels WHERE mauzaId = :mauzaId AND isActivate = 1 LIMIT 1")
+  suspend fun getAnyActiveParcelByMauza(mauzaId: Long): ActiveParcelEntity?
+
+  // Logout clears every downloaded area. Guarded by a pending-survey check at the
+  // call site, so this never runs while unuploaded work exists.
+  @Query("DELETE FROM active_parcels")
+  suspend fun deleteAllParcels()
+
+  @Query("SELECT MAX(parcelNo) FROM active_parcels WHERE mauzaId = :mauzaId")
+  suspend fun getMaxParcelNoByMauza(mauzaId: Long): Long?
+
+  // sirf locally drawn + unsurveyed hi delete ho sakta hai
+  @Query("DELETE FROM active_parcels WHERE id = :id AND isLocallyDrawn = 1 AND surveyStatusCode != 2")
+  suspend fun deleteLocalDrawnParcelById(id: Long): Int
+
+    // Corporate Farms: refresh a tehsil's parcels but keep the ones whose survey
+    // is not uploaded yet. The tehsil is stored in areaAssigned.
+    @Query("""
+        DELETE FROM active_parcels
+        WHERE areaAssigned = :tehsil
+          AND id NOT IN (:keepIds)
+    """)
+    suspend fun deleteParcelsForTehsilExcept(tehsil: String, keepIds: List<Long>): Int
 }
 
 data class MauzaAreaEntry(

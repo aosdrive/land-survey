@@ -19,6 +19,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.ui.activities.MenuActivity
 import pk.gop.pulse.katchiAbadi.adapter.SurveyAdapter
@@ -96,28 +97,16 @@ class FragmentSurveyList : Fragment(), RadioGroup.OnCheckedChangeListener, Surve
 
             btnAddNewUnit.setOnClickListener {
 
-                val builder = AlertDialog.Builder(context).setTitle("Confirm!").setCancelable(false)
-                    .setMessage("Are you sure, you want to add occupant?")
-                    .setPositiveButton("Yes") { _, _ ->
-                        viewModel.surveyStatus = Constants.Survey_New_Unit
-                        navigateToNextScreen()
-                    }.setNegativeButton("Cancel", null)
-                // Create the AlertDialog object
-                val dialog = builder.create()
-                dialog.show()
-
-                // Get the buttons from the dialog
-                val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                // Set button text size and style
-                positiveButton.textSize =
-                    16f // Change the size according to your preference
-                positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                negativeButton.textSize =
-                    16f // Change the size according to your preference
-                negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                ZdAlert.confirm(
+                    context = requireContext(),
+                    title = "Confirm!",
+                    message = "Are you sure, you want to add occupant?",
+                    confirmText = "Yes",
+                    cancelText = "Cancel"
+                ) {
+                    viewModel.surveyStatus = Constants.Survey_New_Unit
+                    navigateToNextScreen()
+                }
             }
         }
 
@@ -292,35 +281,20 @@ class FragmentSurveyList : Fragment(), RadioGroup.OnCheckedChangeListener, Surve
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (viewModel.parcelOperation != "Split") {
-                    val builder = AlertDialog.Builder(requireActivity())
-                        .setTitle("Alert!")
-                        .setCancelable(false)
-                        .setMessage("Are you sure you want to exit the form? Please note that any unsaved data will be lost if you proceed to leave")
-                        .setPositiveButton("Exit") { _, _ ->
-                            Intent(context, MenuActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                                startActivity(this)
-                                requireActivity().finish()
-                                Utility.dismissProgressAlertDialog()
-                            }
+                    ZdAlert.confirm(
+                        context = requireActivity(),
+                        title = "Alert!",
+                        message = "Are you sure you want to exit the form? Please note that any unsaved data will be lost if you proceed to leave",
+                        confirmText = "Exit",
+                        cancelText = "Cancel"
+                    ) {
+                        Intent(context, MenuActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(this)
+                            requireActivity().finish()
+                            Utility.dismissProgressAlertDialog()
                         }
-                        .setNegativeButton("Cancel", null)
-                    // Create the AlertDialog object
-                    val dialog = builder.create()
-                    dialog.show()
-
-                    // Get the buttons from the dialog
-                    val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                    val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-                    // Set button text size and style
-                    positiveButton.textSize =
-                        16f // Change the size according to your preference
-                    positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                    negativeButton.textSize =
-                        16f // Change the size according to your preference
-                    negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                    }
                 } else {
                     remove()
                     if (isAdded) {

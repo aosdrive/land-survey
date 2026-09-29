@@ -23,6 +23,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.AppDatabase
@@ -279,21 +280,17 @@ class TaskAssignActivity : AppCompatActivity() {
             return
         }
         val checkedItems = BooleanArray(items.size) { allIds[it] in preSelectedIds }
-        val tempSelection = checkedItems.copyOf()
 
-        androidx.appcompat.app.AlertDialog.Builder(context)
-            .setTitle(title)
-            .setMultiChoiceItems(items.toTypedArray(), checkedItems) { _, which, isChecked ->
-                tempSelection[which] = isChecked
-            }
-            .setPositiveButton("OK") { dialog, _ ->
-                val chosen = mutableSetOf<Int>()
-                tempSelection.forEachIndexed { idx, picked -> if (picked) chosen.add(allIds[idx]) }
-                onConfirm(chosen)
-                dialog.dismiss()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        ZdAlert.multiList(
+            context = context,
+            title = title,
+            items = items,
+            checked = checkedItems,
+            confirmText = "OK",
+            cancelText = "Cancel"
+        ) { chosenIndices ->
+            onConfirm(chosenIndices.map { allIds[it] }.toSet())
+        }
     }
 
     // ============================================================

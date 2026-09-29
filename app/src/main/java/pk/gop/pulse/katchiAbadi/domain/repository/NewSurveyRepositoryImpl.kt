@@ -19,14 +19,21 @@ import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Resource
 import pk.gop.pulse.katchiAbadi.common.Utility
 import pk.gop.pulse.katchiAbadi.data.local.ActiveParcelDao
+import pk.gop.pulse.katchiAbadi.data.local.SurveyLessorDao
+import pk.gop.pulse.katchiAbadi.domain.model.CorporateParcelPost
+import pk.gop.pulse.katchiAbadi.domain.model.LessorPostDto
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import android.content.Intent
 import pk.gop.pulse.katchiAbadi.data.local.SowingPersonDao
 import pk.gop.pulse.katchiAbadi.data.remote.ServerApi
 import pk.gop.pulse.katchiAbadi.data.remote.post.Pictures
 import pk.gop.pulse.katchiAbadi.data.remote.response.NewSurveyNewDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyImageDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
+import pk.gop.pulse.katchiAbadi.data.remote.response.VarietyValidationPost
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelAction
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPersonEntity
@@ -57,7 +64,9 @@ class NewSurveyRepositoryImpl @Inject constructor(
     private val sowingPersonDao: SowingPersonDao,
     private val api: ServerApi,
     private val sharedPreferences: SharedPreferences,
-    private val activeParcelDao: ActiveParcelDao
+    private val activeParcelDao: ActiveParcelDao,
+    private val logger: ParcelActivityLogger,
+    private val surveyLessorDao: SurveyLessorDao
 ) : NewSurveyRepository {
 
     private val wgs84 by lazy {
@@ -81,7 +90,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
     override suspend fun deleteSurvey(survey: NewSurveyNewEntity): Resource<Unit> {
         return try {
             Log.d(TAG, "=== DELETE SURVEY STARTED ===")
-            Log.d(TAG, "Survey: parcelId=${survey.parcelId}, parcelNo=${survey.parcelNo}, operation=${survey.parcelOperation}")
+            Log.d(
+                TAG,
+                "Survey: parcelId=${survey.parcelId}, parcelNo=${survey.parcelNo}, operation=${survey.parcelOperation}"
+            )
 
             dao.deleteSurvey(survey)
             Log.d(TAG, "Survey deleted from database")
@@ -98,7 +110,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                             .mapNotNull { it.trim().toLongOrNull() }
                             .filter { it != survey.parcelId }
 
-                        Log.d(TAG, "Found ${mergedParcelIds.size} merged child parcels: $mergedParcelIds")
+                        Log.d(
+                            TAG,
+                            "Found ${mergedParcelIds.size} merged child parcels: $mergedParcelIds"
+                        )
 
                         for (childParcelId in mergedParcelIds) {
                             val childSurveys = dao.getSurveysByParcelId(childParcelId)
@@ -106,7 +121,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                                 activeParcelDao.updateSurveyStatus(childParcelId, 1)
                                 Log.d(TAG, "✓ Reset child parcel $childParcelId to unsurveyed")
                             } else {
-                                Log.d(TAG, "Child parcel $childParcelId has other surveys, skipping reset")
+                                Log.d(
+                                    TAG,
+                                    "Child parcel $childParcelId has other surveys, skipping reset"
+                                )
                             }
                         }
                     }
@@ -146,75 +164,103 @@ class NewSurveyRepositoryImpl @Inject constructor(
         survey: NewSurveyNewEntity
     ): Resource<Unit> {
         return try {
+            // Corporate Farms has its own endpoint and payload - the Split/Merge/Same
+            // path does not apply there.
+            if (isCorporateFarm()) return uploadCorporateSurvey(context, survey)
+
             Log.d(TAG, "=== uploadSurvey START ===")
             Log.d(TAG, "App Version: ${Constants.VERSION_NAME}")
-            Log.d(TAG, "Survey object: parcelId=${survey.parcelId}, parcelOperation=${survey.parcelOperation}")
+            Log.d(
+                TAG,
+                "Survey object: parcelId=${survey.parcelId}, parcelOperation=${survey.parcelOperation}"
+            )
 
             // ✅ Track if this is a split parcel being uploaded with "Same" operation
             var isSplitParcelWithSameOperation = false
             var originalParcelIdToDeactivate: Long? = null
 
             // ===== PROCESS PARCELS BASED ON OPERATION (validation se PEHLE) =====
+//            val subparcels = withContext(Dispatchers.IO) {
+//                when (survey.parcelOperation) {
+//                    "Split" -> {
+//                        originalParcelIdToDeactivate = survey.parcelId
+//                        processSplitParcels(survey)
+//                    }
+//                    "Merge" -> processMergeParcels(survey)
+//                    "Same" -> {
+//                        // ✅ Check if this is actually a split parcel
+//                        val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+//                        if (localParcel != null &&
+//                            localParcel.subParcelNo.isNotBlank() &&
+//                            localParcel.subParcelNo != "0") {
+//
+//                            Log.d(TAG, "⚠️ Detected: Split parcel with 'Same' operation")
+//                            Log.d(TAG, "   This will be treated as a NEW parcel upload")
+//                            Log.d(TAG, "   Need to find and deactivate original parent parcel")
+//
+//                            isSplitParcelWithSameOperation = true
+//
+//                            // Find the original parent parcel (the one with subParcelNo = "0" or blank)
+//                            val allParcelsWithSameNumber = activeParcelDao.getActiveParcelsByMauzaAndArea(
+//                                localParcel.mauzaId,
+//                                localParcel.areaAssigned
+//                            ).filter {
+//                                it.parcelNo == localParcel.parcelNo
+//                            }
+//
+//                            // Find original parent
+//                            val originalParent = allParcelsWithSameNumber.firstOrNull {
+//                                (it.subParcelNo.isBlank() || it.subParcelNo == "0") &&
+//                                        it.isActivate == true
+//                            }
+//
+//                            if (originalParent != null) {
+//                                originalParcelIdToDeactivate = originalParent.id
+//                                Log.d(TAG, "✅ Found original parent parcel to deactivate:")
+//                                Log.d(TAG, "   ID: ${originalParent.id}")
+//                                Log.d(TAG, "   ParcelNo: ${originalParent.parcelNo}")
+//                                Log.d(TAG, "   SubParcelNo: '${originalParent.subParcelNo}'")
+//                                Log.d(TAG, "   isActivate: ${originalParent.isActivate}")
+//                            } else {
+//                                Log.w(TAG, "⚠️ Original parent parcel not found - may already be deactivated")
+//
+//                                // Check if it exists but is inactive
+//                                val inactiveParent = activeParcelDao.getParcelsByMauzaAndArea(
+//                                    localParcel.mauzaId,
+//                                    localParcel.areaAssigned
+//                                ).firstOrNull {
+//                                    it.parcelNo == localParcel.parcelNo &&
+//                                            (it.subParcelNo.isBlank() || it.subParcelNo == "0")
+//                                }
+//
+//                                if (inactiveParent != null) {
+//                                    Log.d(TAG, "   Found inactive parent: ID=${inactiveParent.id}, isActivate=${inactiveParent.isActivate}")
+//                                }
+//                            }
+//                        }
+//                        processSameParcels(survey)
+//                    }
+//                    else -> processOtherParcels(survey)
+//                }
+//            }
+
             val subparcels = withContext(Dispatchers.IO) {
-                when (survey.parcelOperation) {
+                val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+
+                if (localParcel?.isLocallyDrawn == true) {
+                    Log.d(TAG, "Locally drawn parcel → uploading as New/Drawn")
+                    listOf(survey.copy(parcelOperation = "New", parcelOperationValue = "Drawn"))
+                } else when (survey.parcelOperation) {
                     "Split" -> {
                         originalParcelIdToDeactivate = survey.parcelId
                         processSplitParcels(survey)
                     }
+
                     "Merge" -> processMergeParcels(survey)
                     "Same" -> {
-                        // ✅ Check if this is actually a split parcel
-                        val localParcel = activeParcelDao.getParcelById(survey.parcelId)
-                        if (localParcel != null &&
-                            localParcel.subParcelNo.isNotBlank() &&
-                            localParcel.subParcelNo != "0") {
-
-                            Log.d(TAG, "⚠️ Detected: Split parcel with 'Same' operation")
-                            Log.d(TAG, "   This will be treated as a NEW parcel upload")
-                            Log.d(TAG, "   Need to find and deactivate original parent parcel")
-
-                            isSplitParcelWithSameOperation = true
-
-                            // Find the original parent parcel (the one with subParcelNo = "0" or blank)
-                            val allParcelsWithSameNumber = activeParcelDao.getActiveParcelsByMauzaAndArea(
-                                localParcel.mauzaId,
-                                localParcel.areaAssigned
-                            ).filter {
-                                it.parcelNo == localParcel.parcelNo
-                            }
-
-                            // Find original parent
-                            val originalParent = allParcelsWithSameNumber.firstOrNull {
-                                (it.subParcelNo.isBlank() || it.subParcelNo == "0") &&
-                                        it.isActivate == true
-                            }
-
-                            if (originalParent != null) {
-                                originalParcelIdToDeactivate = originalParent.id
-                                Log.d(TAG, "✅ Found original parent parcel to deactivate:")
-                                Log.d(TAG, "   ID: ${originalParent.id}")
-                                Log.d(TAG, "   ParcelNo: ${originalParent.parcelNo}")
-                                Log.d(TAG, "   SubParcelNo: '${originalParent.subParcelNo}'")
-                                Log.d(TAG, "   isActivate: ${originalParent.isActivate}")
-                            } else {
-                                Log.w(TAG, "⚠️ Original parent parcel not found - may already be deactivated")
-
-                                // Check if it exists but is inactive
-                                val inactiveParent = activeParcelDao.getParcelsByMauzaAndArea(
-                                    localParcel.mauzaId,
-                                    localParcel.areaAssigned
-                                ).firstOrNull {
-                                    it.parcelNo == localParcel.parcelNo &&
-                                            (it.subParcelNo.isBlank() || it.subParcelNo == "0")
-                                }
-
-                                if (inactiveParent != null) {
-                                    Log.d(TAG, "   Found inactive parent: ID=${inactiveParent.id}, isActivate=${inactiveParent.isActivate}")
-                                }
-                            }
-                        }
                         processSameParcels(survey)
                     }
+
                     else -> processOtherParcels(survey)
                 }
             }
@@ -268,6 +314,13 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 buildSurveyPosts(context, survey, subparcels)
             }
 
+            val invalid =
+                posts.firstOrNull { it.parcelOperation == "New" && it.geomWKT.isNullOrBlank() }
+            if (invalid != null) {
+                Log.e(TAG, "❌ Upload blocked: parcel ${invalid.parcelNo} has no geometry")
+                return Resource.Error("Missing geometry of parcel ${invalid.parcelNo} — cannot upload.")
+            }
+
             // ===== UPLOAD TO SERVER =====
             val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
             Log.d(TAG, "=== UPLOAD SUMMARY ===")
@@ -275,7 +328,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "Token present: ${token.isNotEmpty()}")
 
             posts.forEachIndexed { index, post ->
-                Log.d(TAG, "Upload ${index + 1}: ParcelNo=${post.parcelNo}, SubParcel=${post.subParcelNo}, HasGeometry=${post.geomWKT?.isNotEmpty() == true}")
+                Log.d(
+                    TAG,
+                    "Upload ${index + 1}: ParcelNo=${post.parcelNo}, SubParcel=${post.subParcelNo}, HasGeometry=${post.geomWKT?.isNotEmpty() == true}"
+                )
             }
 
             val response = api.postSurveyDataNew("Bearer $token", posts)
@@ -291,15 +347,31 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         // Mark surveys as uploaded
                         subparcels.forEach { subSurvey ->
                             dao.markAsUploaded(subSurvey.pkId)
+                            logger.log(
+                                subSurvey.parcelId,
+                                subSurvey.parcelNo,
+                                ParcelAction.SURVEY_UPLOADED,
+                                subSurvey.subParcelNo,
+                                surveyPkId = subSurvey.pkId,
+                                details = "op=${subSurvey.parcelOperation}, opValue=${subSurvey.parcelOperationValue}, code=${response.code()}"
+                            )
                             Log.d(TAG, "Marked survey pkId=${subSurvey.pkId} as uploaded")
                         }
 
                         // ✅ ENHANCED: Deactivate original parcel for split operations
                         if (survey.parcelOperation == "Split" || isSplitParcelWithSameOperation) {
                             if (originalParcelIdToDeactivate != null) {
-                                Log.d(TAG, "=== DEACTIVATING ORIGINAL PARCEL AFTER SPLIT UPLOAD ===")
-                                Log.d(TAG, "Reason: ${if (survey.parcelOperation == "Split") "Direct split operation" else "Split parcel with 'Same' operation"}")
-                                deactivateOriginalParcelWithVerification(originalParcelIdToDeactivate!!)
+                                Log.d(
+                                    TAG,
+                                    "=== DEACTIVATING ORIGINAL PARCEL AFTER SPLIT UPLOAD ==="
+                                )
+                                Log.d(
+                                    TAG,
+                                    "Reason: ${if (survey.parcelOperation == "Split") "Direct split operation" else "Split parcel with 'Same' operation"}"
+                                )
+                                deactivateOriginalParcelWithVerification(
+                                    originalParcelIdToDeactivate!!
+                                )
                             } else {
                                 Log.w(TAG, "⚠️ No original parcel ID found to deactivate")
                             }
@@ -309,19 +381,42 @@ class NewSurveyRepositoryImpl @Inject constructor(
                     Resource.Success(Unit)
                 }
 
-                response.code() == 401 -> handleUnauthorizedResponse(response)
+                response.code() == 401 -> {
+                    logger.log(
+                        survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                        survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                        details = "401 Unauthorized"
+                    )
+                    handleUnauthorizedResponse(response)
+                }
+
                 else -> {
                     val errorBody = response.errorBody()?.string() ?: "Unknown"
                     val errorMessage = "Server error: $errorBody (code ${response.code()})"
                     Log.e(TAG, "Upload failed: $errorMessage")
+                    logger.log(
+                        survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                        survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                        details = errorMessage
+                    )
                     Resource.Error(errorMessage)
                 }
             }
 
         } catch (e: retrofit2.HttpException) {
+            logger.log(
+                survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                details = "HTTP ${e.code()}: ${e.message()}"
+            )
             handleHttpException(e)
         } catch (e: Exception) {
             Log.e(TAG, "Exception during survey upload", e)
+            logger.log(
+                survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                details = e.message ?: "Unexpected error"
+            )
             Resource.Error(e.message ?: "Unexpected error")
         }
     }
@@ -553,7 +648,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                     if (parcelAfter.isActivate == false) {
                         Log.d(TAG, "✅✅ SUCCESS: Original parcel successfully deactivated!")
                     } else {
-                        Log.e(TAG, "❌❌ ERROR: Original parcel still active after deactivation attempt!")
+                        Log.e(
+                            TAG,
+                            "❌❌ ERROR: Original parcel still active after deactivation attempt!"
+                        )
                     }
                 } else {
                     Log.e(TAG, "❌ Parcel not found after deactivation attempt")
@@ -571,7 +669,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 }
 
                 Log.d(TAG, "=== SPLIT PARCEL STATUS ===")
-                Log.d(TAG, "Active split parcels for ParcelNo ${parcelBefore.parcelNo}: ${activeSplitParcels.size}")
+                Log.d(
+                    TAG,
+                    "Active split parcels for ParcelNo ${parcelBefore.parcelNo}: ${activeSplitParcels.size}"
+                )
                 activeSplitParcels.forEachIndexed { index, splitParcel ->
                     Log.d(TAG, "Split Parcel ${index + 1}:")
                     Log.d(TAG, "   ID: ${splitParcel.id}")
@@ -644,7 +745,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "   isActivate: ${parentParcel.isActivate}")
         } else {
             Log.e(TAG, "   ❌ NOT FOUND - server parent ko deactivate nahi karega")
-            Log.e(TAG, "   Dekhein: mauzaId=$mauzaId, areaName='$areaName', parcelNo=${originalParcel.parcelNo}")
+            Log.e(
+                TAG,
+                "   Dekhein: mauzaId=$mauzaId, areaName='$areaName', parcelNo=${originalParcel.parcelNo}"
+            )
         }
 
         Log.d(TAG, "=== SPLIT PARCELS FOUND ===")
@@ -658,7 +762,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "   SurveyStatus: ${parcel.surveyStatusCode}")
             Log.d(TAG, "   isActivate: ${parcel.isActivate}")
             Log.d(TAG, "   AreaAssigned: ${parcel.areaAssigned}")
-            Log.d(TAG, "   GeomWKT: ${if (parcel.geomWKT.isNullOrEmpty()) "❌ NULL/EMPTY" else "✅ Present (${parcel.geomWKT.length} chars)"}")
+            Log.d(
+                TAG,
+                "   GeomWKT: ${if (parcel.geomWKT.isNullOrEmpty()) "❌ NULL/EMPTY" else "✅ Present (${parcel.geomWKT.length} chars)"}"
+            )
         }
 
         val splitSurveys = mutableListOf<NewSurveyNewEntity>()
@@ -692,7 +799,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
 
         Log.d(TAG, "=== SPLIT PARCEL PROCESSING COMPLETE ===")
-        Log.d(TAG, "Created ${splitSurveys.size} survey records (including unsurveyed split parcels)")
+        Log.d(
+            TAG,
+            "Created ${splitSurveys.size} survey records (including unsurveyed split parcels)"
+        )
         return splitSurveys
     }
 
@@ -731,7 +841,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
             return emptyList()
         }
 
-        Log.d(TAG, "Main parcel => ParcelNo=${mainParcel.parcelNo}, SubParcelNo='${mainParcel.subParcelNo}', isActivate=${mainParcel.isActivate}")
+        Log.d(
+            TAG,
+            "Main parcel => ParcelNo=${mainParcel.parcelNo}, SubParcelNo='${mainParcel.subParcelNo}', isActivate=${mainParcel.isActivate}"
+        )
 
         val mainIsSplitParcel = mainParcel.subParcelNo.isNotBlank() && mainParcel.subParcelNo != "0"
         Log.d(TAG, "Main parcel isSplitParcel=$mainIsSplitParcel")
@@ -761,11 +874,13 @@ class NewSurveyRepositoryImpl @Inject constructor(
             }
             val originalParent = allParcelsWithSameNumber.firstOrNull()
 
-            Log.d(TAG, "Original parent: ${
-                if (originalParent != null)
-                    "ID=${originalParent.id}, isActivate=${originalParent.isActivate}"
-                else "NOT FOUND"
-            }")
+            Log.d(
+                TAG, "Original parent: ${
+                    if (originalParent != null)
+                        "ID=${originalParent.id}, isActivate=${originalParent.isActivate}"
+                    else "NOT FOUND"
+                }"
+            )
 
             // ✅ Find ALL sibling split parcels (same parcelNo, different subParcelNo)
             // These are the unsurveyed siblings that also need to be sent to server
@@ -779,13 +894,20 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         it.id != mainParcel.id  // exclude the main (surveyed) one
             }
 
-            Log.d(TAG, "Found ${allSiblingsSplitParcels.size} unsurveyed sibling split parcel(s): ${allSiblingsSplitParcels.map { "ID=${it.id}, SubParcel=${it.subParcelNo}" }}")
+            Log.d(
+                TAG,
+                "Found ${allSiblingsSplitParcels.size} unsurveyed sibling split parcel(s): ${allSiblingsSplitParcels.map { "ID=${it.id}, SubParcel=${it.subParcelNo}" }}"
+            )
 
             // Determine opValue for original parent deactivation
             val originalIsStillActive = originalParent?.isActivate == true
-            val originalParentIdStr = if (originalIsStillActive) originalParent!!.id.toString() else ""
+            val originalParentIdStr =
+                if (originalIsStillActive) originalParent!!.id.toString() else ""
 
-            Log.d(TAG, "Original parent deactivation: ${if (originalIsStillActive) "YES → ID=${originalParent!!.id}" else "NO (already inactive or not found)"}")
+            Log.d(
+                TAG,
+                "Original parent deactivation: ${if (originalIsStillActive) "YES → ID=${originalParent!!.id}" else "NO (already inactive or not found)"}"
+            )
 
             // ✅ STEP 1: Send unsurveyed sibling split parcels FIRST
             // They need the deactivation opValue only on the FIRST one sent
@@ -822,7 +944,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 mergeSurveys.add(siblingSurvey)
 
                 Log.d(TAG, "✅ Added UNSURVEYED sibling split parcel as 'New':")
-                Log.d(TAG, "   parcelId=${sibling.id}, ParcelNo=${sibling.parcelNo}, SubParcelNo=${sibling.subParcelNo}")
+                Log.d(
+                    TAG,
+                    "   parcelId=${sibling.id}, ParcelNo=${sibling.parcelNo}, SubParcelNo=${sibling.subParcelNo}"
+                )
                 Log.d(TAG, "   parcelOperationValue='$siblingOpValue'")
             }
 
@@ -846,7 +971,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
             mergeSurveys.add(splitParcelSurvey)
 
             Log.d(TAG, "✅ Added SURVEYED main split parcel as 'New':")
-            Log.d(TAG, "   parcelId=${mainParcel.id}, ParcelNo=${mainParcel.parcelNo}, SubParcelNo=${mainParcel.subParcelNo}")
+            Log.d(
+                TAG,
+                "   parcelId=${mainParcel.id}, ParcelNo=${mainParcel.parcelNo}, SubParcelNo=${mainParcel.subParcelNo}"
+            )
             Log.d(TAG, "   parcelOperationValue='$mainOpValue'")
 
             // ✅ STEP 3: Add normal merged parcels as "Merge"
@@ -865,7 +993,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 parcelOperationValue = survey.parcelOperationValue
             )
             mergeSurveys.add(mainSurvey)
-            Log.d(TAG, "✅ Added main normal parcel as 'Merge' with value: ${survey.parcelOperationValue}")
+            Log.d(
+                TAG,
+                "✅ Added main normal parcel as 'Merge' with value: ${survey.parcelOperationValue}"
+            )
 
             mergedParcelIds.forEach { mergedParcelId ->
                 addMergedParcel(survey, mergedParcelId, mergeSurveys)
@@ -874,7 +1005,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
         Log.d(TAG, "=== MERGE PROCESSING COMPLETE: ${mergeSurveys.size} records ===")
         mergeSurveys.forEachIndexed { i, s ->
-            Log.d(TAG, "  Record ${i + 1}: parcelId=${s.parcelId}, ParcelNo=${s.parcelNo}, SubParcel=${s.subParcelNo}, op=${s.parcelOperation}, opValue='${s.parcelOperationValue}', propertyType='${s.propertyType}'")
+            Log.d(
+                TAG,
+                "  Record ${i + 1}: parcelId=${s.parcelId}, ParcelNo=${s.parcelNo}, SubParcel=${s.subParcelNo}, op=${s.parcelOperation}, opValue='${s.parcelOperationValue}', propertyType='${s.propertyType}'"
+            )
         }
         return mergeSurveys
     }
@@ -892,7 +1026,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
         }
 
         val mergedIsSplit = mergedParcel.subParcelNo.isNotBlank() && mergedParcel.subParcelNo != "0"
-        Log.d(TAG, "Processing merged parcel ID=$mergedParcelId: ParcelNo=${mergedParcel.parcelNo}, SubParcelNo='${mergedParcel.subParcelNo}', isSplit=$mergedIsSplit")
+        Log.d(
+            TAG,
+            "Processing merged parcel ID=$mergedParcelId: ParcelNo=${mergedParcel.parcelNo}, SubParcelNo='${mergedParcel.subParcelNo}', isSplit=$mergedIsSplit"
+        )
 
         if (mergedIsSplit) {
             // Split parcel being merged — send as "New" with deactivation logic
@@ -904,7 +1041,8 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         (it.subParcelNo.isBlank() || it.subParcelNo == "0")
             }
             val originalParent = allParcelsWithSameNumber.firstOrNull()
-            val opValue = if (originalParent?.isActivate == true) originalParent.id.toString() else ""
+            val opValue =
+                if (originalParent?.isActivate == true) originalParent.id.toString() else ""
 
             val mergedSurvey = survey.copy(
                 pkId = survey.pkId,
@@ -915,7 +1053,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 parcelOperationValue = opValue
             )
             mergeSurveys.add(mergedSurvey)
-            Log.d(TAG, "✅ Added split merged parcel as 'New': ID=${mergedParcel.id}, opValue='$opValue'")
+            Log.d(
+                TAG,
+                "✅ Added split merged parcel as 'New': ID=${mergedParcel.id}, opValue='$opValue'"
+            )
         } else {
             // Normal parcel — send as "Merge"
             val mergedSurvey = survey.copy(
@@ -927,13 +1068,20 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 parcelOperationValue = ""
             )
             mergeSurveys.add(mergedSurvey)
-            Log.d(TAG, "✅ Added normal merged parcel as 'Merge': ID=$mergedParcelId, ParcelNo=${mergedParcel.parcelNo}")
+            Log.d(
+                TAG,
+                "✅ Added normal merged parcel as 'Merge': ID=$mergedParcelId, ParcelNo=${mergedParcel.parcelNo}"
+            )
         }
     }
+
     // ===== getParcelDataForOperation =====
     private suspend fun getParcelDataForOperation(subSurvey: NewSurveyNewEntity): ParcelData {
         Log.d(TAG, "=== Getting parcel data for operation ===")
-        Log.d(TAG, "ParcelId: ${subSurvey.parcelId}, Op: ${subSurvey.parcelOperation}, SubParcel: ${subSurvey.subParcelNo}")
+        Log.d(
+            TAG,
+            "ParcelId: ${subSurvey.parcelId}, Op: ${subSurvey.parcelOperation}, SubParcel: ${subSurvey.subParcelNo}"
+        )
 
         return when (subSurvey.parcelOperation) {
 
@@ -943,7 +1091,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 val parcel = activeParcelDao.getParcelById(subSurvey.parcelId)
                 if (parcel != null) {
                     val calculatedArea = calculateAreaFromGeometry(parcel.geomWKT)
-                    Log.d(TAG, "✅ [New] Found parcel ID=${parcel.id}, SubParcel=${parcel.subParcelNo}, area=$calculatedArea, geomLen=${parcel.geomWKT?.length ?: 0}")
+                    Log.d(
+                        TAG,
+                        "✅ [New] Found parcel ID=${parcel.id}, SubParcel=${parcel.subParcelNo}, area=$calculatedArea, geomLen=${parcel.geomWKT?.length ?: 0}"
+                    )
 
                     if (parcel.geomWKT.isNullOrEmpty()) {
                         Log.e(TAG, "❌❌ CRITICAL: Parcel ${parcel.id} has NO geometry!")
@@ -960,11 +1111,21 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         }
                     } else null
 
+//                    ParcelData(
+//                        geomWKT = parcel.geomWKT ?: "",
+//                        centroid = parcel.centroid ?: "",
+//                        khewatInfo = khewatParent?.khewatInfo ?: parcel.khewatInfo ?: "",
+//                        parcelAreaKMF = khewatParent?.parcelAreaKMF ?: parcel.parcelAreaKMF ?: "",
+//                        calculatedArea = calculatedArea
+//                    )
+
                     ParcelData(
                         geomWKT = parcel.geomWKT ?: "",
                         centroid = parcel.centroid ?: "",
-                        khewatInfo = khewatParent?.khewatInfo ?: parcel.khewatInfo ?: "",
-                        parcelAreaKMF = khewatParent?.parcelAreaKMF ?: parcel.parcelAreaKMF ?: "",
+                        khewatInfo = if (parcel.isLocallyDrawn) "0"
+                        else khewatParent?.khewatInfo ?: parcel.khewatInfo ?: "",
+                        parcelAreaKMF = if (parcel.isLocallyDrawn) ""
+                        else khewatParent?.parcelAreaKMF ?: parcel.parcelAreaKMF ?: "",
                         calculatedArea = calculatedArea
                     )
                 } else {
@@ -977,7 +1138,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                 val parcel = activeParcelDao.getParcelById(subSurvey.parcelId)
                 if (parcel != null) {
                     val calculatedArea = calculateAreaFromGeometry(parcel.geomWKT)
-                    Log.d(TAG, "✅ [${subSurvey.parcelOperation}] Found parcel ID=${parcel.id}, SubParcel=${parcel.subParcelNo}, area=$calculatedArea, geomLen=${parcel.geomWKT?.length ?: 0}")
+                    Log.d(
+                        TAG,
+                        "✅ [${subSurvey.parcelOperation}] Found parcel ID=${parcel.id}, SubParcel=${parcel.subParcelNo}, area=$calculatedArea, geomLen=${parcel.geomWKT?.length ?: 0}"
+                    )
                     ParcelData(
                         geomWKT = parcel.geomWKT ?: "",
                         centroid = parcel.centroid ?: "",
@@ -986,7 +1150,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         calculatedArea = calculatedArea
                     )
                 } else {
-                    Log.e(TAG, "❌ [${subSurvey.parcelOperation}] Parcel NOT FOUND for ID=${subSurvey.parcelId}")
+                    Log.e(
+                        TAG,
+                        "❌ [${subSurvey.parcelOperation}] Parcel NOT FOUND for ID=${subSurvey.parcelId}"
+                    )
                     ParcelData("", "", "", "", "")
                 }
             }
@@ -1001,12 +1168,21 @@ class NewSurveyRepositoryImpl @Inject constructor(
     // ===== PROCESS SAME PARCELS =====
 // ===== PROCESS SAME PARCELS (FIXED) =====
     private suspend fun processSameParcels(survey: NewSurveyNewEntity): List<NewSurveyNewEntity> {
-        Log.d(TAG, "Processing 'Same' operation for parcelId=${survey.parcelId}, pkId=${survey.pkId}")
+        Log.d(
+            TAG,
+            "Processing 'Same' operation for parcelId=${survey.parcelId}, pkId=${survey.pkId}"
+        )
         val localParcel = activeParcelDao.getParcelById(survey.parcelId)
 
         if (localParcel != null && localParcel.subParcelNo.isNotBlank() && localParcel.subParcelNo != "0") {
-            Log.d(TAG, "Detected split parcel with 'Same' operation - need to upload ALL split parcels")
-            Log.d(TAG, "Parcel details: ID=${localParcel.id}, ParcelNo=${localParcel.parcelNo}, SubParcel=${localParcel.subParcelNo}")
+            Log.d(
+                TAG,
+                "Detected split parcel with 'Same' operation - need to upload ALL split parcels"
+            )
+            Log.d(
+                TAG,
+                "Parcel details: ID=${localParcel.id}, ParcelNo=${localParcel.parcelNo}, SubParcel=${localParcel.subParcelNo}"
+            )
 
             // ✅ Find all split parcels with the same ParcelNo
             val allSplitParcels = activeParcelDao.getActiveParcelsByMauzaAndArea(
@@ -1019,7 +1195,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         it.subParcelNo != "0"
             }.sortedBy { it.subParcelNo }
 
-            Log.d(TAG, "Found ${allSplitParcels.size} total split parcels for ParcelNo ${localParcel.parcelNo}")
+            Log.d(
+                TAG,
+                "Found ${allSplitParcels.size} total split parcels for ParcelNo ${localParcel.parcelNo}"
+            )
 
             // ✅ Find original parent for server deactivation
             val allParcelsWithSameNumber = activeParcelDao.getParcelsByMauzaAndArea(
@@ -1059,7 +1238,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         parcelOperationValue = originalParentId
                     )
                     cleanSurveys.add(surveyRecord)
-                    Log.d(TAG, "✅ Added SURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}")
+                    Log.d(
+                        TAG,
+                        "✅ Added SURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}"
+                    )
                 } else {
                     val minimalSurvey = survey.copy(
                         pkId = 0,
@@ -1079,18 +1261,27 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         isGeometryCorrect = false
                     )
                     cleanSurveys.add(minimalSurvey)
-                    Log.d(TAG, "⚠️ Added UNSURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}")
+                    Log.d(
+                        TAG,
+                        "⚠️ Added UNSURVEYED split parcel: ID=${splitParcel.id}, SubParcel=${splitParcel.subParcelNo}"
+                    )
                 }
             }
 
-            Log.d(TAG, "Converted ${cleanSurveys.size} survey records (surveyed + unsurveyed split parcels)")
+            Log.d(
+                TAG,
+                "Converted ${cleanSurveys.size} survey records (surveyed + unsurveyed split parcels)"
+            )
             return cleanSurveys
         } else {
             // ✅ THE ACTUAL FIX FOR YOUR DUPLICATE BUG:
             // Normal (non-split) "Same" operation — return ONLY the specific survey being uploaded,
             // not ALL surveys for that parcelId. If the parcel has been surveyed multiple times locally,
             // getCompleteRecord(parcelId) would return all of them and cause duplicate uploads.
-            Log.d(TAG, "Normal 'Same' operation - returning only the specific survey pkId=${survey.pkId}")
+            Log.d(
+                TAG,
+                "Normal 'Same' operation - returning only the specific survey pkId=${survey.pkId}"
+            )
             return listOf(survey)
         }
     }
@@ -1107,9 +1298,24 @@ class NewSurveyRepositoryImpl @Inject constructor(
         survey: NewSurveyNewEntity,
         subparcels: List<NewSurveyNewEntity>
     ): List<SurveyPostNew> {
-        return subparcels.mapIndexed { index, subSurvey ->
+        return subparcels.mapIndexed { index, rawSubSurvey ->
+
+            val activeParcel = activeParcelDao.getParcelById(rawSubSurvey.parcelId)
+            val subSurvey = if (activeParcel?.isLocallyDrawn == true &&
+                rawSubSurvey.parcelOperation != "New"
+            ) {
+                Log.w(
+                    TAG, "parcelId=${rawSubSurvey.parcelId} is LOCALLY DRAWN but op was " +
+                            "'${rawSubSurvey.parcelOperation}' — forcing to New/Drawn"
+                )
+                rawSubSurvey.copy(parcelOperation = "New", parcelOperationValue = "Drawn")
+            } else rawSubSurvey
+
             Log.d(TAG, "=== Processing Survey ${index + 1}/${subparcels.size} ===")
-            Log.d(TAG, "Survey Details: pkId=${subSurvey.pkId}, parcelNo=${subSurvey.parcelNo}, subParcelNo=${subSurvey.subParcelNo}")
+            Log.d(
+                TAG,
+                "Survey Details: pkId=${subSurvey.pkId}, parcelNo=${subSurvey.parcelNo}, subParcelNo=${subSurvey.subParcelNo}"
+            )
 
             val sourceSurveyPkId = subSurvey.pkId
 
@@ -1155,13 +1361,22 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.d(TAG, "ParcelId: ${subSurvey.parcelId}")
             Log.d(TAG, "SubParcelNo: ${subSurvey.subParcelNo}")
             Log.d(TAG, "CalculatedArea: ${parcelData.calculatedArea} Acres")
-            Log.d(TAG, "GeomWKT: ${if (parcelData.geomWKT.isNotEmpty()) "Present (${parcelData.geomWKT.length} chars)" else "❌ EMPTY/NULL"}")
-            Log.d(TAG, "Centroid: ${if (parcelData.centroid.isNotEmpty()) parcelData.centroid else "❌ EMPTY/NULL"}")
+            Log.d(
+                TAG,
+                "GeomWKT: ${if (parcelData.geomWKT.isNotEmpty()) "Present (${parcelData.geomWKT.length} chars)" else "❌ EMPTY/NULL"}"
+            )
+            Log.d(
+                TAG,
+                "Centroid: ${if (parcelData.centroid.isNotEmpty()) parcelData.centroid else "❌ EMPTY/NULL"}"
+            )
             Log.d(TAG, "KhewatInfo: ${parcelData.khewatInfo}")
             Log.d(TAG, "ParcelAreaKMF: ${parcelData.parcelAreaKMF}")
 
             if (parcelData.geomWKT.isEmpty()) {
-                Log.e(TAG, "❌❌ CRITICAL ERROR: Empty geometry for parcel ${subSurvey.parcelNo}-${subSurvey.subParcelNo}")
+                Log.e(
+                    TAG,
+                    "❌❌ CRITICAL ERROR: Empty geometry for parcel ${subSurvey.parcelNo}-${subSurvey.subParcelNo}"
+                )
             }
             val farmerProfileBase64 = if (isSurveyed) {
                 encodeFarmerProfile(context, subSurvey.farmerProfilePath)
@@ -1201,9 +1416,11 @@ class NewSurveyRepositoryImpl @Inject constructor(
                         val polygons = Utility.getMultiPolygonFromString(geomWKT, wgs84)
                         polygons?.firstOrNull()
                     }
+
                     geomWKT.contains("POLYGON") -> {
                         Utility.getPolygonFromString(geomWKT, wgs84)
                     }
+
                     else -> null
                 }
 
@@ -1392,6 +1609,7 @@ class NewSurveyRepositoryImpl @Inject constructor(
             null
         }
     }
+
     // ===== HELPER: LOG SURVEY POST ===== //
     private fun logSurveyPost(surveyPost: SurveyPostNew, index: Int) {
         Log.d(TAG, "=== Survey Post ${index + 1} Details ===")
@@ -1407,7 +1625,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
 
         //  CRITICAL VALIDATION
         if (surveyPost.geomWKT.isNullOrEmpty()) {
-            Log.e(TAG, " CRITICAL ERROR: GeomWKT is NULL/EMPTY for ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
+            Log.e(
+                TAG,
+                " CRITICAL ERROR: GeomWKT is NULL/EMPTY for ${surveyPost.parcelNo}-${surveyPost.subParcelNo}"
+            )
             Log.e(TAG, "   This will cause NULL geometry in SQL Server!")
         } else {
             Log.d(TAG, " GeomWKT: Present (${surveyPost.geomWKT.length} chars)")
@@ -1423,7 +1644,10 @@ class NewSurveyRepositoryImpl @Inject constructor(
         if (surveyPost.parcelOperation == "New" && surveyPost.parcelOperationValue.isNotBlank()) {
             Log.d(TAG, " SERVER DEACTIVATION REQUEST:")
             Log.d(TAG, "   Original Parcel ID to deactivate: ${surveyPost.parcelOperationValue}")
-            Log.d(TAG, "   New Parcel being created: ${surveyPost.parcelNo}-${surveyPost.subParcelNo}")
+            Log.d(
+                TAG,
+                "   New Parcel being created: ${surveyPost.parcelNo}-${surveyPost.subParcelNo}"
+            )
         }
 
         Log.d(TAG, "KhewatInfo: ${surveyPost.khewatInfo}")
@@ -1520,5 +1744,271 @@ class NewSurveyRepositoryImpl @Inject constructor(
             Log.e(TAG, "Error loading images for survey $surveyId: ${e.message}", e)
             emptyList()
         }
+    }
+
+
+    suspend fun uploadVarietyValidations(): Resource<Int> = try {
+        val pending = activeParcelDao.getPendingVarietyValidations()
+            .filter { it.id > 0 }
+        Log.d(TAG, "=== VARIETY VALIDATION UPLOAD ===")
+        Log.d(TAG, "Pending validations: ${pending.size}")
+
+        if (pending.isEmpty()) {
+            Resource.Success(0)
+        } else {
+            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "") ?: ""
+            val body = pending.map { p ->
+                VarietyValidationPost(
+                    ParcelId = p.id,
+                    OldVariety = p.varietyOldLocal.orEmpty(),
+                    NewVariety = p.varietyNewLocal.orEmpty(),
+                    IsMatched = p.varietyValidationStatus == "Matched",
+                    Remarks = p.varietyValidationRemarks.orEmpty(),
+                    Latitude = p.varietyValidationLat,
+                    Longitude = p.varietyValidationLng,
+                    ValidatedOnDevice = p.varietyValidatedAt.orEmpty()
+                )
+            }
+
+            body.forEach {
+                Log.d(
+                    TAG,
+                    "→ ParcelId=${it.ParcelId}, ${it.OldVariety} → ${it.NewVariety}, matched=${it.IsMatched}"
+                )
+            }
+
+            val response = api.postVarietyValidations("Bearer $token", body)
+            Log.d(TAG, "Response code: ${response.code()}")
+
+            if (response.isSuccessful) {
+                val done = response.body()?.ProcessedParcelIds ?: pending.map { it.id }
+                val notFound = response.body()?.NotFoundParcelIds.orEmpty()
+
+                if (done.isNotEmpty()) {
+                    activeParcelDao.markVarietyValidationsUploaded(done)
+                }
+                if (notFound.isNotEmpty()) {
+                    Log.w(
+                        TAG,
+                        "⚠️ Server par record nahi mila, pending list se hata rahe hain: $notFound"
+                    )
+                    activeParcelDao.markVarietyValidationsUploaded(notFound)
+                }
+
+                Log.d(TAG, "✅ Uploaded ${done.size} variety validations")
+                Resource.Success(done.size)
+            } else {
+                val err = response.errorBody()?.string() ?: "Unknown"
+                Log.e(TAG, "❌ Upload failed: ${response.code()} $err")
+                Resource.Error("Server error: ${response.code()} $err")
+            }
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "Variety validation upload failed: ${e.message}", e)
+        Resource.Error(e.message ?: "Upload failed")
+    }
+
+    // =====================================================================
+    //  Corporate Farms upload path
+    //
+    //  The Katchi Abadi path branches on Split / Merge / Same and sends several
+    //  sub-parcels. The corporate model is completely different: one survey is one
+    //  post, always "New"/"Drawn", and the payload carries lessors + sowingPersons
+    //  instead of persons.
+    // =====================================================================
+
+    private fun isCorporateFarm(): Boolean =
+        sharedPreferences.getBoolean(Constants.SHARED_PREF_IS_CORPORATE_USER, false)
+
+    private suspend fun uploadCorporateSurvey(
+        context: Context,
+        survey: NewSurveyNewEntity
+    ): Resource<Unit> {
+        return try {
+            Log.d(TAG, "=== corporate uploadSurvey START ===")
+            Log.d(TAG, "parcelId=${survey.parcelId}, parcelNo=${survey.parcelNo}")
+
+            val posts = withContext(Dispatchers.IO) {
+                listOf(buildCorporateSurveyPost(context, survey))
+            }
+
+            // A corporate parcel is created fresh on the server, so geometry is mandatory.
+            val missingGeometry = posts.firstOrNull { it.geomWKT.isNullOrBlank() }
+            if (missingGeometry != null) {
+                val msg = "Parcel ${missingGeometry.parcelNo} has no geometry, so it cannot be uploaded."
+                logger.log(
+                    survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                    survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                    details = msg
+                )
+                return Resource.Error(msg)
+            }
+
+            val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, "").orEmpty()
+            val response = api.postCorporateSurveyData("Bearer $token", posts)
+
+            val errorBodyStr = try {
+                if (!response.isSuccessful) response.errorBody()?.string().orEmpty() else ""
+            } catch (e: Exception) {
+                "Could not read the error body: ${e.message}"
+            }
+
+            when {
+                response.isSuccessful && response.body() != null -> {
+                    Log.i(TAG, "Corporate upload successful")
+
+                    withContext(Dispatchers.IO) {
+                        if (survey.pkId > 0) {
+                            dao.markAsUploaded(survey.pkId)
+                            surveyLessorDao.markSurveyLessorsSynced(survey.pkId)
+                        }
+                    }
+
+                    logger.log(
+                        survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOADED,
+                        survey.subParcelNo, surveyPkId = survey.pkId,
+                        details = "Corporate: ${survey.areaName}"
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        try {
+                            LocalBroadcastManager.getInstance(context)
+                                .sendBroadcast(Intent("REFRESH_MAP"))
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Refresh broadcast failed: ${e.message}")
+                        }
+                    }
+
+                    Resource.Success(Unit)
+                }
+
+                response.code() == 401 -> {
+                    logger.log(
+                        survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                        survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                        details = "401 Unauthorized"
+                    )
+                    handleUnauthorizedResponse(response)
+                }
+
+                else -> {
+                    Log.e(TAG, "Corporate upload failed (${response.code()}): $errorBodyStr")
+                    logger.log(
+                        survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                        survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                        details = "HTTP ${response.code()}: $errorBodyStr"
+                    )
+                    Resource.Error("Server error (${response.code()}): $errorBodyStr")
+                }
+            }
+        } catch (e: retrofit2.HttpException) {
+            val errorBody = e.response()?.errorBody()?.string() ?: e.message()
+            Log.e(TAG, "Corporate HttpException ${e.code()}: $errorBody", e)
+            logger.log(
+                survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                details = "HTTP ${e.code()}: ${e.message()}"
+            )
+            Resource.Error(
+                if (errorBody.contains("isUpdateRequired", ignoreCase = true))
+                    "APP_VERSION_OUTDATED: Please update your app."
+                else "Server error: $errorBody"
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Corporate upload unexpected exception", e)
+            logger.log(
+                survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId,
+                details = e.message ?: "Unexpected error"
+            )
+            Resource.Error(e.localizedMessage ?: "An unexpected problem occurred during upload.")
+        }
+    }
+
+    private suspend fun buildCorporateSurveyPost(
+        context: Context,
+        survey: NewSurveyNewEntity
+    ): CorporateParcelPost {
+
+        val pkId = survey.pkId
+        val isSurveyed = pkId > 0 && survey.propertyType.isNotBlank()
+
+        val pictures = convertSurveyImagesToPictures(
+            context,
+            if (isSurveyed) imageDao.getImagesBySurvey(pkId) else emptyList()
+        )
+
+        val lessorDtos = (if (isSurveyed) surveyLessorDao.getLessorsForSurvey(pkId) else emptyList())
+            .map { l ->
+                LessorPostDto(
+                    lessorId = l.lessorId,
+                    lessorName = l.lessorName,
+                    lessorCode = l.lessorCode,
+                    lessorType = l.lessorType
+                )
+            }
+
+        val sowingPersonDtos =
+            (if (isSurveyed) sowingPersonDao.getBySurveyId(pkId) else emptyList()).map { sp ->
+                SowingPersonPostDto(
+                    name = sp.name,
+                    CNIC = sp.cnic,
+                    growerCode = sp.growerCode ?: ""
+                )
+            }
+
+        val parcel = activeParcelDao.getParcelById(survey.parcelId)
+        val geomWKT = parcel?.geomWKT.orEmpty()
+        val centroid = parcel?.centroid.orEmpty()
+        val calculatedArea = calculateAreaFromGeometry(geomWKT)
+
+        // In the corporate flow the tehsil is held in areaAssigned - see
+        // MenuActivity.selectTehsil().
+        val tehsil = parcel?.areaAssigned?.takeIf { it.isNotBlank() } ?: survey.areaName
+
+        Log.d(TAG, "Corporate post: parcelNo=${survey.parcelNo}, tehsil=$tehsil, area=$calculatedArea")
+        Log.d(TAG, "  lessors=${lessorDtos.size}, pictures=${pictures.size}, sowing=${sowingPersonDtos.size}")
+
+        return CorporateParcelPost(
+            // The server creates a new row for every corporate survey, hence 0.
+            parcelId = 0L,
+            parcelNo = survey.parcelNo,
+            subParcelNo = "",
+            mauzaId = survey.mauzaId,
+            parcelOperation = "New",
+            parcelOperationValue = "Drawn",
+            geomWKT = geomWKT.ifEmpty { null },
+            centriod = centroid.ifEmpty { null },
+            calculatedArea = calculatedArea,
+            isGeometryCorrect = survey.isGeometryCorrect,
+            distance = Constants.SHARED_PREF_DEFAULT_DISTANCE,
+            khewatInfo = "0",
+            areaAssigned = tehsil,
+            parcelAreaKMF = "",
+            areaName = tehsil,
+            propertyType = survey.propertyType,
+            ownershipStatus = survey.ownershipStatus,
+            variety = survey.variety,
+            cropType = survey.cropType,
+            crop = survey.crop,
+            year = survey.year,
+            area = survey.area,
+            remarks = survey.remarks,
+            sowingStatus = survey.sowingStatus,
+            sowingDate = survey.sowingDate,
+            zone = survey.zone,
+            division = survey.division,
+            section = survey.section,
+            farm = survey.farm,
+            block = survey.block,
+            plot = survey.plot,
+            lessorName = lessorDtos.firstOrNull()?.lessorName,
+            persons = emptyList(),
+            pictures = pictures,
+            sowingPersons = sowingPersonDtos,
+            lessors = lessorDtos,
+            irrigationSource = survey.irrigationSource,
+            irrigationSourceQuantity = survey.irrigationSourceQuantity
+        )
     }
 }

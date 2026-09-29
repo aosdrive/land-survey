@@ -1,0 +1,3191 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 28,
+    "identityHash": "0297cca02ff2cf5073b8ee51f9bb53e8",
+    "entities": [
+      {
+        "tableName": "new_surveys",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pkId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `propertyType` TEXT NOT NULL, `ownershipStatus` TEXT NOT NULL, `variety` TEXT NOT NULL, `cropType` TEXT NOT NULL, `crop` TEXT NOT NULL, `year` TEXT NOT NULL, `area` TEXT NOT NULL, `isGeometryCorrect` INTEGER NOT NULL, `remarks` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `areaName` TEXT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `subParcelNo` TEXT NOT NULL, `parcelOperation` TEXT NOT NULL, `parcelOperationValue` TEXT NOT NULL, `statusBit` INTEGER NOT NULL, `sowingStatus` TEXT NOT NULL, `sowingDate` TEXT, `farmerProfilePath` TEXT, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "pkId",
+            "columnName": "pkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propertyType",
+            "columnName": "propertyType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipStatus",
+            "columnName": "ownershipStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "variety",
+            "columnName": "variety",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cropType",
+            "columnName": "cropType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "crop",
+            "columnName": "crop",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "year",
+            "columnName": "year",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isGeometryCorrect",
+            "columnName": "isGeometryCorrect",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "areaName",
+            "columnName": "areaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperation",
+            "columnName": "parcelOperation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperationValue",
+            "columnName": "parcelOperationValue",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statusBit",
+            "columnName": "statusBit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sowingStatus",
+            "columnName": "sowingStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sowingDate",
+            "columnName": "sowingDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "farmerProfilePath",
+            "columnName": "farmerProfilePath",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "survey_persons",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `surveyId` INTEGER NOT NULL, `ownershipType` TEXT NOT NULL, `personId` INTEGER NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `gender` TEXT NOT NULL, `relation` TEXT NOT NULL, `religion` TEXT NOT NULL, `mobile` TEXT NOT NULL, `nic` TEXT NOT NULL, `growerCode` TEXT NOT NULL, `personArea` TEXT NOT NULL, `extra1` TEXT NOT NULL, `extra2` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `mauzaName` TEXT NOT NULL, `address` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipType",
+            "columnName": "ownershipType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "personId",
+            "columnName": "personId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relation",
+            "columnName": "relation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "religion",
+            "columnName": "religion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobile",
+            "columnName": "mobile",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nic",
+            "columnName": "nic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "growerCode",
+            "columnName": "growerCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "personArea",
+            "columnName": "personArea",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "extra1",
+            "columnName": "extra1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "extra2",
+            "columnName": "extra2",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaName",
+            "columnName": "mauzaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "survey_images",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `surveyId` INTEGER NOT NULL, `uri` TEXT NOT NULL, `type` TEXT NOT NULL, `latitude` REAL, `longitude` REAL, `timestamp` INTEGER, `locationAddress` TEXT, `bearing` REAL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uri",
+            "columnName": "uri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "locationAddress",
+            "columnName": "locationAddress",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "bearing",
+            "columnName": "bearing",
+            "affinity": "REAL",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "ParcelEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `geom` TEXT NOT NULL, `centroidGeom` TEXT NOT NULL, `isSurveyed` INTEGER NOT NULL, `distance` REAL NOT NULL, `mauzaId` INTEGER NOT NULL, `mauzaName` TEXT NOT NULL, `kachiAbadiId` INTEGER NOT NULL, `abadiName` TEXT NOT NULL, `parcelNo` INTEGER NOT NULL, `subParcelNo` TEXT NOT NULL, `newStatusId` INTEGER NOT NULL, `subParcelsStatusList` TEXT NOT NULL, `pkId` INTEGER PRIMARY KEY AUTOINCREMENT, `status` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geom",
+            "columnName": "geom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centroidGeom",
+            "columnName": "centroidGeom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSurveyed",
+            "columnName": "isSurveyed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "distance",
+            "columnName": "distance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaName",
+            "columnName": "mauzaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kachiAbadiId",
+            "columnName": "kachiAbadiId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "abadiName",
+            "columnName": "abadiName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "newStatusId",
+            "columnName": "newStatusId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelsStatusList",
+            "columnName": "subParcelsStatusList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pkId",
+            "columnName": "pkId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "KachiAbadiEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `lat` TEXT NOT NULL, `lng` TEXT NOT NULL, `name` TEXT NOT NULL, `MauzaId` INTEGER NOT NULL, `pkid` INTEGER PRIMARY KEY AUTOINCREMENT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lat",
+            "columnName": "lat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lng",
+            "columnName": "lng",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "MauzaId",
+            "columnName": "MauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pkid",
+            "columnName": "pkid",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkid"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "SurveyEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`propertyId` INTEGER NOT NULL, `propertyNo` TEXT NOT NULL, `name` TEXT NOT NULL, `fname` TEXT NOT NULL, `area` TEXT NOT NULL, `relation` TEXT NOT NULL, `cnic` TEXT NOT NULL, `gender` TEXT NOT NULL, `kachiAbadiId` INTEGER NOT NULL, `mauzaId` INTEGER NOT NULL, `isAttached` INTEGER NOT NULL, `pkId` INTEGER PRIMARY KEY AUTOINCREMENT)",
+        "fields": [
+          {
+            "fieldPath": "propertyId",
+            "columnName": "propertyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propertyNo",
+            "columnName": "propertyNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fname",
+            "columnName": "fname",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relation",
+            "columnName": "relation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnic",
+            "columnName": "cnic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kachiAbadiId",
+            "columnName": "kachiAbadiId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isAttached",
+            "columnName": "isAttached",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pkId",
+            "columnName": "pkId",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "SurveyFormEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`surveyId` INTEGER NOT NULL, `surveyPkId` INTEGER NOT NULL, `surveyStatus` TEXT NOT NULL, `propertyNumber` TEXT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelPkId` INTEGER NOT NULL, `parcelStatus` TEXT NOT NULL, `geom` TEXT NOT NULL, `centroidGeom` TEXT NOT NULL, `parcelOperation` TEXT NOT NULL, `parcelOperationValue` TEXT NOT NULL, `discrepancyPicturePath` TEXT NOT NULL, `subParcelId` INTEGER NOT NULL, `interviewStatus` TEXT NOT NULL, `area` TEXT NOT NULL, `name` TEXT NOT NULL, `fatherName` TEXT NOT NULL, `gender` TEXT NOT NULL, `cnic` TEXT NOT NULL, `cnicSource` TEXT NOT NULL, `cnicOtherSource` TEXT NOT NULL, `mobile` TEXT NOT NULL, `mobileSource` TEXT NOT NULL, `mobileOtherSource` TEXT NOT NULL, `ownershipType` TEXT NOT NULL, `ownershipOtherType` TEXT NOT NULL, `floorsList` TEXT NOT NULL, `picturesList` TEXT NOT NULL, `remarks` TEXT NOT NULL, `userId` INTEGER NOT NULL, `kachiAbadiId` INTEGER NOT NULL, `gpsAccuracy` TEXT NOT NULL, `gpsAltitude` TEXT NOT NULL, `gpsProvider` TEXT NOT NULL, `gpsTimestamp` TEXT NOT NULL, `latitude` TEXT NOT NULL, `longitude` TEXT NOT NULL, `timeZoneId` TEXT NOT NULL, `timeZoneName` TEXT NOT NULL, `mobileTimestamp` TEXT NOT NULL, `appVersion` TEXT NOT NULL, `uniqueId` TEXT NOT NULL, `qrCode` TEXT NOT NULL, `parcelNo` INTEGER NOT NULL, `subParcelNo` TEXT NOT NULL, `newStatusId` INTEGER NOT NULL, `subParcelsStatusList` TEXT NOT NULL, `isRevisit` INTEGER NOT NULL, `pkId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `statusBit` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyPkId",
+            "columnName": "surveyPkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyStatus",
+            "columnName": "surveyStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propertyNumber",
+            "columnName": "propertyNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelPkId",
+            "columnName": "parcelPkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelStatus",
+            "columnName": "parcelStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geom",
+            "columnName": "geom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centroidGeom",
+            "columnName": "centroidGeom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperation",
+            "columnName": "parcelOperation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperationValue",
+            "columnName": "parcelOperationValue",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discrepancyPicturePath",
+            "columnName": "discrepancyPicturePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelId",
+            "columnName": "subParcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interviewStatus",
+            "columnName": "interviewStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fatherName",
+            "columnName": "fatherName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnic",
+            "columnName": "cnic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicSource",
+            "columnName": "cnicSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicOtherSource",
+            "columnName": "cnicOtherSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobile",
+            "columnName": "mobile",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileSource",
+            "columnName": "mobileSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileOtherSource",
+            "columnName": "mobileOtherSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipType",
+            "columnName": "ownershipType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipOtherType",
+            "columnName": "ownershipOtherType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "floorsList",
+            "columnName": "floorsList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "picturesList",
+            "columnName": "picturesList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kachiAbadiId",
+            "columnName": "kachiAbadiId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsAccuracy",
+            "columnName": "gpsAccuracy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsAltitude",
+            "columnName": "gpsAltitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsProvider",
+            "columnName": "gpsProvider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsTimestamp",
+            "columnName": "gpsTimestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeZoneId",
+            "columnName": "timeZoneId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeZoneName",
+            "columnName": "timeZoneName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileTimestamp",
+            "columnName": "mobileTimestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "appVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uniqueId",
+            "columnName": "uniqueId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "qrCode",
+            "columnName": "qrCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "newStatusId",
+            "columnName": "newStatusId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelsStatusList",
+            "columnName": "subParcelsStatusList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isRevisit",
+            "columnName": "isRevisit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pkId",
+            "columnName": "pkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statusBit",
+            "columnName": "statusBit",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "TempSurveyFormEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`surveyId` INTEGER NOT NULL, `surveyPkId` INTEGER NOT NULL, `surveyStatus` TEXT NOT NULL, `propertyNumber` TEXT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelPkId` INTEGER NOT NULL, `parcelStatus` TEXT NOT NULL, `geom` TEXT NOT NULL, `centroidGeom` TEXT NOT NULL, `parcelOperation` TEXT NOT NULL, `parcelOperationValue` TEXT NOT NULL, `discrepancyPicturePath` TEXT NOT NULL, `subParcelId` INTEGER NOT NULL, `interviewStatus` TEXT NOT NULL, `area` TEXT NOT NULL, `name` TEXT NOT NULL, `fatherName` TEXT NOT NULL, `gender` TEXT NOT NULL, `cnic` TEXT NOT NULL, `cnicSource` TEXT NOT NULL, `cnicOtherSource` TEXT NOT NULL, `mobile` TEXT NOT NULL, `mobileSource` TEXT NOT NULL, `mobileOtherSource` TEXT NOT NULL, `ownershipType` TEXT NOT NULL, `ownershipOtherType` TEXT NOT NULL, `floorsList` TEXT NOT NULL, `picturesList` TEXT NOT NULL, `remarks` TEXT NOT NULL, `userId` INTEGER NOT NULL, `kachiAbadiId` INTEGER NOT NULL, `gpsAccuracy` TEXT NOT NULL, `gpsAltitude` TEXT NOT NULL, `gpsProvider` TEXT NOT NULL, `gpsTimestamp` TEXT NOT NULL, `latitude` TEXT NOT NULL, `longitude` TEXT NOT NULL, `timeZoneId` TEXT NOT NULL, `timeZoneName` TEXT NOT NULL, `mobileTimestamp` TEXT NOT NULL, `appVersion` TEXT NOT NULL, `uniqueId` TEXT NOT NULL, `qrCode` TEXT NOT NULL, `parcelNo` INTEGER NOT NULL, `subParcelNo` TEXT NOT NULL, `newStatusId` INTEGER NOT NULL, `subParcelsStatusList` TEXT NOT NULL, `isRevisit` INTEGER NOT NULL, `pkId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `statusBit` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyPkId",
+            "columnName": "surveyPkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyStatus",
+            "columnName": "surveyStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propertyNumber",
+            "columnName": "propertyNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelPkId",
+            "columnName": "parcelPkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelStatus",
+            "columnName": "parcelStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geom",
+            "columnName": "geom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centroidGeom",
+            "columnName": "centroidGeom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperation",
+            "columnName": "parcelOperation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperationValue",
+            "columnName": "parcelOperationValue",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discrepancyPicturePath",
+            "columnName": "discrepancyPicturePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelId",
+            "columnName": "subParcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interviewStatus",
+            "columnName": "interviewStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fatherName",
+            "columnName": "fatherName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnic",
+            "columnName": "cnic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicSource",
+            "columnName": "cnicSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicOtherSource",
+            "columnName": "cnicOtherSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobile",
+            "columnName": "mobile",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileSource",
+            "columnName": "mobileSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileOtherSource",
+            "columnName": "mobileOtherSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipType",
+            "columnName": "ownershipType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipOtherType",
+            "columnName": "ownershipOtherType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "floorsList",
+            "columnName": "floorsList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "picturesList",
+            "columnName": "picturesList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kachiAbadiId",
+            "columnName": "kachiAbadiId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsAccuracy",
+            "columnName": "gpsAccuracy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsAltitude",
+            "columnName": "gpsAltitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsProvider",
+            "columnName": "gpsProvider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsTimestamp",
+            "columnName": "gpsTimestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeZoneId",
+            "columnName": "timeZoneId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeZoneName",
+            "columnName": "timeZoneName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileTimestamp",
+            "columnName": "mobileTimestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "appVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uniqueId",
+            "columnName": "uniqueId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "qrCode",
+            "columnName": "qrCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "newStatusId",
+            "columnName": "newStatusId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelsStatusList",
+            "columnName": "subParcelsStatusList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isRevisit",
+            "columnName": "isRevisit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pkId",
+            "columnName": "pkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statusBit",
+            "columnName": "statusBit",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "temp_survey_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `subParcelNo` TEXT NOT NULL, `isSurveyed` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSurveyed",
+            "columnName": "isSurveyed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "NotAtHomeSurveyFormEntity",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`surveyId` INTEGER NOT NULL, `surveyPkId` INTEGER NOT NULL, `surveyStatus` TEXT NOT NULL, `propertyNumber` TEXT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelPkId` INTEGER NOT NULL, `parcelStatus` TEXT NOT NULL, `geom` TEXT NOT NULL, `centroidGeom` TEXT NOT NULL, `parcelOperation` TEXT NOT NULL, `parcelOperationValue` TEXT NOT NULL, `discrepancyPicturePath` TEXT NOT NULL, `subParcelId` INTEGER NOT NULL, `interviewStatus` TEXT NOT NULL, `area` TEXT NOT NULL, `name` TEXT NOT NULL, `fatherName` TEXT NOT NULL, `gender` TEXT NOT NULL, `cnic` TEXT NOT NULL, `cnicSource` TEXT NOT NULL, `cnicOtherSource` TEXT NOT NULL, `mobile` TEXT NOT NULL, `mobileSource` TEXT NOT NULL, `mobileOtherSource` TEXT NOT NULL, `ownershipType` TEXT NOT NULL, `ownershipOtherType` TEXT NOT NULL, `floorsList` TEXT NOT NULL, `picturesList` TEXT NOT NULL, `remarks` TEXT NOT NULL, `userId` INTEGER NOT NULL, `kachiAbadiId` INTEGER NOT NULL, `gpsAccuracy` TEXT NOT NULL, `gpsAltitude` TEXT NOT NULL, `gpsProvider` TEXT NOT NULL, `gpsTimestamp` TEXT NOT NULL, `latitude` TEXT NOT NULL, `longitude` TEXT NOT NULL, `timeZoneId` TEXT NOT NULL, `timeZoneName` TEXT NOT NULL, `mobileTimestamp` TEXT NOT NULL, `appVersion` TEXT NOT NULL, `uniqueId` TEXT NOT NULL, `qrCode` TEXT NOT NULL, `parcelNo` INTEGER NOT NULL, `subParcelNo` TEXT NOT NULL, `newStatusId` INTEGER NOT NULL, `subParcelsStatusList` TEXT NOT NULL, `isRevisit` INTEGER NOT NULL, `pkId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `statusBit` INTEGER NOT NULL, `visitCount` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyPkId",
+            "columnName": "surveyPkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyStatus",
+            "columnName": "surveyStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propertyNumber",
+            "columnName": "propertyNumber",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelPkId",
+            "columnName": "parcelPkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelStatus",
+            "columnName": "parcelStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geom",
+            "columnName": "geom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centroidGeom",
+            "columnName": "centroidGeom",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperation",
+            "columnName": "parcelOperation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelOperationValue",
+            "columnName": "parcelOperationValue",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discrepancyPicturePath",
+            "columnName": "discrepancyPicturePath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelId",
+            "columnName": "subParcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interviewStatus",
+            "columnName": "interviewStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fatherName",
+            "columnName": "fatherName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnic",
+            "columnName": "cnic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicSource",
+            "columnName": "cnicSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicOtherSource",
+            "columnName": "cnicOtherSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobile",
+            "columnName": "mobile",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileSource",
+            "columnName": "mobileSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileOtherSource",
+            "columnName": "mobileOtherSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipType",
+            "columnName": "ownershipType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ownershipOtherType",
+            "columnName": "ownershipOtherType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "floorsList",
+            "columnName": "floorsList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "picturesList",
+            "columnName": "picturesList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kachiAbadiId",
+            "columnName": "kachiAbadiId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsAccuracy",
+            "columnName": "gpsAccuracy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsAltitude",
+            "columnName": "gpsAltitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsProvider",
+            "columnName": "gpsProvider",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsTimestamp",
+            "columnName": "gpsTimestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeZoneId",
+            "columnName": "timeZoneId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeZoneName",
+            "columnName": "timeZoneName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileTimestamp",
+            "columnName": "mobileTimestamp",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "appVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uniqueId",
+            "columnName": "uniqueId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "qrCode",
+            "columnName": "qrCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "newStatusId",
+            "columnName": "newStatusId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelsStatusList",
+            "columnName": "subParcelsStatusList",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isRevisit",
+            "columnName": "isRevisit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pkId",
+            "columnName": "pkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "statusBit",
+            "columnName": "statusBit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitCount",
+            "columnName": "visitCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "active_parcels",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pkid` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `id` INTEGER NOT NULL, `parcelNo` INTEGER NOT NULL, `subParcelNo` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `mauzaName` TEXT NOT NULL, `khewatInfo` TEXT NOT NULL, `areaAssigned` TEXT NOT NULL, `geomWKT` TEXT NOT NULL, `centroid` TEXT NOT NULL, `distance` INTEGER NOT NULL, `parcelType` TEXT NOT NULL, `parcelAreaKMF` TEXT, `parcelAreaAbadiDeh` TEXT, `surveyStatusCode` INTEGER NOT NULL, `surveyId` INTEGER, `isActivate` INTEGER NOT NULL, `unitId` INTEGER, `groupId` INTEGER, `growerCodes` TEXT, `variety` TEXT, `varietyValidationStatus` TEXT, `varietyOldLocal` TEXT, `varietyNewLocal` TEXT, `varietyValidationRemarks` TEXT, `varietyValidationLat` REAL, `varietyValidationLng` REAL, `varietyValidatedAt` TEXT, `varietyValidationUploaded` INTEGER NOT NULL, `isLocallyDrawn` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "pkid",
+            "columnName": "pkid",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaName",
+            "columnName": "mauzaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "khewatInfo",
+            "columnName": "khewatInfo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "areaAssigned",
+            "columnName": "areaAssigned",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geomWKT",
+            "columnName": "geomWKT",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centroid",
+            "columnName": "centroid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "distance",
+            "columnName": "distance",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelType",
+            "columnName": "parcelType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelAreaKMF",
+            "columnName": "parcelAreaKMF",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "parcelAreaAbadiDeh",
+            "columnName": "parcelAreaAbadiDeh",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "surveyStatusCode",
+            "columnName": "surveyStatusCode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isActivate",
+            "columnName": "isActivate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unitId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "growerCodes",
+            "columnName": "growerCodes",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "variety",
+            "columnName": "variety",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyValidationStatus",
+            "columnName": "varietyValidationStatus",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyOldLocal",
+            "columnName": "varietyOldLocal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyNewLocal",
+            "columnName": "varietyNewLocal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyValidationRemarks",
+            "columnName": "varietyValidationRemarks",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyValidationLat",
+            "columnName": "varietyValidationLat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyValidationLng",
+            "columnName": "varietyValidationLng",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyValidatedAt",
+            "columnName": "varietyValidatedAt",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "varietyValidationUploaded",
+            "columnName": "varietyValidationUploaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isLocallyDrawn",
+            "columnName": "isLocallyDrawn",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pkid"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "tasks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`taskId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `assignDate` TEXT NOT NULL, `issueType` TEXT NOT NULL, `details` TEXT NOT NULL, `picData` TEXT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `assignedByUserId` INTEGER NOT NULL, `assignedToUserId` INTEGER NOT NULL, `khewatInfo` TEXT NOT NULL, `createdOn` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, `daysToComplete` INTEGER NOT NULL, `issueTypeId` INTEGER, `pestTypeIds` TEXT, `diseaseTypeIds` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "taskId",
+            "columnName": "taskId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignDate",
+            "columnName": "assignDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "issueType",
+            "columnName": "issueType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "details",
+            "columnName": "details",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "picData",
+            "columnName": "picData",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignedByUserId",
+            "columnName": "assignedByUserId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignedToUserId",
+            "columnName": "assignedToUserId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "khewatInfo",
+            "columnName": "khewatInfo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdOn",
+            "columnName": "createdOn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "daysToComplete",
+            "columnName": "daysToComplete",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "issueTypeId",
+            "columnName": "issueTypeId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pestTypeIds",
+            "columnName": "pestTypeIds",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "diseaseTypeIds",
+            "columnName": "diseaseTypeIds",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "taskId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "crops",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `value` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "crop_types",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `value` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "crop_varieties",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `value` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sowing_person",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `surveyId` INTEGER NOT NULL, `name` TEXT NOT NULL, `cnic` TEXT NOT NULL, `growerCode` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnic",
+            "columnName": "cnic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "growerCode",
+            "columnName": "growerCode",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "issue_types",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "pest_types",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "disease_types",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "officers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `fullName` TEXT NOT NULL, `userName` TEXT NOT NULL, `cnic` TEXT NOT NULL, `mobileNo` TEXT NOT NULL, `vendorName` TEXT, `roleName` TEXT, `isNotActive` INTEGER NOT NULL, `createdOn` TEXT NOT NULL, `cachedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userName",
+            "columnName": "userName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnic",
+            "columnName": "cnic",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileNo",
+            "columnName": "mobileNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vendorName",
+            "columnName": "vendorName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "roleName",
+            "columnName": "roleName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isNotActive",
+            "columnName": "isNotActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdOn",
+            "columnName": "createdOn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedAt",
+            "columnName": "cachedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "jk_growers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `circleCode` TEXT NOT NULL, `circle` TEXT NOT NULL, `mouzaCode` TEXT NOT NULL, `mouzaName` TEXT NOT NULL, `passbookNo` TEXT NOT NULL, `growerName` TEXT NOT NULL, `fatherName` TEXT NOT NULL, `cnicNo` TEXT NOT NULL, `mobileNo` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "circleCode",
+            "columnName": "circleCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "circle",
+            "columnName": "circle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mouzaCode",
+            "columnName": "mouzaCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mouzaName",
+            "columnName": "mouzaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "passbookNo",
+            "columnName": "passbookNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "growerName",
+            "columnName": "growerName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fatherName",
+            "columnName": "fatherName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cnicNo",
+            "columnName": "cnicNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileNo",
+            "columnName": "mobileNo",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "parcel_declines",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `declineGuid` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `mauzaName` TEXT NOT NULL, `areaName` TEXT NOT NULL, `serverParcelId` INTEGER, `parcelNo` TEXT NOT NULL, `subParcelNo` TEXT NOT NULL, `parcelStatus` TEXT NOT NULL, `khewatInfo` TEXT NOT NULL, `remarks` TEXT NOT NULL, `geomWKT` TEXT, `centroid` TEXT, `calculatedArea` REAL, `latitude` REAL, `longitude` REAL, `bearing` REAL, `pic1Path` TEXT NOT NULL, `pic2Path` TEXT NOT NULL, `pic3Path` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isUploaded` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "declineGuid",
+            "columnName": "declineGuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaName",
+            "columnName": "mauzaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "areaName",
+            "columnName": "areaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serverParcelId",
+            "columnName": "serverParcelId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelStatus",
+            "columnName": "parcelStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "khewatInfo",
+            "columnName": "khewatInfo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remarks",
+            "columnName": "remarks",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geomWKT",
+            "columnName": "geomWKT",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "centroid",
+            "columnName": "centroid",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "calculatedArea",
+            "columnName": "calculatedArea",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "bearing",
+            "columnName": "bearing",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pic1Path",
+            "columnName": "pic1Path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pic2Path",
+            "columnName": "pic2Path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pic3Path",
+            "columnName": "pic3Path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isUploaded",
+            "columnName": "isUploaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "mauza_boundary",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mauzaId` INTEGER NOT NULL, `mauzaName` TEXT NOT NULL, `groupId` INTEGER, `unitId` INTEGER, `zoneId` INTEGER, `circleId` INTEGER, `area` TEXT, `geomWKT` TEXT NOT NULL, `geomType` TEXT, `downloadedAt` INTEGER NOT NULL, PRIMARY KEY(`mauzaId`))",
+        "fields": [
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaName",
+            "columnName": "mauzaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unitId",
+            "columnName": "unitId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "circleId",
+            "columnName": "circleId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "geomWKT",
+            "columnName": "geomWKT",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geomType",
+            "columnName": "geomType",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "downloadedAt",
+            "columnName": "downloadedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mauzaId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "parcel_activity_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `parcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `subParcelNo` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `areaName` TEXT NOT NULL, `action` TEXT NOT NULL, `status` TEXT NOT NULL, `details` TEXT NOT NULL, `relatedParcelIds` TEXT NOT NULL, `surveyPkId` INTEGER, `userId` INTEGER NOT NULL, `userName` TEXT NOT NULL, `lat` REAL, `lng` REAL, `appVersion` TEXT NOT NULL, `deviceInfo` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `isUploaded` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mauzaId",
+            "columnName": "mauzaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "areaName",
+            "columnName": "areaName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "details",
+            "columnName": "details",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relatedParcelIds",
+            "columnName": "relatedParcelIds",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyPkId",
+            "columnName": "surveyPkId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "userId",
+            "columnName": "userId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "userName",
+            "columnName": "userName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lat",
+            "columnName": "lat",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lng",
+            "columnName": "lng",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "appVersion",
+            "columnName": "appVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviceInfo",
+            "columnName": "deviceInfo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isUploaded",
+            "columnName": "isUploaded",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_parcel_activity_log_parcelId",
+            "unique": false,
+            "columnNames": [
+              "parcelId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_parcel_activity_log_parcelId` ON `${TABLE_NAME}` (`parcelId`)"
+          },
+          {
+            "name": "index_parcel_activity_log_mauzaId",
+            "unique": false,
+            "columnNames": [
+              "mauzaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_parcel_activity_log_mauzaId` ON `${TABLE_NAME}` (`mauzaId`)"
+          },
+          {
+            "name": "index_parcel_activity_log_isUploaded",
+            "unique": false,
+            "columnNames": [
+              "isUploaded"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_parcel_activity_log_isUploaded` ON `${TABLE_NAME}` (`isUploaded`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "zones",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`zoneId` INTEGER NOT NULL, `zoneName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`zoneId`))",
+        "fields": [
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zoneName",
+            "columnName": "zoneName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSynced",
+            "columnName": "lastSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "zoneId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "divisions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`divisionId` INTEGER NOT NULL, `zoneId` INTEGER NOT NULL, `divisionName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`divisionId`), FOREIGN KEY(`zoneId`) REFERENCES `zones`(`zoneId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "divisionId",
+            "columnName": "divisionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "divisionName",
+            "columnName": "divisionName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSynced",
+            "columnName": "lastSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "divisionId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "zones",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "zoneId"
+            ],
+            "referencedColumns": [
+              "zoneId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "sections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sectionId` INTEGER NOT NULL, `divisionId` INTEGER NOT NULL, `sectionName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`sectionId`), FOREIGN KEY(`divisionId`) REFERENCES `divisions`(`divisionId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "sectionId",
+            "columnName": "sectionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "divisionId",
+            "columnName": "divisionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sectionName",
+            "columnName": "sectionName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSynced",
+            "columnName": "lastSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "sectionId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "divisions",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "divisionId"
+            ],
+            "referencedColumns": [
+              "divisionId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "farms",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`farmId` INTEGER NOT NULL, `sectionId` INTEGER NOT NULL, `farmName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`farmId`), FOREIGN KEY(`sectionId`) REFERENCES `sections`(`sectionId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "farmId",
+            "columnName": "farmId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sectionId",
+            "columnName": "sectionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "farmName",
+            "columnName": "farmName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSynced",
+            "columnName": "lastSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "farmId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "sections",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sectionId"
+            ],
+            "referencedColumns": [
+              "sectionId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "blocks",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`blockId` INTEGER NOT NULL, `farmId` INTEGER NOT NULL, `blockName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`blockId`), FOREIGN KEY(`farmId`) REFERENCES `farms`(`farmId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "blockId",
+            "columnName": "blockId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "farmId",
+            "columnName": "farmId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blockName",
+            "columnName": "blockName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSynced",
+            "columnName": "lastSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "blockId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "farms",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "farmId"
+            ],
+            "referencedColumns": [
+              "farmId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "plots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`plotId` INTEGER NOT NULL, `blockId` INTEGER NOT NULL, `plotName` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `lastSynced` INTEGER NOT NULL, PRIMARY KEY(`plotId`), FOREIGN KEY(`blockId`) REFERENCES `blocks`(`blockId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "plotId",
+            "columnName": "plotId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blockId",
+            "columnName": "blockId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plotName",
+            "columnName": "plotName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSynced",
+            "columnName": "lastSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "plotId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "blocks",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "blockId"
+            ],
+            "referencedColumns": [
+              "blockId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "lessors",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `code` TEXT, `zoneId` INTEGER, `isDeleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "zoneId",
+            "columnName": "zoneId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "isDeleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "new_survey_lessors",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `surveyId` INTEGER NOT NULL, `parcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `subParcelNo` TEXT NOT NULL, `lessorId` INTEGER NOT NULL, `lessorName` TEXT NOT NULL, `lessorCode` TEXT NOT NULL, `lessorType` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surveyId",
+            "columnName": "surveyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelId",
+            "columnName": "parcelId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parcelNo",
+            "columnName": "parcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subParcelNo",
+            "columnName": "subParcelNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lessorId",
+            "columnName": "lessorId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lessorName",
+            "columnName": "lessorName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lessorCode",
+            "columnName": "lessorCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lessorType",
+            "columnName": "lessorType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "irrigation_source",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `value` TEXT NOT NULL, `isSynced` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "property_types",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`value` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`value`))",
+        "fields": [
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "value"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "aoi_boundaries",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`localId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `tehsil` TEXT NOT NULL, `theId` TEXT NOT NULL, `district` TEXT NOT NULL, `area` REAL NOT NULL, `geomWKT` TEXT NOT NULL, `downloadedAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "localId",
+            "columnName": "localId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tehsil",
+            "columnName": "tehsil",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "theId",
+            "columnName": "theId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "district",
+            "columnName": "district",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "area",
+            "columnName": "area",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "geomWKT",
+            "columnName": "geomWKT",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "downloadedAt",
+            "columnName": "downloadedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "localId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0297cca02ff2cf5073b8ee51f9bb53e8')"
+    ]
+  }
+}

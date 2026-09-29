@@ -19,6 +19,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
+import pk.gop.pulse.katchiAbadi.presentation.util.ZdAlert
 import pk.gop.pulse.katchiAbadi.R
 import pk.gop.pulse.katchiAbadi.common.Constants
 import pk.gop.pulse.katchiAbadi.common.Utility
@@ -165,68 +166,48 @@ class FragmentFormPropertyDetails : Fragment() {
 
                         if (viewModel.interviewStatus != spnCategory.selectedItem.toString()) {
 
-                            val builder = AlertDialog.Builder(requireActivity())
-                                .setTitle("Alert!")
-                                .setCancelable(false)
-                                .setMessage("This action will reset the current form.\n\nDo you really want to change the selection to ${spnCategory.selectedItem}?")
-                                .setPositiveButton("Yes") { _, _ ->
-
-                                    when (pos) {
-                                        0 -> {
-                                            cvOwner2.visibility = View.VISIBLE
-                                            tvPageNumber.text = "2/4"
-                                        }
-
-                                        1, 2 -> {
-                                            cvOwner2.visibility = View.GONE
-                                            tvPageNumber.text = "2/4"
-                                        }
-
-                                        else -> {
-                                            cvOwner2.visibility = View.GONE
-                                            tvPageNumber.text = "2/3"
-                                        }
-                                    }
-                                    viewModel.resetValues(false)
-
-                                    viewModel.interviewStatus = spnCategory.selectedItem.toString()
-                                }
-                                .setNegativeButton("No") { _, _ ->
-
+                            ZdAlert.confirm(
+                                context = requireActivity(),
+                                title = "Alert!",
+                                message = "This action will reset the current form.\n\nDo you really want to change the selection to ${spnCategory.selectedItem}?",
+                                confirmText = "Yes",
+                                cancelText = "No",
+                                onCancel = {
+                                    // Put the spinner back on whatever is still selected.
                                     when (viewModel.interviewStatus) {
-                                        requireContext().getString(R.string.present_respondent_status) -> {
+                                        requireContext().getString(R.string.present_respondent_status) ->
                                             spnCategory.setSelection(0)
-                                        }
 
-                                        requireContext().getString(R.string.declined_respondent_status) -> {
+                                        requireContext().getString(R.string.declined_respondent_status) ->
                                             spnCategory.setSelection(1)
-                                        }
 
-                                        requireContext().getString(R.string.not_present_respondent_status) -> {
+                                        requireContext().getString(R.string.not_present_respondent_status) ->
                                             spnCategory.setSelection(2)
-                                        }
 
-                                        requireContext().getString(R.string.empty_plot_status) -> {
+                                        requireContext().getString(R.string.empty_plot_status) ->
                                             spnCategory.setSelection(3)
-                                        }
                                     }
                                 }
-                            // Create the AlertDialog object
-                            val dialog = builder.create()
-                            dialog.show()
+                            ) {
+                                when (pos) {
+                                    0 -> {
+                                        cvOwner2.visibility = View.VISIBLE
+                                        tvPageNumber.text = "2/4"
+                                    }
 
-                            // Get the buttons from the dialog
-                            val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-                            val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
+                                    1, 2 -> {
+                                        cvOwner2.visibility = View.GONE
+                                        tvPageNumber.text = "2/4"
+                                    }
 
-                            // Set button text size and style
-                            positiveButton.textSize =
-                                16f // Change the size according to your preference
-                            positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-                            negativeButton.textSize =
-                                16f // Change the size according to your preference
-                            negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+                                    else -> {
+                                        cvOwner2.visibility = View.GONE
+                                        tvPageNumber.text = "2/3"
+                                    }
+                                }
+                                viewModel.resetValues(false)
+                                viewModel.interviewStatus = spnCategory.selectedItem.toString()
+                            }
                         } else {
                             when (pos) {
                                 0 -> {
@@ -588,33 +569,18 @@ class FragmentFormPropertyDetails : Fragment() {
     }
 
     private fun showAlertDialog() {
-        val builder = AlertDialog.Builder(requireActivity())
-            .setTitle("Alert!")
-            .setCancelable(false)
-            .setMessage("Are you sure you want to go back? Please note that the form will be reset, if you proceed to leave")
-            .setPositiveButton("Proceed") { _, _ ->
-                viewModel.resetValues(false)
-                if (isAdded) {
-                    findNavController().popBackStack()
-                }
+        ZdAlert.confirm(
+            context = requireActivity(),
+            title = "Alert!",
+            message = "Are you sure you want to go back? Please note that the form will be reset, if you proceed to leave",
+            confirmText = "Proceed",
+            cancelText = "Cancel"
+        ) {
+            viewModel.resetValues(false)
+            if (isAdded) {
+                findNavController().popBackStack()
             }
-            .setNegativeButton("Cancel", null)
-        // Create the AlertDialog object
-        val dialog = builder.create()
-        dialog.show()
-
-        // Get the buttons from the dialog
-        val positiveButton = dialog.getButton(DialogInterface.BUTTON_POSITIVE)
-        val negativeButton = dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-
-        // Set button text size and style
-        positiveButton.textSize =
-            16f // Change the size according to your preference
-        positiveButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
-
-        negativeButton.textSize =
-            16f // Change the size according to your preference
-        negativeButton.setTypeface(android.graphics.Typeface.DEFAULT_BOLD) // Make the text bold
+        }
     }
 
     override fun onDestroyView() {
