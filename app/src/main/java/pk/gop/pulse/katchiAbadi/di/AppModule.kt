@@ -32,6 +32,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.data.repository.AuthRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.DeclineRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.JKGrowerRepositoryImpl
+import pk.gop.pulse.katchiAbadi.data.repository.MapAnalysisRepository
 import pk.gop.pulse.katchiAbadi.data.repository.MenuRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NAHRepositoryImpl
 import pk.gop.pulse.katchiAbadi.data.repository.NewSurveyRepositoryImpl
@@ -137,8 +138,11 @@ object AppModule {
                 // Build the authorized request first
                 val requestBuilder = original.newBuilder()
                 val token = sharedPreferences.getString(Constants.SHARED_PREF_TOKEN, null)
-                if (!token.isNullOrEmpty()) {
-                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                // Only when the call has none of its own: methods with @Header("Authorization")
+                // already set it, and a second copy reaches ASP.NET as "Bearer x,Bearer x",
+                // which the JWT handler rejects with 401 invalid_token.
+                if (!token.isNullOrEmpty() && original.header("Authorization") == null) {
+                    requestBuilder.header("Authorization", "Bearer $token")
                 }
                 val authorizedRequest = requestBuilder.build()
 
@@ -610,7 +614,8 @@ object AppModule {
         api: ServerApi,
         sharedPreferences: SharedPreferences,
         activeParcelDao: ActiveParcelDao,
-        logger: ParcelActivityLogger
+        logger: ParcelActivityLogger,
+        mapAnalysisRepository: MapAnalysisRepository
     ): NewSurveyRepository {
         return NewSurveyRepositoryImpl(
             dao,
@@ -621,7 +626,8 @@ object AppModule {
             sharedPreferences,
             activeParcelDao,
             logger,
-            db.surveyLessorDao()
+            db.surveyLessorDao(),
+            mapAnalysisRepository
         )
     }
     @Provides
@@ -639,14 +645,31 @@ object AppModule {
     fun provideDeclineRepository(
         database: AppDatabase,
         api: ServerApi,
-        sharedPreferences: SharedPreferences
+        sharedPreferences: SharedPreferences,
+        logger: ParcelActivityLogger
     ): DeclineRepositoryImpl = DeclineRepositoryImpl(
         database.parcelDeclineDao(),
         api,
-        sharedPreferences
+        sharedPreferences,
+        logger
     )
 
     @Provides fun provideParcelActivityLogDao(db: AppDatabase) = db.parcelActivityLogDao()
+
+    @Provides
+    @Singleton
+    fun provideMapAnalysisRepository(
+        database: AppDatabase,
+        api: ServerApi,
+        sharedPreferences: SharedPreferences,
+        logger: ParcelActivityLogger
+    ): MapAnalysisRepository = MapAnalysisRepository(
+        database.analyticsParcelDao(),
+        database.parcelAcceptDao(),
+        api,
+        sharedPreferences,
+        logger
+    )
 
     // ---- Corporate Farms ----
     // LessorRepository ka apna @Inject constructor hai, is liye uska @Provides nahi chahiye.

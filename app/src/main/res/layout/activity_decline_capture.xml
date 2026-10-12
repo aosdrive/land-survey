@@ -37,6 +37,18 @@
                     android:textStyle="bold"
                     tools:text="Parcel 775" />
 
+                <!-- Multi-parcel mode only: the parcel numbers being declined together -->
+                <TextView
+                    android:id="@+id/tvDeclineParcels"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="#1B5E20"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:text="Parcels 12, 13, 15"
+                    tools:visibility="visible" />
+
                 <TextView
                     android:id="@+id/tvDeclineSub"
                     android:layout_width="match_parent"
@@ -166,6 +178,7 @@
                     android:textStyle="bold" />
 
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilDeclineRemarks"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"

@@ -213,7 +213,9 @@ schema change and no migration, so field devices ended up with `user_version = 2
 still schema-21 content. That is now repaired: no-op bridges `migration21to22` / `22to23` / `23to24` fill the
 phantom steps, and the three real migrations were renumbered to `migration24to25` (the `active_parcels`
 variety columns), `migration25to26` (`mauza_boundary` + `isLocallyDrawn`) and `migration26to27`
-(`parcel_activity_log`). The chain is unbroken 1 → 27 and `version = 27` matches it. Keep it that way —
+(`parcel_activity_log`). Versions 28 → 33 each carry a registered migration (the latest,
+`migration32to33`, adds `analytics_parcels.existingSubParcelNos`). The chain is unbroken 1 → 33 and
+`version = 33` matches it. Keep it that way —
 every bump needs a registered migration, even an empty one.
 
 ### Corporate Farms: gate on the isCorporateUser flag

@@ -41,6 +41,11 @@
             android:label="Pending Declines"
             android:theme="@style/Theme.Survey" />
         <activity
+            android:name=".ui.activities.PendingAcceptsActivity"
+            android:exported="false"
+            android:label="Pending Survey Removals"
+            android:theme="@style/Theme.Survey" />
+        <activity
             android:name=".ui.activities.DeclineCaptureActivity"
             android:exported="false" />
         <activity

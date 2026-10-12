@@ -47,6 +47,10 @@ interface ActiveParcelDao {
     @Query("SELECT * FROM active_parcels WHERE id = :parcelId")
     suspend fun getParcelById(parcelId: Long): ActiveParcelEntity?
 
+    /** Of the given parcel ids, those with a survey saved on this device (Map Analysis colours them). */
+    @Query("SELECT DISTINCT id FROM active_parcels WHERE surveyStatusCode = 2 AND id IN (:parcelIds)")
+    suspend fun getSurveyedParcelIds(parcelIds: List<Long>): List<Long>
+
 
     @Query("UPDATE active_parcels SET surveyStatusCode = :statusCode WHERE id = :parcelId")
     suspend fun updateSurveyStatus(parcelId: Long, statusCode: Int)

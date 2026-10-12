@@ -49,6 +49,8 @@ import pk.gop.pulse.katchiAbadi.domain.model.BoundaryDto
 import pk.gop.pulse.katchiAbadi.domain.model.GrowerFeatureDto
 import pk.gop.pulse.katchiAbadi.domain.model.LookupItem
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelDeclinePostDto
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelAcceptPostDto
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelAcceptResponse
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SugarcaneResponseDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyPostNew
@@ -314,6 +316,13 @@ interface ServerApi {
         @Header("Authorization") token: String,
         @Body body: List<ParcelDeclinePostDto>
     ): Response<PostApiDto>
+
+    @POST("api/MobileData/AddParcelAccept")
+    @Headers("Content-Type: application/json")
+    suspend fun postParcelAccepts(
+        @Header("Authorization") token: String,
+        @Body body: List<ParcelAcceptPostDto>
+    ): Response<ParcelAcceptResponse>
 
     @POST("api/RykMobileData/RykValidateVariety")
     suspend fun postVarietyValidations(

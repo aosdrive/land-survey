@@ -48,6 +48,8 @@ import pk.gop.pulse.katchiAbadi.domain.model.SurveyLessorEntity
 import pk.gop.pulse.katchiAbadi.domain.model.IrrigationSourceEntity
 import pk.gop.pulse.katchiAbadi.domain.model.PropertyTypeEntity
 import pk.gop.pulse.katchiAbadi.domain.model.AoiBoundaryEntity
+import pk.gop.pulse.katchiAbadi.domain.model.AnalyticsParcelEntity
+import pk.gop.pulse.katchiAbadi.domain.model.ParcelAcceptEntity
 
 @Database(
     entities = [NewSurveyNewEntity::class, SurveyPersonEntity::class, SurveyImage::class, ParcelEntity::class, KachiAbadiEntity::class, SurveyEntity::class, SurveyFormEntity::class, TempSurveyFormEntity::class, TempSurveyLogEntity::class, NotAtHomeSurveyFormEntity::class, ActiveParcelEntity::class, TaskEntity::class, CropEntity::class, CropTypeEntity::class, CropVarietyEntity::class,
@@ -71,8 +73,10 @@ import pk.gop.pulse.katchiAbadi.domain.model.AoiBoundaryEntity
         SurveyLessorEntity::class,
         IrrigationSourceEntity::class,
         PropertyTypeEntity::class,
-        AoiBoundaryEntity::class],
-    version = 29,
+        AoiBoundaryEntity::class,
+        AnalyticsParcelEntity::class,
+        ParcelAcceptEntity::class],
+    version = 33,
     exportSchema = true
 )
 @TypeConverters(StatusConverter::class)
@@ -115,6 +119,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun propertyTypeDao(): PropertyTypeDao
     abstract fun aoiBoundaryDao(): AoiBoundaryDao
 
+    // ---- Map Analysis ----
+    abstract fun analyticsParcelDao(): AnalyticsParcelDao
+    abstract fun parcelAcceptDao(): ParcelAcceptDao
+
     companion object {
 
         @Volatile
@@ -155,6 +163,10 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(migration26to27)
                     .addMigrations(migration27to28)
                     .addMigrations(migration28to29)
+                    .addMigrations(migration29to30)
+                    .addMigrations(migration30to31)
+                    .addMigrations(migration31to32)
+                    .addMigrations(migration32to33)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -497,5 +509,43 @@ val migration28to29 = object : Migration(28, 29) {
         db.execSQL("ALTER TABLE new_surveys ADD COLUMN plot TEXT")
         db.execSQL("ALTER TABLE new_surveys ADD COLUMN irrigationSource TEXT")
         db.execSQL("ALTER TABLE new_surveys ADD COLUMN irrigationSourceQuantity TEXT")
+    }
+}
+
+val migration29to30 = object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Map Analysis: offline copy of the analytics parcels, and accepts of
+        // "Unmapped cane cells" parcels waiting for upload.
+        // DDL matches Room's exported schema (app/schemas/.../30.json).
+        db.execSQL("CREATE TABLE IF NOT EXISTS `analytics_parcels` (`pk` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `serverRowId` INTEGER NOT NULL, `parcelId` INTEGER NOT NULL, `mauzaId` INTEGER NOT NULL, `parcelNo` TEXT, `khewat` TEXT, `status` TEXT, `parcelAcres` REAL, `computedAcres` REAL, `geometryWKT` TEXT, `cachedAt` INTEGER NOT NULL)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_analytics_parcels_mauzaId` ON `analytics_parcels` (`mauzaId`)")
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS `parcel_accepts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `acceptGuid` TEXT NOT NULL, `mauzaId` INTEGER NOT NULL, `mauzaName` TEXT NOT NULL, `areaName` TEXT NOT NULL, `serverParcelId` INTEGER NOT NULL, `parcelNo` TEXT NOT NULL, `parcelStatus` TEXT NOT NULL, `khewatInfo` TEXT NOT NULL, `remarks` TEXT NOT NULL, `latitude` REAL, `longitude` REAL, `createdAt` INTEGER NOT NULL, `isUploaded` INTEGER NOT NULL, `lastError` TEXT)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_parcel_accepts_serverParcelId` ON `parcel_accepts` (`serverParcelId`)")
+    }
+}
+
+val migration30to31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Map Analysis: the server now says which parcels were already accepted or declined.
+        db.execSQL("ALTER TABLE analytics_parcels ADD COLUMN action TEXT")
+    }
+}
+
+val migration31to32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Map Analysis: sub-parcels of split parcels and each parcel's own server area.
+        db.execSQL("ALTER TABLE analytics_parcels ADD COLUMN parentParcelId INTEGER")
+        db.execSQL("ALTER TABLE analytics_parcels ADD COLUMN subParcelNo TEXT")
+        db.execSQL("ALTER TABLE analytics_parcels ADD COLUMN areaAssigned TEXT")
+        db.execSQL("ALTER TABLE analytics_parcels ADD COLUMN surveyStatusCode INTEGER")
+    }
+}
+
+val migration32to33 = object : Migration(32, 33) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Map Analysis: the server's other active sub-parcel numbers for each parcel number, so a
+        // split on the device never reuses a number that already exists on the server.
+        db.execSQL("ALTER TABLE analytics_parcels ADD COLUMN existingSubParcelNos TEXT")
     }
 }

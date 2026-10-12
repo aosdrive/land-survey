@@ -92,6 +92,11 @@ class CustomTileLayer(
     private val areaId: String,
     private val minZoomLevel: Int,
     private val maxZoomLevel: Int,
+    /**
+     * When it returns true, a tile missing from the device is downloaded and saved into the
+     * same folder, so it also shows offline afterwards. Null keeps the layer offline-only.
+     */
+    private val canDownloadMissing: (() -> Boolean)? = null,
 
     ) : ImageTiledLayer(tileInfo, fullExtent) {
 
@@ -104,6 +109,9 @@ class CustomTileLayer(
 
                 // Fetch and cache the tile using the TileManager
                 val tileFile = tileManager.viewCacheTile(level, row, col, areaId, "files", minZoomLevel, maxZoomLevel)
+                    ?: if (canDownloadMissing?.invoke() == true)
+                        tileManager.downloadAndCacheTileNew(level, row, col, areaId, "files", minZoomLevel, maxZoomLevel)
+                    else null
                 // Return the tile bytes if found, else return an empty byte array
                 tileFile?.readBytes() ?: ByteArray(0)
             } catch (e: IOException) {

@@ -171,6 +171,8 @@ class FragmentMap : Fragment() {
     private lateinit var tvMergeParcelHi: TextView
     private val originalGraphicSymbols = mutableMapOf<Long, Symbol>()
     private val originalLabelGraphics = mutableMapOf<Long, Graphic>()
+    /** Server ids of parcels declined from Map Analysis (parcel_declines); refreshed on resume. */
+    private var declinedParcelIds: Set<Long> = emptySet()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
@@ -474,6 +476,25 @@ class FragmentMap : Fragment() {
 //            }
 //        }
 //    }
+
+    /** Loads the ids of parcels declined on this device, so split / merge can refuse them. */
+    private fun refreshDeclinedParcelIds() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                declinedParcelIds = withContext(Dispatchers.IO) {
+                    database.parcelDeclineDao().getDeclinedParcelIds().toSet()
+                }
+            } catch (e: Exception) {
+                Log.w("FragmentMap", "Could not load declined parcels: ${e.message}")
+            }
+        }
+    }
+
+    /** A declined parcel is out of the survey queue: it can not be split or merged. */
+    private fun isDeclined(graphic: Graphic): Boolean {
+        val id = graphic.attributes["parcel_id"]?.toString()?.toLongOrNull() ?: return false
+        return id in declinedParcelIds
+    }
 
     private fun enterSplitMode(graphic: Graphic) {
         if (isSplitMode) {
@@ -1217,6 +1238,8 @@ class FragmentMap : Fragment() {
         super.onResume()
 
         closeCallOut()
+        // Declines made in Map Analysis while this map was in the background.
+        refreshDeclinedParcelIds()
 
         refreshReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -3157,6 +3180,15 @@ class FragmentMap : Fragment() {
                             return@addDoneListener
                         }
 
+                        if (isDeclined(graphic)) {
+                            ZdAlert.warn(
+                                requireContext(), "Can Not Split",
+                                "Parcel ${graphic.attributes["parcel_no"]} has been declined. " +
+                                    "A declined parcel can not be split or merged."
+                            )
+                            return@addDoneListener
+                        }
+
                         mCallOut.dismiss()
 
                         enterSplitMode(graphic)
@@ -3564,6 +3596,14 @@ class FragmentMap : Fragment() {
 //        }
 
         tvMergeParcel.setOnClickListener {
+            if (isDeclined(graphics)) {
+                ZdAlert.warn(
+                    requireContext(), "Can Not Merge",
+                    "Parcel ${graphics.attributes["parcel_no"]} has been declined. " +
+                        "A declined parcel can not be split or merged."
+                )
+                return@setOnClickListener
+            }
             Toast.makeText(
                 requireContext(),
                 "Tap on parcels to select for merge",
@@ -3633,6 +3673,15 @@ class FragmentMap : Fragment() {
                                         Toast.makeText(
                                             requireContext(),
                                             "Surveyed parcel cannot be selected",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@addDoneListener
+                                    }
+
+                                    if (isDeclined(selectedGraphic)) {
+                                        Toast.makeText(
+                                            requireContext(),
+                                            "Declined parcel cannot be merged",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                         return@addDoneListener

@@ -67,8 +67,8 @@ class PendingDeclineAdapter(
         }
 
         holder.dot.setBackgroundColor(
-            if (item.parcelStatus.contains("Unmapped", true)) COLOR_UNMAPPED
-            else COLOR_NO_SURVEY
+            if (item.parcelStatus.contains("surveyed", true)) COLOR_UNMAPPED   // red: surveyed but not cane
+            else COLOR_NO_SURVEY                                                // yellow: cane without survey
         )
 
         if (item.remarks.isNotBlank()) {

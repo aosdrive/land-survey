@@ -35,6 +35,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.withTransaction
 import com.google.android.gms.location.FusedLocationProviderClient
 import android.location.Location
 import androidx.core.app.ActivityCompat
@@ -160,6 +161,36 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
     @Inject
     lateinit var logger: ParcelActivityLogger
 
+    // ---- Optional launch extras: the real area/mauza of the parcel ----
+    // Map Analysis shows every area of a mauza, so the selected-area prefs can point at
+    // the wrong area for the tapped parcel. When the caller sends "areaName" / "mauzaId"
+    // the saved survey row uses them; otherwise the prefs are used exactly as before.
+    private var intentAreaName: String = ""
+    private var intentMauzaId: Long = 0L
+
+    // ---- Batch mode: one form, one separate survey per parcel ----
+    // Index 0 is always the parcel the scalar extras describe, so every code path that
+    // reads parcelId/parcelNo/subParcelNo keeps working unchanged for the first parcel.
+    private var isBatchSurvey = false
+    private var batchTargets: List<BatchTarget> = emptyList()
+
+    /** One parcel that receives its own survey row in batch mode. */
+    private data class BatchTarget(
+        val parcelId: Long,
+        val parcelNo: String,
+        val subParcelNo: String,
+        val areaName: String,
+        val khewat: String,
+        val parcelArea: String
+    )
+
+    /** What the save block hands back: the first survey plus one entry per extra batch parcel. */
+    private data class SaveOutcome(
+        val surveyId: Long,
+        val growerCodesText: String,
+        val extraSurveys: List<Pair<BatchTarget, Long>>
+    )
+
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -213,6 +244,33 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 Constants.SHARED_PREF_DEFAULT_STRING
             ).orEmpty()
 
+        intentAreaName = intent.getStringExtra("areaName").orEmpty()
+        intentMauzaId = intent.getLongExtra("mauzaId", 0L)
+
+        isBatchSurvey = intent.getBooleanExtra("isBatchSurvey", false)
+        if (isBatchSurvey) {
+            // Editing rewrites one existing row; a batch has nowhere to put the rest.
+            if (isEditMode) {
+                ZdAlert.error(
+                    this,
+                    "Batch Not Available",
+                    "A saved survey can only be edited one parcel at a time.",
+                    buttonText = "Close"
+                ) { finish() }
+                return
+            }
+            batchTargets = readBatchTargets(parcelId, parcelNo, subParcelNo, khewatInfo, parcelArea)
+            if (batchTargets.isEmpty()) {
+                ZdAlert.error(
+                    this,
+                    "Batch Parcels Missing",
+                    "The parcel list for this batch is empty or does not start with the selected parcel. Go back and select the parcels again.",
+                    buttonText = "Close"
+                ) { finish() }
+                return
+            }
+        }
+
         if (isEditMode) {
             supportActionBar?.title = "Edit Survey"
             binding.btnSubmitSurvey.text = "Update Survey"
@@ -240,6 +298,13 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 
         findViewById<TextView>(R.id.tvParcelInfo).text = parcelInfoText
 
+        if (isBatchSurvey) {
+            supportActionBar?.title = "Batch Survey"
+            binding.btnSubmitSurvey.text =
+                if (batchTargets.size == 1) "Submit Survey" else "Submit ${batchTargets.size} Surveys"
+            binding.tvParcelInfo.text = buildBatchHeaderText()
+        }
+
 
         setupSpinners()
         setupPersonSection()
@@ -252,6 +317,64 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
 //        syncUnsyncedData()
         loadJKGrowers()
         if (!isEditMode) syncUnsyncedData()
+    }
+
+    /**
+     * Reads the batch arrays. Every array is aligned by index with "batchParcelIds".
+     * Index 0 must be the parcel the scalar extras describe; if it is not, the batch is
+     * refused (empty list) rather than saved against the wrong parcel. Index 0 takes its
+     * values from the scalar extras so the header and the saved row cannot disagree.
+     */
+    private fun readBatchTargets(
+        parcelId: Long,
+        parcelNo: String,
+        subParcelNo: String,
+        khewatInfo: String,
+        parcelArea: String
+    ): List<BatchTarget> {
+        val ids = intent.getLongArrayExtra("batchParcelIds") ?: return emptyList()
+        if (ids.isEmpty() || ids[0] != parcelId) return emptyList()
+
+        val nos = intent.getStringArrayExtra("batchParcelNos")
+        val subs = intent.getStringArrayExtra("batchSubParcelNos")
+        val areas = intent.getStringArrayExtra("batchAreaNames")
+        val khewats = intent.getStringArrayExtra("batchKhewats")
+        val parcelAreas = intent.getStringArrayExtra("batchParcelAreas")
+
+        return ids.indices.map { i ->
+            if (i == 0) {
+                BatchTarget(
+                    parcelId = parcelId,
+                    parcelNo = parcelNo,
+                    subParcelNo = subParcelNo,
+                    areaName = intentAreaName,
+                    khewat = khewatInfo,
+                    parcelArea = parcelArea
+                )
+            } else {
+                BatchTarget(
+                    parcelId = ids[i],
+                    parcelNo = nos?.getOrNull(i).orEmpty(),
+                    subParcelNo = subs?.getOrNull(i).orEmpty(),
+                    areaName = areas?.getOrNull(i).orEmpty(),
+                    khewat = khewats?.getOrNull(i).orEmpty(),
+                    parcelArea = parcelAreas?.getOrNull(i).orEmpty()
+                )
+            }
+        }.distinctBy { it.parcelId }
+    }
+
+    /** "Parcels 12, 13, 15 (3)" plus a one-line reminder of what the batch does. */
+    private fun buildBatchHeaderText(): CharSequence {
+        val labels = batchTargets.map { target ->
+            val sub = target.subParcelNo.trim()
+            if (sub.isEmpty() || sub == "0") target.parcelNo else "${target.parcelNo}/$sub"
+        }
+        val title = SpannableString("Parcels ${labels.joinToString(", ")} (${labels.size})")
+        title.setSpan(StyleSpan(Typeface.BOLD), 0, title.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return SpannableStringBuilder()
+            .append(title)
+            .append("\nOne form - each parcel gets its own survey")
     }
 
     private fun loadParcelGeometry(parcelId: Long) {
@@ -1657,14 +1780,18 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                 remarks = binding.etRemarks.text.toString(),
                 parcelOperation = parcelOperation,
                 parcelOperationValue = parcelOperationValue,
-                mauzaId = sharedPreferences.getLong(
+                // The caller may send the parcel's real mauza/area (Map Analysis spans
+                // every area of a mauza); without them the prefs are used as before.
+                mauzaId = if (intentMauzaId > 0) intentMauzaId else sharedPreferences.getLong(
                     Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID,
                     Constants.SHARED_PREF_DEFAULT_INT.toLong()
                 ),
-                areaName = sharedPreferences.getString(
-                    Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
-                    Constants.SHARED_PREF_DEFAULT_STRING
-                ).orEmpty(),
+                areaName = intentAreaName.ifBlank {
+                    sharedPreferences.getString(
+                        Constants.SHARED_PREF_USER_SELECTED_AREA_NAME,
+                        Constants.SHARED_PREF_DEFAULT_STRING
+                    ).orEmpty()
+                },
                 sowingStatus = if (selectedSowingDate.isNullOrBlank()) "No" else "Yes",
                 sowingDate = selectedSowingDate,   // optional, may be null
                 farmerProfilePath = farmerProfilePath,
@@ -1684,9 +1811,22 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
             val mauzaId = sharedPreferences.getLong(Constants.SHARED_PREF_USER_SELECTED_MAUZA_ID, 0)
             val images = viewModel.surveyImages.value!!
 
+            // Batch mode: every parcel after the first gets its own copy of this survey.
+            // Read the lessor type here, on the main thread, once for all of them.
+            val extraTargets = if (isBatchSurvey) batchTargets.drop(1) else emptyList()
+            val batchLessorType = binding.spinnerLessorType.selectedItem?.toString() ?: "Single"
+
             lifecycleScope.launch {
                 try {
-                    val (surveyId, growerCodesText) = withContext(Dispatchers.IO) {
+                    // Batch mode runs every write below inside one Room transaction so a
+                    // failure on any parcel leaves nothing half-written. A single-parcel
+                    // save runs exactly as before.
+                    val saved = saveOnIo(useTransaction = extraTargets.isNotEmpty()) {
+                        // Rows written for the first survey, in the order they were inserted.
+                        // Extra batch parcels reuse them with their own surveyId, so every
+                        // survey links to exactly the same persons.
+                        val resolvedPersons = mutableListOf<SurveyPersonEntity>()
+
                         val surveyId = if (isEditMode) {
                             database.newSurveyNewDao().updateSurvey(survey.copy(pkId = editSurveyId))
 
@@ -1748,6 +1888,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                             mauzaName = parcelMauzaName
                                         )
                                         database.personDao().insertPerson(newPerson)
+                                        resolvedPersons.add(newPerson)
                                         Log.d("SurveyActivity", "  ✅ Created NEW person (modified)")
 
                                     } else {
@@ -1759,6 +1900,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                             mauzaName = parcelMauzaName
                                         )
                                         database.personDao().insertPerson(personLink)
+                                        resolvedPersons.add(personLink)
                                         Log.d("SurveyActivity", "  ✅ Linked existing person")
                                     }
                                 } else {
@@ -1769,6 +1911,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                         mauzaName = parcelMauzaName
                                     )
                                     database.personDao().insertPerson(newPerson)
+                                    resolvedPersons.add(newPerson)
                                 }
                             } else {
                                 val similarPerson = if (!person.nic.isNullOrBlank()) {
@@ -1786,6 +1929,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                         mauzaName = parcelMauzaName
                                     )
                                     database.personDao().insertPerson(personLink)
+                                    resolvedPersons.add(personLink)
                                 } else {
                                     val newPerson = person.copy(
                                         id = 0,
@@ -1794,6 +1938,7 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                                         mauzaName = parcelMauzaName
                                     )
                                     database.personDao().insertPerson(newPerson)
+                                    resolvedPersons.add(newPerson)
                                     Log.d("SurveyActivity", "  ✅ Created brand new person")
                                 }
                             }
@@ -1841,32 +1986,139 @@ class SurveyActivity : AppCompatActivity(), SensorEventListener {
                             }
                         }
 
-                        // withContext ka return value
-                        surveyId to growerCodesText
+                        // ===== BATCH: one more survey per extra parcel =====
+                        // Same form data and the same resolved persons, lessors and image
+                        // rows, but the parcel identity of each target. Image rows point at
+                        // the same files on disk: nothing in the app deletes an image file
+                        // per survey (deleteSurvey only removes the new_surveys row and the
+                        // uploader only reads the file), so the copies stay valid.
+                        val extraSaved = mutableListOf<Pair<BatchTarget, Long>>()
+                        extraTargets.forEach { target ->
+                            val extraId = database.newSurveyNewDao().insertSurvey(
+                                survey.copy(
+                                    pkId = 0,
+                                    parcelId = target.parcelId,
+                                    parcelNo = target.parcelNo,
+                                    subParcelNo = target.subParcelNo,
+                                    areaName = target.areaName.ifBlank { survey.areaName }
+                                )
+                            )
+                            Log.d(
+                                "SurveyActivity",
+                                "=== SAVING BATCH SURVEY $extraId for parcel ${target.parcelId} (${target.parcelNo}/${target.subParcelNo}) ==="
+                            )
+
+                            if (isCorporateFarm) {
+                                database.surveyLessorDao().deleteForSurvey(extraId)
+                                selectedLessors.forEach { lessor ->
+                                    database.surveyLessorDao().insert(
+                                        SurveyLessorEntity(
+                                            surveyId = extraId,
+                                            parcelId = target.parcelId,
+                                            parcelNo = target.parcelNo,
+                                            subParcelNo = target.subParcelNo,
+                                            lessorId = lessor.id,
+                                            lessorName = lessor.name,
+                                            lessorCode = lessor.code.orEmpty(),
+                                            lessorType = batchLessorType
+                                        )
+                                    )
+                                }
+                            }
+
+                            resolvedPersons.forEach { row ->
+                                database.personDao().insertPerson(row.copy(id = 0, surveyId = extraId))
+                            }
+
+                            images.forEach { image ->
+                                database.imageDao().insertImage(image.copy(id = 0, surveyId = extraId))
+                            }
+
+                            database.activeParcelDao().updateParcelSurveyStatus(2, extraId, target.parcelId)
+
+                            if (growerCodesText.isNotEmpty()) {
+                                database.activeParcelDao().updateParcelGrowerCodes(target.parcelId, growerCodesText)
+                            }
+
+                            database.tempSurveyLogDao().insertLog(
+                                TempSurveyLogEntity(
+                                    parcelId = target.parcelId,
+                                    parcelNo = target.parcelNo,
+                                    subParcelNo = target.subParcelNo
+                                )
+                            )
+
+                            extraSaved.add(target to extraId)
+                        }
+
+                        SaveOutcome(surveyId, growerCodesText, extraSaved)
                     }
+                    val surveyId = saved.surveyId
+                    val growerCodesText = saved.growerCodesText
 
                     // ===== ACTIVITY LOG =====
                     logger.log(
                         parcelId, parcelNo,
                         if (isEditMode) ParcelAction.SURVEY_UPDATED else ParcelAction.SURVEY_SAVED,
                         subParcelNo,
+                        mauzaId = survey.mauzaId,
+                        areaName = survey.areaName,
                         surveyPkId = surveyId,
-                        details = "op=$parcelOperation, opValue=$parcelOperationValue, " +
+                        details = (if (isBatchSurvey) "batch 1/${batchTargets.size}, " else "") +
+                                "op=$parcelOperation, opValue=$parcelOperationValue, " +
                                 "variety=$selectedVariety, persons=${rawPersons.size}, " +
                                 "images=${images.size}, growers=$growerCodesText"
                     )
 
-                    ToastUtil.showShort(context, if (isEditMode) "Survey updated" else "Survey saved locally")
+                    saved.extraSurveys.forEachIndexed { index, (target, extraId) ->
+                        logger.log(
+                            target.parcelId, target.parcelNo,
+                            ParcelAction.SURVEY_SAVED,
+                            target.subParcelNo,
+                            mauzaId = survey.mauzaId,
+                            areaName = target.areaName.ifBlank { survey.areaName },
+                            surveyPkId = extraId,
+                            details = "batch ${index + 2}/${batchTargets.size} (first survey $surveyId), " +
+                                    "op=$parcelOperation, opValue=$parcelOperationValue, " +
+                                    "variety=$selectedVariety, persons=${rawPersons.size}, " +
+                                    "images=${images.size}, growers=$growerCodesText",
+                            relatedParcelIds = parcelId.toString()
+                        )
+                    }
+
+                    ToastUtil.showShort(
+                        context,
+                        when {
+                            isEditMode -> "Survey updated"
+                            saved.extraSurveys.isNotEmpty() ->
+                                "Surveys saved locally for ${saved.extraSurveys.size + 1} parcels"
+                            else -> "Survey saved locally"
+                        }
+                    )
                     finish()
                 } catch (e: Exception) {
                     // If insertion fails, re-enable button so user can retry
                     Log.e("SurveyActivity", "Error saving survey: ${e.message}", e)
                     binding.btnSubmitSurvey.isEnabled = true
-                    ToastUtil.showShort(context, "Error saving survey: ${e.message}")
+                    ToastUtil.showShort(
+                        context,
+                        if (extraTargets.isEmpty()) "Error saving survey: ${e.message}"
+                        else "Error saving surveys, nothing was saved: ${e.message}"
+                    )
                 }
             }
         }
     }
+
+    /**
+     * Runs the save block on the IO dispatcher. With [useTransaction] (batch mode) the
+     * whole block is one Room transaction, so a failure on any parcel rolls back every
+     * survey written before it. Without it the block runs exactly as it always has.
+     */
+    private suspend fun <T> saveOnIo(useTransaction: Boolean, block: suspend () -> T): T =
+        withContext(Dispatchers.IO) {
+            if (useTransaction) database.withTransaction { block() } else block()
+        }
 
     private fun hasPersonDataChanged(
         original: SurveyPersonEntity,

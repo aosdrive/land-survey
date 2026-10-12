@@ -48,6 +48,13 @@ object ParcelAction {
     const val VALIDATION_UPLOADED  = "VALIDATION_UPLOADED"
     const val TASK_ASSIGNED        = "TASK_ASSIGNED"
     const val DECLINED             = "DECLINED"
+    const val DECLINE_UPLOADED     = "DECLINE_UPLOADED"
+    const val DECLINE_UPLOAD_FAILED = "DECLINE_UPLOAD_FAILED"
     const val PARCEL_DEACTIVATED   = "PARCEL_DEACTIVATED"
     const val SYNCED               = "SYNCED"
+    const val ACCEPTED             = "ACCEPTED"
+    const val ACCEPT_UPLOADED      = "ACCEPT_UPLOADED"
+    const val ACCEPT_UPLOAD_FAILED = "ACCEPT_UPLOAD_FAILED"
+    /** A pending survey removal deleted by the surveyor before upload. */
+    const val ACCEPT_DELETED       = "ACCEPT_DELETED"
 }

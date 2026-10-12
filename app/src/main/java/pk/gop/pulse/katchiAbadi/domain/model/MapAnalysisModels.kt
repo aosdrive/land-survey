@@ -73,7 +73,19 @@ data class AnalyticsParcelDto(
     @SerializedName("lat") val lat: Double?,
     @SerializedName("lng") val lng: Double?,
     @SerializedName("computedAcres") val computedAcres: Double?,
-    @SerializedName("geometryWKT") val geometryWKT: String?
+    @SerializedName("geometryWKT") val geometryWKT: String?,
+    /** "Accepted" or "Declined" when a surveyor already acted on it from Map Analysis, else null. */
+    @SerializedName("action") val action: String? = null,
+    /** The analytics parcel this row belongs to; differs from parcelId for a sub-parcel of a split parcel. */
+    @SerializedName("parentParcelId") val parentParcelId: Int? = null,
+    /** "" for a whole parcel, "1"/"2"... for a sub-parcel created by a split. */
+    @SerializedName("subParcelNo") val subParcelNo: String? = null,
+    /** The parcel's own Parcels.AreaAssigned on the server - the area it must stay in. */
+    @SerializedName("areaAssigned") val areaAssigned: String? = null,
+    /** Parcels.SurveyStatusCode: 1 = not surveyed, 2 = surveyed. */
+    @SerializedName("surveyStatusCode") val surveyStatusCode: Int? = null,
+    /** Other active sub-parcel numbers of this parcel number on the server, comma separated ("2,3"). */
+    @SerializedName("existingSubParcelNos") val existingSubParcelNos: String? = null
 )
 
 data class AnalyticsParcelsResponse(

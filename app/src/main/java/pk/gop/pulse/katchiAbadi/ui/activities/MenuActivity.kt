@@ -79,6 +79,7 @@ import pk.gop.pulse.katchiAbadi.domain.model.AoiBoundaryEntity
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelAction
 import pk.gop.pulse.katchiAbadi.data.repository.ParcelActivityLogger
 import pk.gop.pulse.katchiAbadi.data.repository.LessorRepository
+import pk.gop.pulse.katchiAbadi.data.repository.MapAnalysisRepository
 import pk.gop.pulse.katchiAbadi.domain.use_case.auth.LogoutUseCase
 import pk.gop.pulse.katchiAbadi.presentation.base.BaseActivity
 import pk.gop.pulse.katchiAbadi.presentation.menu.MenuViewModel
@@ -169,6 +170,9 @@ class MenuActivity : BaseActivity() {
     @Inject
     lateinit var lessorRepository: LessorRepository
 
+    @Inject
+    lateinit var mapAnalysisRepository: MapAnalysisRepository
+
     private enum class SyncMode { NORMAL, FREE_POLYGON }
     private var syncMode = SyncMode.NORMAL
 
@@ -180,6 +184,7 @@ class MenuActivity : BaseActivity() {
     private var pendingTasksCount = 0
     private var pendingDeclinesCount = 0
     private var pendingValidationsCount = 0
+    private var pendingAcceptsCount = 0
     private var currentTabId = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -217,6 +222,15 @@ class MenuActivity : BaseActivity() {
                 pendingValidationsCount = count
                 binding.tvPendingValidationsTitle.text =
                     if (count > 0) "PENDING VALIDATIONS ($count)" else "PENDING VALIDATIONS"
+                refreshUploadsBadge()
+            }
+        }
+
+        lifecycleScope.launch {
+            mapAnalysisRepository.livePendingAcceptCount().collect { count ->
+                pendingAcceptsCount = count
+                binding.tvPendingAcceptsTitle.text =
+                    if (count > 0) "PENDING SURVEY REMOVALS ($count)" else "PENDING SURVEY REMOVALS"
                 refreshUploadsBadge()
             }
         }
@@ -602,6 +616,11 @@ class MenuActivity : BaseActivity() {
                 }
             }
 
+            cvPendingAccepts.setOnClickListener {
+                // Same as Pending Declines: a list the surveyor can upload from or delete rows in.
+                startActivity(Intent(this@MenuActivity, PendingAcceptsActivity::class.java))
+            }
+
             cvSettings.setOnClickListener {
                 startActivity(Intent(this@MenuActivity, SettingsActivity::class.java))
             }
@@ -811,9 +830,25 @@ class MenuActivity : BaseActivity() {
             .start()
     }
 
+    /**
+     * Saves the mauza's Map Analysis parcels so that screen works offline in the field.
+     * Runs alongside the tile download; a failure only means Map Analysis needs internet later.
+     */
+    private fun cacheMapAnalysisParcels(mauzaId: Long) {
+        if (mauzaId <= 0) return   // Corporate tehsils have no analytics parcels
+        lifecycleScope.launch {
+            try {
+                val load = mapAnalysisRepository.loadAnalyticsParcels(mauzaId.toInt())
+                Log.d("MAP_ANALYSIS", "Cached ${load.rows.size} analytics parcels (fromCache=${load.fromCache})")
+            } catch (e: Exception) {
+                Log.w("MAP_ANALYSIS", "Analytics cache failed: ${e.message}")
+            }
+        }
+    }
+
     /** Uploads tab par total pending ka red badge. */
     private fun refreshUploadsBadge() {
-        val total = pendingTasksCount + pendingDeclinesCount + pendingValidationsCount
+        val total = pendingTasksCount + pendingDeclinesCount + pendingValidationsCount + pendingAcceptsCount
         val badge = binding.bottomNav.getOrCreateBadge(R.id.nav_pending)
         if (total > 0) {
             badge.isVisible = true
@@ -1500,7 +1535,10 @@ class MenuActivity : BaseActivity() {
                     )
 
                     when (result) {
-                        is Resource.Success -> downloadMapTilesNew(scope)
+                        is Resource.Success -> {
+                            cacheMapAnalysisParcels(mauza.mauzaId)
+                            downloadMapTilesNew(scope)
+                        }
                         is Resource.Error -> {
                             if (::progressAlertDialog.isInitialized && progressAlertDialog.isShowing) {
                                 progressAlertDialog.dismiss()

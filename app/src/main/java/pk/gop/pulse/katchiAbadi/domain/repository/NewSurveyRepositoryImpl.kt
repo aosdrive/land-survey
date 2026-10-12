@@ -33,6 +33,7 @@ import pk.gop.pulse.katchiAbadi.data.remote.response.SurveyPersonDao
 import pk.gop.pulse.katchiAbadi.data.remote.response.VarietyValidationPost
 import pk.gop.pulse.katchiAbadi.domain.model.ActiveParcelEntity
 import pk.gop.pulse.katchiAbadi.domain.model.NewSurveyNewEntity
+import pk.gop.pulse.katchiAbadi.data.repository.MapAnalysisRepository
 import pk.gop.pulse.katchiAbadi.domain.model.ParcelAction
 import pk.gop.pulse.katchiAbadi.domain.model.SowingPersonPostDto
 import pk.gop.pulse.katchiAbadi.domain.model.SurveyImage
@@ -66,8 +67,33 @@ class NewSurveyRepositoryImpl @Inject constructor(
     private val sharedPreferences: SharedPreferences,
     private val activeParcelDao: ActiveParcelDao,
     private val logger: ParcelActivityLogger,
-    private val surveyLessorDao: SurveyLessorDao
+    private val surveyLessorDao: SurveyLessorDao,
+    private val mapAnalysisRepository: MapAnalysisRepository
 ) : NewSurveyRepository {
+
+    /**
+     * Map Analysis "accept" of a red parcel removes the parcel's old survey on the server. That
+     * accept must reach the server BEFORE the parcel's new survey, otherwise it would remove the
+     * survey just uploaded. Uploads the pending accept now; returns an error text if it still
+     * could not be sent. Split children are covered by the accept of their parent parcel.
+     */
+    private suspend fun ensureAcceptUploadedFirst(survey: NewSurveyNewEntity): String? {
+        val candidateIds = mutableListOf(survey.parcelId)
+        val localParcel = activeParcelDao.getParcelById(survey.parcelId)
+        if (localParcel != null && localParcel.subParcelNo.isNotBlank() && localParcel.subParcelNo != "0") {
+            activeParcelDao.getParcelsByNumber(localParcel.parcelNo, localParcel.mauzaId, localParcel.areaAssigned)
+                .filter { it.subParcelNo.isBlank() || it.subParcelNo == "0" }
+                .forEach { candidateIds.add(it.id) }
+        }
+        if (!mapAnalysisRepository.hasPendingAccept(candidateIds)) return null
+
+        Log.d(TAG, "Parcel ${survey.parcelNo} has a pending accept - uploading it before the survey")
+        mapAnalysisRepository.uploadPendingAccepts()
+        return if (mapAnalysisRepository.hasPendingAccept(candidateIds)) {
+            "Parcel ${survey.parcelNo} has a pending survey removal that must reach the server before its survey. " +
+                "Upload it from Pending Survey Removals on the home screen, then retry."
+        } else null
+    }
 
     private val wgs84 by lazy {
         SpatialReferences.getWgs84()
@@ -167,6 +193,15 @@ class NewSurveyRepositoryImpl @Inject constructor(
             // Corporate Farms has its own endpoint and payload - the Split/Merge/Same
             // path does not apply there.
             if (isCorporateFarm()) return uploadCorporateSurvey(context, survey)
+
+            ensureAcceptUploadedFirst(survey)?.let { blocked ->
+                Log.w(TAG, "Upload blocked: $blocked")
+                logger.log(
+                    survey.parcelId, survey.parcelNo, ParcelAction.SURVEY_UPLOAD_FAILED,
+                    survey.subParcelNo, status = "FAILED", surveyPkId = survey.pkId, details = blocked
+                )
+                return Resource.Error(blocked)
+            }
 
             Log.d(TAG, "=== uploadSurvey START ===")
             Log.d(TAG, "App Version: ${Constants.VERSION_NAME}")
